@@ -4,7 +4,17 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Plus, Search, Filter, MoreHorizontal, ArrowUpDown } from "lucide-react";
+import { 
+  Plus, 
+  Search, 
+  MoreHorizontal, 
+  ArrowUpDown, 
+  Edit, 
+  Trash, 
+  Copy,
+  EyeOff,
+  Eye
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
   Select, 
@@ -13,9 +23,18 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { MOCK_TENANTS, Product } from "@/lib/store-data";
 import { formatVND } from "@/lib/currency";
 import Image from "next/image";
+import { toast } from "@/hooks/use-toast";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,6 +50,13 @@ export default function AdminProductsPage() {
     const matchesCategory = categoryFilter === "all" || p.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  const handleAction = (action: string, productName: string) => {
+    toast({
+      title: "Thông báo",
+      description: `Đã thực hiện thao tác: ${action} trên sản phẩm ${productName}`,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -106,9 +132,29 @@ export default function AdminProductsPage() {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Quản lý sản phẩm</DropdownMenuLabel>
+                          <DropdownMenuItem className="gap-2" onClick={() => handleAction("Chỉnh sửa", product.name)}>
+                            <Edit className="w-4 h-4" /> Chỉnh sửa
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2" onClick={() => handleAction("Sao chép", product.name)}>
+                            <Copy className="w-4 h-4" /> Nhân bản
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="gap-2" onClick={() => handleAction("Ẩn", product.name)}>
+                            <EyeOff className="w-4 h-4" /> Tạm ẩn sản phẩm
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleAction("Xóa", product.name)}>
+                            <Trash className="w-4 h-4" /> Xóa sản phẩm
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}

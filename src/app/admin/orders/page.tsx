@@ -1,15 +1,41 @@
 
 "use client";
 
-import { useOrderStore } from "@/store/orderStore";
+import { useOrderStore, Order } from "@/store/orderStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Search, Filter, MoreHorizontal, Download } from "lucide-react";
+import { 
+  Search, 
+  MoreHorizontal, 
+  Download, 
+  Eye, 
+  Truck, 
+  CheckCircle2, 
+  XCircle,
+  Clock
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "@/hooks/use-toast";
 
 export default function AdminOrdersPage() {
   const { orders, updateOrderStatus } = useOrderStore();
+
+  const handleUpdateStatus = (orderId: string, status: Order['status']) => {
+    updateOrderStatus(orderId, status);
+    toast({
+      title: "Cập nhật thành công",
+      description: `Đơn hàng ${orderId} đã chuyển sang trạng thái ${status}`,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -58,7 +84,8 @@ export default function AdminOrdersPage() {
                     <td className="p-4">
                       <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         order.status === 'Chờ xử lý' ? 'bg-yellow-500/10 text-yellow-500' : 
-                        order.status === 'Đang giao' ? 'bg-blue-500/10 text-blue-500' : 'bg-green-500/10 text-green-500'
+                        order.status === 'Đang giao' ? 'bg-blue-500/10 text-blue-500' : 
+                        order.status === 'Đã hủy' ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-500'
                       }`}>
                         {order.status}
                       </span>
@@ -70,9 +97,33 @@ export default function AdminOrdersPage() {
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                          <DropdownMenuItem className="gap-2">
+                            <Eye className="w-4 h-4" /> Xem chi tiết
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">Trạng thái</DropdownMenuLabel>
+                          <DropdownMenuItem className="gap-2" onClick={() => handleUpdateStatus(order.id, 'Chờ xử lý')}>
+                            <Clock className="w-4 h-4 text-yellow-500" /> Chờ xử lý
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2" onClick={() => handleUpdateStatus(order.id, 'Đang giao')}>
+                            <Truck className="w-4 h-4 text-blue-500" /> Đang giao
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2" onClick={() => handleUpdateStatus(order.id, 'Hoàn thành')}>
+                            <CheckCircle2 className="w-4 h-4 text-green-500" /> Hoàn thành
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleUpdateStatus(order.id, 'Đã hủy')}>
+                            <XCircle className="w-4 h-4" /> Hủy đơn
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 )) : (

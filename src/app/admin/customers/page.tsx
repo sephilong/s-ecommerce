@@ -1,9 +1,30 @@
 
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, Mail, Phone, MoreHorizontal } from "lucide-react";
+import { 
+  Search, 
+  Filter, 
+  Mail, 
+  Phone, 
+  MoreHorizontal, 
+  UserCircle, 
+  MessageSquare, 
+  Ban,
+  History
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "@/hooks/use-toast";
 
 export default function AdminCustomersPage() {
   const customers = [
@@ -11,6 +32,13 @@ export default function AdminCustomersPage() {
     { id: "2", name: "Trần Thị B", email: "thib@yahoo.com", phone: "0912345678", orders: 5, totalSpent: "3.200.000₫", status: "Active" },
     { id: "3", name: "Lê Văn C", email: "vanc@outlook.com", phone: "0987654321", orders: 1, totalSpent: "500.000₫", status: "Inactive" },
   ];
+
+  const handleAction = (action: string, customerName: string) => {
+    toast({
+      title: "Khách hàng",
+      description: `Đã thực hiện: ${action} cho ${customerName}`,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -71,9 +99,29 @@ export default function AdminCustomersPage() {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel>Hồ sơ khách hàng</DropdownMenuLabel>
+                          <DropdownMenuItem className="gap-2" onClick={() => handleAction("Xem hồ sơ", customer.name)}>
+                            <UserCircle className="w-4 h-4" /> Xem hồ sơ chi tiết
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2" onClick={() => handleAction("Xem lịch sử", customer.name)}>
+                            <History className="w-4 h-4" /> Lịch sử mua hàng
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="gap-2" onClick={() => handleAction("Gửi tin nhắn", customer.name)}>
+                            <MessageSquare className="w-4 h-4" /> Gửi tin nhắn trực tiếp
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2 text-destructive" onClick={() => handleAction("Khóa tài khoản", customer.name)}>
+                            <Ban className="w-4 h-4" /> Khóa tài khoản khách
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
