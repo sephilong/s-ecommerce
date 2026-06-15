@@ -7,33 +7,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { getTenantConfig } from "@/lib/tenant";
-import { PaymentMethod, ShippingMethod } from "@/lib/store-data";
-import { CreditCard, Truck, Settings2, ShieldCheck } from "lucide-react";
+import { useConfigStore } from "@/store/configStore";
+import { CreditCard, Truck, Settings2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function AdminSettingsPage() {
-  const [loading, setLoading] = useState(true);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const config = useConfigStore();
+  const [localStoreName, setLocalStoreName] = useState("");
+  const [localStoreDesc, setLocalStoreDesc] = useState("");
 
   useEffect(() => {
-    const fetchConfig = async () => {
-      const tenant = await getTenantConfig("demo");
-      setPaymentMethods(tenant.paymentMethods);
-      setShippingMethods(tenant.shippingMethods);
-      setLoading(false);
-    };
-    fetchConfig();
-  }, []);
+    setLocalStoreName(config.storeName);
+    setLocalStoreDesc(config.storeDescription);
+  }, [config.storeName, config.storeDescription]);
 
   const togglePayment = (id: string) => {
-    setPaymentMethods(prev => prev.map(pm => pm.id === id ? { ...pm, isActive: !pm.isActive } : pm));
+    const updated = config.paymentMethods.map(pm => pm.id === id ? { ...pm, isActive: !pm.isActive } : pm);
+    config.updatePaymentMethods(updated);
   };
 
   const toggleShipping = (id: string) => {
-    setShippingMethods(prev => prev.map(sm => sm.id === id ? { ...sm, isActive: !sm.isActive } : sm));
+    const updated = config.shippingMethods.map(sm => sm.id === id ? { ...sm, isActive: !sm.isActive } : sm);
+    config.updateShippingMethods(updated);
+  };
+
+  const handleSave = () => {
+    config.updateStoreInfo(localStoreName, localStoreDesc);
+    toast({
+      title: "Đã lưu cấu hình",
+      description: "Thay đổi đã được áp dụng cho toàn bộ cửa hàng.",
+    });
   };
 
   return (
@@ -44,7 +48,6 @@ export default function AdminSettingsPage() {
       </div>
 
       <div className="space-y-8">
-        {/* Section 1: Thông tin cửa hàng */}
         <Card className="border-white/5 bg-card/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -55,21 +58,16 @@ export default function AdminSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tên cửa hàng</Label>
-                <Input defaultValue="S-Com Hub Demo Store" />
-              </div>
-              <div className="space-y-2">
-                <Label>Slogan</Label>
-                <Input defaultValue="Công nghệ cho tương lai" />
+                <Input value={localStoreName} onChange={(e) => setLocalStoreName(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Mô tả ngắn</Label>
-              <Textarea defaultValue="Nền tảng thương mại điện tử đa năng, đa vendor, hỗ trợ Việt Nam." />
+              <Textarea value={localStoreDesc} onChange={(e) => setLocalStoreDesc(e.target.value)} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 2: Thanh toán Online */}
         <Card className="border-white/5 bg-card/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -78,7 +76,7 @@ export default function AdminSettingsPage() {
             <CardDescription>Bật/tắt các cổng thanh toán hỗ trợ khách hàng Việt Nam.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {paymentMethods.map((pm) => (
+            {config.paymentMethods.map((pm) => (
               <div key={pm.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-white/5">
                 <div className="space-y-1">
                   <p className="font-bold">{pm.name}</p>
@@ -93,7 +91,6 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Section 3: Vận chuyển */}
         <Card className="border-white/5 bg-card/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -102,7 +99,7 @@ export default function AdminSettingsPage() {
             <CardDescription>Cấu hình các đối tác giao hàng nội địa.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {shippingMethods.map((sm) => (
+            {config.shippingMethods.map((sm) => (
               <div key={sm.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-white/5">
                 <div className="flex flex-col">
                   <p className="font-bold">{sm.name}</p>
@@ -118,8 +115,7 @@ export default function AdminSettingsPage() {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button variant="outline" className="rounded-full px-8">Hủy</Button>
-          <Button className="rounded-full px-8">Lưu tất cả cấu hình</Button>
+          <Button className="rounded-full px-8" onClick={handleSave}>Lưu tất cả cấu hình</Button>
         </div>
       </div>
     </div>

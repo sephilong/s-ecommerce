@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Tenant } from "@/lib/store-data";
 import { useCartStore } from "@/store/cartStore";
 import { useUIStore } from "@/store/uiStore";
+import { useConfigStore } from "@/store/configStore";
 
 export function Header({ tenant }: { tenant: Tenant }) {
   const cartCount = useCartStore((state) => state.totalItems());
   const toggleMobileMenu = useUIStore((state) => state.toggleMobileMenu);
+  const { storeName } = useConfigStore();
 
   return (
     <header className="sticky top-0 z-50 w-full glass-panel border-b border-white/5">
@@ -18,7 +20,7 @@ export function Header({ tenant }: { tenant: Tenant }) {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl font-bold font-headline gradient-text">
-              {tenant.name}
+              {storeName || tenant.name}
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">

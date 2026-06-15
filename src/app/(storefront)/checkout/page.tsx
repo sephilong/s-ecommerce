@@ -2,6 +2,8 @@
 "use client";
 
 import { useCartStore } from "@/store/cartStore";
+import { useConfigStore } from "@/store/configStore";
+import { useOrderStore, Order } from "@/store/orderStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,52 +14,105 @@ import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { getTenantConfig } from "@/lib/tenant";
-import { PaymentMethod, ShippingMethod } from "@/lib/store-data";
-import { CreditCard, Truck, Wallet, Landmark, TruckIcon } from "lucide-react";
+import { Loader2, CheckCircle2, QrCode } from "lucide-react";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
+  const { paymentMethods, shippingMethods } = useConfigStore();
+  const { addOrder } = useOrderStore();
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
-  
+  const [showSandbox, setShowSandbox] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<string>("");
   const [selectedShipping, setSelectedShipping] = useState<string>("");
 
+  // Customer info state
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    address: ""
+  });
+
   useEffect(() => {
-    const fetchConfig = async () => {
-      const tenant = await getTenantConfig("demo");
-      setPaymentMethods(tenant.paymentMethods.filter(pm => pm.isActive));
-      setShippingMethods(tenant.shippingMethods.filter(sm => sm.isActive));
-      
-      if (tenant.paymentMethods.length > 0) setSelectedPayment(tenant.paymentMethods[0].id);
-      if (tenant.shippingMethods.length > 0) setSelectedShipping(tenant.shippingMethods[0].id);
-    };
-    fetchConfig();
-  }, []);
+    const activePMs = paymentMethods.filter(p => p.isActive);
+    const activeSMs = shippingMethods.filter(s => s.isActive);
+    if (activePMs.length > 0) setSelectedPayment(activePMs[0].id);
+    if (activeSMs.length > 0) setSelectedShipping(activeSMs[0].id);
+  }, [paymentMethods, shippingMethods]);
 
-  const currentShippingPrice = shippingMethods.find(s => s.id === selectedShipping)?.price || 0;
-  const finalTotal = totalPrice() + currentShippingPrice;
+  const currentShipping = shippingMethods.find(s => s.id === selectedShipping);
+  const currentPayment = paymentMethods.find(p => p.id === selectedPayment);
+  const finalTotal = totalPrice() + (currentShipping?.price || 0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Simulate gateway processing for Online Payments
+    if (currentPayment?.type === 'vnpay' || currentPayment?.type === 'momo') {
+      await new Promise(r => setTimeout(r, 1000));
+      setShowSandbox(true);
+      return;
+    }
+
+    completeOrder();
+  };
+
+  const completeOrder = () => {
+    const orderId = `SCHUB-${Math.floor(10000 + Math.random() * 90000)}`;
+    const newOrder: Order = {
+      id: orderId,
+      customerName: `${formData.firstName} ${formData.lastName}`,
+      customerPhone: formData.phone,
+      customerAddress: formData.address,
+      items: items.map(i => ({ name: i.product.name, qty: i.quantity, price: i.product.price })),
+      total: finalTotal,
+      status: 'Chờ xử lý',
+      paymentStatus: currentPayment?.type === 'cod' ? 'Chờ thanh toán' : 'Đã thanh toán',
+      paymentMethod: currentPayment?.name || "N/A",
+      shippingMethod: currentShipping?.name || "N/A",
+      createdAt: new Date().toISOString()
+    };
+
+    addOrder(newOrder);
     
     setTimeout(() => {
       setLoading(false);
-      toast({
-        title: "Đặt hàng thành công",
-        description: "Cảm ơn bạn đã mua sắm tại S-Com Hub.",
-      });
       clearCart();
       router.push("/checkout/success");
     }, 1500);
   };
 
-  if (items.length === 0) {
-    return null;
+  if (items.length === 0) return null;
+
+  if (showSandbox) {
+    return (
+      <div className="container mx-auto px-4 py-24 flex flex-col items-center justify-center max-w-lg text-center space-y-8 animate-in zoom-in-95">
+        <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <Loader2 className="h-10 w-10 animate-spin" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Giả lập cổng thanh toán {currentPayment?.name}</h2>
+          <p className="text-muted-foreground">Vui lòng không đóng trình duyệt. Hệ thống đang kết nối với Sandbox của {currentPayment?.type.toUpperCase()}.</p>
+        </div>
+        <Card className="w-full bg-card/50 border-white/5 p-8 space-y-6">
+          <div className="bg-white p-4 rounded-xl inline-block mx-auto">
+             <QrCode className="h-40 w-40 text-black" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs uppercase text-muted-foreground font-bold">Số tiền thanh toán</p>
+            <p className="text-2xl font-bold text-primary">{formatVND(finalTotal)}</p>
+          </div>
+          <Button className="w-full h-12 rounded-full" onClick={completeOrder}>Xác nhận đã thanh toán (Simulate Success)</Button>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -66,7 +121,6 @@ export default function CheckoutPage() {
       
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
         <form onSubmit={handleSubmit} className="space-y-12">
-          {/* Section 1: Thông tin khách hàng */}
           <section className="space-y-6">
             <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-sm">1</span>
@@ -75,38 +129,34 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Họ</Label>
-                <Input id="firstName" placeholder="Nguyễn" required />
+                <Input id="firstName" placeholder="Nguyễn" required value={formData.firstName} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Tên</Label>
-                <Input id="lastName" placeholder="Văn A" required />
+                <Input id="lastName" placeholder="Văn A" required value={formData.lastName} onChange={handleInputChange} />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Số điện thoại</Label>
-              <Input id="phone" placeholder="090 123 4567" required />
+              <Input id="phone" placeholder="090 123 4567" required value={formData.phone} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="address">Địa chỉ chi tiết</Label>
-              <Input id="address" placeholder="123 Lê Lợi, Quận 1, TP. HCM" required />
+              <Input id="address" placeholder="123 Lê Lợi, Quận 1, TP. HCM" required value={formData.address} onChange={handleInputChange} />
             </div>
           </section>
 
-          {/* Section 2: Vận chuyển */}
           <section className="space-y-6">
             <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-sm">2</span>
-              Đơn vị vận chuyển
+              Vận chuyển
             </h2>
             <RadioGroup value={selectedShipping} onValueChange={setSelectedShipping} className="grid grid-cols-1 gap-4">
-              {shippingMethods.map((sm) => (
-                <Label key={sm.id} className="relative flex items-center justify-between p-4 rounded-xl border border-white/5 cursor-pointer hover:bg-white/5 transition-colors">
+              {shippingMethods.filter(s => s.isActive).map((sm) => (
+                <Label key={sm.id} className="relative flex items-center justify-between p-4 rounded-xl border border-white/5 cursor-pointer hover:bg-white/5">
                   <div className="flex items-center gap-3">
                     <RadioGroupItem value={sm.id} id={sm.id} />
-                    <div className="flex flex-col">
-                      <span className="font-bold">{sm.name}</span>
-                      <span className="text-xs text-muted-foreground">Thời gian dự kiến: 2-4 ngày</span>
-                    </div>
+                    <span className="font-bold">{sm.name}</span>
                   </div>
                   <span className="font-bold">{formatVND(sm.price)}</span>
                 </Label>
@@ -114,35 +164,36 @@ export default function CheckoutPage() {
             </RadioGroup>
           </section>
 
-          {/* Section 3: Thanh toán */}
           <section className="space-y-6">
             <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-sm">3</span>
-              Phương thức thanh toán
+              Thanh toán
             </h2>
             <RadioGroup value={selectedPayment} onValueChange={setSelectedPayment} className="grid grid-cols-1 gap-4">
-              {paymentMethods.map((pm) => (
-                <Label key={pm.id} className="relative flex flex-col p-4 rounded-xl border border-white/5 cursor-pointer hover:bg-white/5 transition-colors">
-                  <div className="flex items-center gap-3">
+              {paymentMethods.filter(p => p.isActive).map((pm) => (
+                <div key={pm.id}>
+                  <Label className="relative flex items-center gap-3 p-4 rounded-xl border border-white/5 cursor-pointer hover:bg-white/5">
                     <RadioGroupItem value={pm.id} id={pm.id} />
-                    <div className="flex items-center gap-3">
-                      {pm.type === 'vnpay' && <Image src="https://picsum.photos/seed/vnpay/32/32" alt="vnpay" width={32} height={32} className="rounded" />}
-                      {pm.type === 'momo' && <Image src="https://picsum.photos/seed/momo/32/32" alt="momo" width={32} height={32} className="rounded" />}
-                      <span className="font-bold">{pm.name}</span>
+                    <span className="font-bold">{pm.name}</span>
+                  </Label>
+                  {selectedPayment === pm.id && pm.type === 'banking' && (
+                    <div className="mt-2 p-4 bg-primary/10 border border-primary/20 rounded-xl space-y-2 animate-in slide-in-from-top-2">
+                      <p className="text-sm font-bold">Thông tin chuyển khoản:</p>
+                      <p className="text-xs">Ngân hàng: MB Bank</p>
+                      <p className="text-xs">Số tài khoản: 0901234567</p>
+                      <p className="text-xs">Chủ tài khoản: NGUYEN VAN A</p>
                     </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2 pl-7">{pm.description}</p>
-                </Label>
+                  )}
+                </div>
               ))}
             </RadioGroup>
           </section>
 
           <Button type="submit" size="lg" className="w-full h-14 rounded-full text-lg font-bold" disabled={loading}>
-            {loading ? "Đang xử lý..." : `Đặt hàng • ${formatVND(finalTotal)}`}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang xử lý...</> : `Đặt hàng • ${formatVND(finalTotal)}`}
           </Button>
         </form>
 
-        {/* Sidebar Summary */}
         <div className="space-y-8">
           <Card className="border-white/5 bg-card/50 backdrop-blur-sm sticky top-24">
             <CardContent className="p-8 space-y-6">
@@ -170,7 +221,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Phí vận chuyển</span>
-                  <span>{formatVND(currentShippingPrice)}</span>
+                  <span>{formatVND(currentShipping?.price || 0)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-xl pt-4 border-t border-white/10">
                   <span>Tổng cộng</span>
