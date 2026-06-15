@@ -24,6 +24,22 @@ export type Banner = {
   isActive: boolean;
 };
 
+export type PaymentMethod = {
+  id: string;
+  name: string;
+  type: 'vnpay' | 'momo' | 'cod' | 'banking';
+  isActive: boolean;
+  description?: string;
+};
+
+export type ShippingMethod = {
+  id: string;
+  name: string;
+  type: 'ghn' | 'ghtk' | 'viettel' | 'grab';
+  isActive: boolean;
+  price: number;
+};
+
 export type Tenant = {
   id: string;
   name: string;
@@ -33,11 +49,12 @@ export type Tenant = {
   primaryColor: string;
   products: Product[];
   banners: Banner[];
+  paymentMethods: PaymentMethod[];
+  shippingMethods: ShippingMethod[];
 };
 
 const categories = ["Điện tử", "Phụ kiện", "Gia dụng", "Thời trang"];
 
-// Helper to remove Vietnamese accents for clean slugs
 function slugify(text: string) {
   return text
     .toString()
@@ -91,6 +108,19 @@ const mockBanners: Banner[] = [
   }
 ];
 
+const mockPaymentMethods: PaymentMethod[] = [
+  { id: "pm1", name: "Thanh toán VNPAY", type: "vnpay", isActive: true, description: "Cổng thanh toán điện tử VNPAY (QR Pay, Thẻ ATM, Thẻ quốc tế)" },
+  { id: "pm2", name: "Ví MoMo", type: "momo", isActive: true, description: "Thanh toán qua ví điện tử MoMo" },
+  { id: "pm3", name: "Chuyển khoản ngân hàng", type: "banking", isActive: true, description: "Quét mã QR hoặc chuyển khoản thủ công" },
+  { id: "pm4", name: "Thanh toán khi nhận hàng (COD)", type: "cod", isActive: true, description: "Thanh toán bằng tiền mặt khi shipper giao hàng" },
+];
+
+const mockShippingMethods: ShippingMethod[] = [
+  { id: "sm1", name: "Giao Hàng Nhanh (GHN)", type: "ghn", isActive: true, price: 35000 },
+  { id: "sm2", name: "Giao Hàng Tiết Kiệm (GHTK)", type: "ghtk", isActive: true, price: 30000 },
+  { id: "sm3", name: "Viettel Post", type: "viettel", isActive: true, price: 32000 },
+];
+
 export const MOCK_TENANTS: Tenant[] = [
   {
     id: "tenant-1",
@@ -99,7 +129,9 @@ export const MOCK_TENANTS: Tenant[] = [
     description: "Nền tảng thương mại điện tử đa năng, hỗ trợ Việt Nam.",
     primaryColor: "#9757EA",
     products: generateMockProducts(20),
-    banners: mockBanners
+    banners: mockBanners,
+    paymentMethods: mockPaymentMethods,
+    shippingMethods: mockShippingMethods
   }
 ];
 
