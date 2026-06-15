@@ -32,7 +32,7 @@ export default function AdminCustomersPage() {
               <Filter className="w-4 h-4" /> Lọc khách hàng
             </Button>
           </div>
-        </Header>
+        </CardHeader>
         <CardContent className="p-0">
           <div className="relative w-full overflow-auto">
             <table className="w-full text-sm">
