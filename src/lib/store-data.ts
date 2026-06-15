@@ -14,6 +14,16 @@ export type Product = {
   createdAt: string;
 };
 
+export type Banner = {
+  id: string;
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  link: string;
+  type: 'product' | 'promotion';
+  isActive: boolean;
+};
+
 export type Tenant = {
   id: string;
   name: string;
@@ -22,6 +32,7 @@ export type Tenant = {
   logo?: string;
   primaryColor: string;
   products: Product[];
+  banners: Banner[];
 };
 
 const categories = ["Điện tử", "Phụ kiện", "Gia dụng", "Thời trang"];
@@ -45,6 +56,27 @@ const generateMockProducts = (count: number): Product[] => {
   });
 };
 
+const mockBanners: Banner[] = [
+  {
+    id: "b1",
+    title: "Siêu Phẩm Công Nghệ 2025",
+    subtitle: "Giảm giá lên đến 30% cho các dòng máy tính xách tay đời mới nhất.",
+    imageUrl: PlaceHolderImages[0].imageUrl,
+    link: "/products/dien-tu-premium-3",
+    type: 'product',
+    isActive: true
+  },
+  {
+    id: "b2",
+    title: "Tuần Lễ Phụ Kiện",
+    subtitle: "Mua 1 tặng 1 cho tất cả các loại ốp lưng và cáp sạc cao cấp.",
+    imageUrl: "https://picsum.photos/seed/promo1/1200/600",
+    link: "/flash-sale",
+    type: 'promotion',
+    isActive: true
+  }
+];
+
 export const MOCK_TENANTS: Tenant[] = [
   {
     id: "tenant-1",
@@ -52,7 +84,8 @@ export const MOCK_TENANTS: Tenant[] = [
     subdomain: "demo",
     description: "Nền tảng thương mại điện tử đa năng, hỗ trợ Việt Nam.",
     primaryColor: "#9757EA",
-    products: generateMockProducts(20)
+    products: generateMockProducts(20),
+    banners: mockBanners
   }
 ];
 

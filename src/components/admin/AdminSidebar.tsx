@@ -10,7 +10,7 @@ import {
   Users, 
   Settings, 
   BarChart3, 
-  ChevronRight,
+  Image as ImageIcon,
   Store
 } from "lucide-react";
 import { 
@@ -30,6 +30,7 @@ export function AdminSidebar() {
   const menuItems = [
     { name: "Dashboard", icon: <LayoutDashboard />, href: "/admin" },
     { name: "Sản phẩm", icon: <Package />, href: "/admin/products" },
+    { name: "Banner Slide", icon: <ImageIcon />, href: "/admin/banners" },
     { name: "Đơn hàng", icon: <ShoppingCart />, href: "/admin/orders" },
     { name: "Khách hàng", icon: <Users />, href: "/admin/customers" },
     { name: "Báo cáo", icon: <BarChart3 />, href: "/admin/analytics" },
