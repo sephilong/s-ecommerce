@@ -1,9 +1,10 @@
 
 import { getTenantConfig } from "@/lib/tenant";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Star, ShieldCheck, Truck } from "lucide-react";
+import { Star, ShieldCheck, Truck, ArrowRight } from "lucide-react";
 import { headers } from "next/headers";
 import { HeroCarousel } from "@/components/layout/HeroCarousel";
+import Link from "next/link";
 
 export default async function HomePage() {
   const headerList = await headers();
@@ -49,9 +50,6 @@ export default async function HomePage() {
     </div>
   );
 }
-
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 function FeatureItem({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
   return (

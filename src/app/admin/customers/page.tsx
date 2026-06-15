@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Filter, Mail, Phone, MoreHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AdminCustomersPage() {
   const customers = [
@@ -32,7 +32,7 @@ export default function AdminCustomersPage() {
               <Filter className="w-4 h-4" /> Lọc khách hàng
             </Button>
           </div>
-        </CardHeader>
+        </Header>
         <CardContent className="p-0">
           <div className="relative w-full overflow-auto">
             <table className="w-full text-sm">
