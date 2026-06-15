@@ -4,6 +4,7 @@
 import { useCartStore } from "@/store/cartStore";
 import { useConfigStore } from "@/store/configStore";
 import { useOrderStore, Order } from "@/store/orderStore";
+import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const { paymentMethods, shippingMethods } = useConfigStore();
   const { addOrder } = useOrderStore();
+  const { profile, updateProfile } = useUserStore();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,18 @@ export default function CheckoutPage() {
     phone: "",
     address: ""
   });
+
+  // Pre-fill form from saved profile
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+        phone: profile.phone || "",
+        address: profile.address || ""
+      });
+    }
+  }, [profile]);
 
   useEffect(() => {
     const activePMs = paymentMethods.filter(p => p.isActive);
@@ -71,12 +85,26 @@ export default function CheckoutPage() {
 
   const completeOrder = () => {
     const orderId = `SCHUB-${Math.floor(10000 + Math.random() * 90000)}`;
+    
+    // Save profile for next time
+    updateProfile({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phone: formData.phone,
+      address: formData.address
+    });
+
     const newOrder: Order = {
       id: orderId,
       customerName: `${formData.firstName} ${formData.lastName}`,
       customerPhone: formData.phone,
       customerAddress: formData.address,
-      items: items.map(i => ({ name: i.product.name, qty: i.quantity, price: i.product.price })),
+      items: items.map(i => ({ 
+        name: i.product.name, 
+        qty: i.quantity, 
+        price: i.product.price,
+        image: i.product.image
+      })),
       total: finalTotal,
       status: 'Chờ xử lý',
       paymentStatus: currentPayment?.type === 'cod' ? 'Chờ thanh toán' : 'Đã thanh toán',
@@ -205,6 +233,11 @@ export default function CheckoutPage() {
               <Label htmlFor="address">Địa chỉ chi tiết</Label>
               <Input id="address" placeholder="123 Lê Lợi, Quận 1, TP. HCM" required value={formData.address} onChange={handleInputChange} className="rounded-xl h-12 bg-card/30" />
             </div>
+            {profile && (
+              <p className="text-[10px] text-primary italic font-medium">
+                * Chúng tôi đã tự động điền thông tin từ đơn hàng trước của bạn.
+              </p>
+            )}
           </section>
 
           {/* Section 2: Shipping */}
@@ -242,13 +275,9 @@ export default function CheckoutPage() {
                         <span className="font-bold text-base">{pm.name}</span>
                         <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-0.5">{pm.description}</span>
                       </div>
-                      {pm.type !== 'cod' && pm.type !== 'banking' && (
-                        <span className="text-[10px] bg-primary/20 text-primary px-3 py-1 rounded-full font-bold uppercase tracking-wider border border-primary/20">Online</span>
-                      )}
                     </div>
                   </Label>
                   
-                  {/* Banking Info Display */}
                   {selectedPayment === pm.id && pm.type === 'banking' && (
                     <div className="p-5 bg-primary/10 border border-primary/20 rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-300">
                       <p className="text-sm font-bold flex items-center gap-2 text-primary">
@@ -261,14 +290,10 @@ export default function CheckoutPage() {
                         <span className="font-bold text-primary text-sm select-all">0901234567</span>
                         <span className="text-muted-foreground">Chủ tài khoản:</span>
                         <span className="font-bold uppercase tracking-wider text-sm">NGUYEN VAN A</span>
-                        <span className="text-muted-foreground">Chi nhánh:</span>
-                        <span className="font-bold">TP. Hồ Chí Minh</span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground italic">* Vui lòng ghi mã đơn hàng trong nội dung chuyển khoản.</p>
                     </div>
                   )}
 
-                  {/* Online Redirect Hint */}
                   {selectedPayment === pm.id && (pm.type === 'vnpay' || pm.type === 'momo') && (
                     <div className="p-4 bg-primary/5 border border-primary/20 border-dashed rounded-2xl space-y-2 animate-in slide-in-from-top-2">
                       <p className="text-xs font-medium text-muted-foreground flex items-center gap-2">
@@ -324,10 +349,6 @@ export default function CheckoutPage() {
               </div>
             </CardContent>
           </Card>
-          <div className="p-6 rounded-2xl border border-white/5 bg-muted/20 flex items-center gap-4">
-             <ShieldCheck className="w-10 h-10 text-primary opacity-50" />
-             <p className="text-xs text-muted-foreground">Thông tin cá nhân và thanh toán của bạn luôn được bảo mật tuyệt đối tại S-Com Hub.</p>
-          </div>
         </div>
       </div>
     </div>
