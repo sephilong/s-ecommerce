@@ -29,12 +29,16 @@ export function Header({ tenant }: { tenant: Tenant }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
-            <Search className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <User className="w-5 h-5" />
-          </Button>
+          <Link href="/search">
+            <Button variant="ghost" size="icon" className="hidden sm:flex">
+              <Search className="w-5 h-5" />
+            </Button>
+          </Link>
+          <Link href="/account">
+            <Button variant="ghost" size="icon">
+              <User className="w-5 h-5" />
+            </Button>
+          </Link>
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="w-5 h-5" />
