@@ -37,18 +37,32 @@ export type Tenant = {
 
 const categories = ["Điện tử", "Phụ kiện", "Gia dụng", "Thời trang"];
 
+// Helper to remove Vietnamese accents for clean slugs
+function slugify(text: string) {
+  return text
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
+}
+
 const generateMockProducts = (count: number): Product[] => {
   return Array.from({ length: count }).map((_, i) => {
     const category = categories[i % categories.length];
-    const imageIndex = (i % 4) + 1; // Use available product placeholders 1-4
+    const imageIndex = (i % 4) + 1; 
+    const productName = `${category} Premium Model ${i + 1}`;
     return {
       id: `p${i + 1}`,
-      name: `${category} Premium Model ${i + 1}`,
-      slug: `${category.toLowerCase().replace(/ /g, '-')}-premium-${i + 1}`,
+      name: productName,
+      slug: `${slugify(productName)}`,
       price: 500000 + (Math.random() * 10000000),
       compareAtPrice: Math.random() > 0.5 ? 12000000 + (Math.random() * 5000000) : undefined,
       image: PlaceHolderImages[imageIndex].imageUrl,
-      description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng.`,
+      description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng. Thiết kế sang trọng, hiệu năng vượt trội phù hợp với mọi nhu cầu.`,
       category: category,
       inStock: Math.random() > 0.1,
       createdAt: new Date(Date.now() - (i * 86400000)).toISOString()
@@ -62,7 +76,7 @@ const mockBanners: Banner[] = [
     title: "Siêu Phẩm Công Nghệ 2025",
     subtitle: "Giảm giá lên đến 30% cho các dòng máy tính xách tay đời mới nhất.",
     imageUrl: PlaceHolderImages[0].imageUrl,
-    link: "/products/dien-tu-premium-3",
+    link: "/products",
     type: 'product',
     isActive: true
   },

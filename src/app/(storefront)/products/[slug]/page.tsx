@@ -4,18 +4,18 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { formatVND } from "@/lib/currency";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, ShieldCheck, Truck, RefreshCcw } from "lucide-react";
+import { Truck, ShieldCheck, RefreshCcw } from "lucide-react";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 
-export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
+export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const headerList = await headers();
   const host = headerList.get("host");
   const subdomain = host?.split('.')[0] || "demo";
   const tenant = await getTenantConfig(subdomain);
   
-  const product = tenant.products.find(p => p.slug === params.slug);
+  const product = tenant.products.find(p => p.slug === slug);
   if (!product) notFound();
 
   return (

@@ -4,14 +4,22 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const headerList = await headers();
   const host = headerList.get("host");
   const subdomain = host?.split('.')[0] || "demo";
   const tenant = await getTenantConfig(subdomain);
   
-  // Simple mapping for demo
-  const categoryName = params.slug === 'dien-tu' ? 'Điện tử' : params.slug === 'phu-kien' ? 'Phụ kiện' : null;
+  // Mapping categories based on clean slugs
+  const categoryMap: Record<string, string> = {
+    'dien-tu': 'Điện tử',
+    'phu-kien': 'Phụ kiện',
+    'gia-dung': 'Gia dụng',
+    'thoi-trang': 'Thời trang'
+  };
+
+  const categoryName = categoryMap[slug];
   if (!categoryName) return notFound();
 
   const filteredProducts = tenant.products.filter(p => p.category === categoryName);
@@ -24,9 +32,15 @@ export default async function CategoryPage({ params }: { params: { slug: string 
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))
+        ) : (
+          <div className="col-span-full py-20 text-center opacity-50">
+            Chưa có sản phẩm nào trong danh mục này.
+          </div>
+        )}
       </div>
     </div>
   );
