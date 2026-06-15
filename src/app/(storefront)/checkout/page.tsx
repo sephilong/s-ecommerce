@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, CheckCircle2, QrCode, ArrowLeft, ShieldCheck, CreditCard, Landmark, Wallet } from "lucide-react";
+import { Loader2, CheckCircle2, QrCode, ArrowLeft, ShieldCheck, CreditCard, Landmark, Info } from "lucide-react";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
@@ -107,7 +107,14 @@ export default function CheckoutPage() {
               Giao dịch an toàn qua {currentPayment?.name}
             </div>
             <h2 className="text-3xl font-bold font-headline">Cổng thanh toán Sandbox</h2>
-            <p className="text-muted-foreground">Vui lòng quét mã QR giả lập bên dưới để hoàn tất thanh toán online.</p>
+            <p className="text-muted-foreground">Môi trường giả lập để kiểm tra luồng đặt hàng của S-Com Hub.</p>
+          </div>
+
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 flex gap-3 text-yellow-500 text-sm">
+            <Info className="w-5 h-5 shrink-0" />
+            <p>
+              <strong>Hướng dẫn Test:</strong> Đây là mã QR giả lập. Bạn <strong>không cần</strong> quét bằng điện thoại thật. Chỉ cần nhấn nút <strong>"Xác nhận đã thanh toán"</strong> bên dưới để hoàn tất luồng test.
+            </p>
           </div>
 
           <Card className="border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
@@ -121,7 +128,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-                <p className="mt-4 text-xs text-slate-500 font-bold uppercase tracking-wider">Quét qua ứng dụng {currentPayment?.name}</p>
+                <p className="mt-4 text-xs text-slate-500 font-bold uppercase tracking-wider">Mô phỏng quét mã {currentPayment?.name}</p>
               </div>
 
               <div className="p-8 space-y-6 flex flex-col justify-between bg-card/10">
@@ -145,10 +152,6 @@ export default function CheckoutPage() {
                       <span className="text-muted-foreground">Nhà cung cấp:</span>
                       <span className="font-bold text-foreground">{currentPayment?.name}</span>
                     </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Nội dung:</span>
-                      <span className="font-bold text-foreground italic">Thanh toán đơn hàng S-Com Hub</span>
-                    </div>
                   </div>
                 </div>
 
@@ -157,7 +160,7 @@ export default function CheckoutPage() {
                     {loading ? <Loader2 className="animate-spin" /> : "Xác nhận đã thanh toán"}
                   </Button>
                   <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:bg-transparent" onClick={() => setShowSandbox(false)}>
-                    <ArrowLeft className="w-3 h-3 mr-2" /> Quay lại cửa hàng
+                    <ArrowLeft className="w-3 h-3 mr-2" /> Quay lại chỉnh sửa
                   </Button>
                 </div>
               </div>
@@ -269,7 +272,7 @@ export default function CheckoutPage() {
                   {selectedPayment === pm.id && (pm.type === 'vnpay' || pm.type === 'momo') && (
                     <div className="p-4 bg-primary/5 border border-primary/20 border-dashed rounded-2xl space-y-2 animate-in slide-in-from-top-2">
                       <p className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-primary" /> Bạn sẽ được chuyển đến cổng thanh toán {pm.name} sau khi nhấn "Đặt hàng".
+                        <ShieldCheck className="w-4 h-4 text-primary" /> Bạn sẽ được chuyển đến trang Sandbox an toàn để "quét mã giả lập" sau khi nhấn nút bên dưới.
                       </p>
                     </div>
                   )}
