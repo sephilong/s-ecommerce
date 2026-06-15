@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import Image from "next/image";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
