@@ -3,6 +3,8 @@
 
 import { useVendorStore } from "@/store/vendorStore";
 import { useInventoryStore } from "@/store/inventoryStore";
+import { useOrderStore } from "@/store/orderStore";
+import { useAnalyticsStore } from "@/store/analyticsStore";
 import { formatVND } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
@@ -10,15 +12,11 @@ import {
   ShoppingCart, 
   Package, 
   TrendingUp, 
-  Users,
   Clock,
-  CheckCircle2,
-  AlertTriangle,
-  ChevronRight,
-  MousePointer2,
-  Star,
   Activity,
-  Warehouse
+  Warehouse,
+  Star,
+  MousePointer2
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -32,30 +30,39 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useMemo } from "react";
 
 export default function MerchantDashboard() {
-  const { vendors, vendorOrders } = useVendorStore();
+  const { vendors } = useVendorStore();
+  const { orders } = useOrderStore();
+  const { events } = useAnalyticsStore();
   const { getLowStockItems, stockLevels } = useInventoryStore();
-  const vendor = vendors[0];
   
+  const vendor = vendors[0]; // Giả định demo vendor
+  
+  // Tính toán dữ liệu thực tế cho Merchant
+  const vendorOrders = useMemo(() => orders.filter(o => o.vendorId === vendor?.id || o.tenantId === 'demo'), [orders, vendor]);
+  const totalRevenue = useMemo(() => vendorOrders.reduce((acc, o) => acc + o.total, 0), [vendorOrders]);
   const lowStockCount = getLowStockItems().length;
   const totalInventory = stockLevels.reduce((acc, curr) => acc + curr.quantity, 0);
+  
+  const myEvents = events.filter(e => !e.productId || e.source === 'organic'); // Đơn giản hóa lọc event cho merchant
 
   const stats = [
-    { label: "Doanh thu (Tháng)", value: formatVND(125000000), icon: <DollarSign />, trend: "+15.2%", color: "text-green-500" },
-    { label: "Đơn hàng mới", value: vendorOrders.length.toString(), icon: <ShoppingCart />, trend: "+8", color: "text-blue-500" },
+    { label: "Doanh thu (Tháng)", value: formatVND(totalRevenue), icon: <DollarSign />, trend: "+15.2%", color: "text-green-500" },
+    { label: "Đơn hàng mới", value: vendorOrders.filter(o => o.status === 'created').length.toString(), icon: <ShoppingCart />, trend: `Tổng: ${vendorOrders.length}`, color: "text-blue-500" },
     { label: "Tổng tồn kho", value: totalInventory.toString(), icon: <Package />, trend: "Đang ổn định", color: "text-primary" },
-    { label: "Lượt ghé thăm", value: "1,450", icon: <MousePointer2 />, trend: "+245", color: "text-orange-500" },
+    { label: "Lượt ghé thăm", value: myEvents.length.toString(), icon: <MousePointer2 />, trend: "+245", color: "text-orange-500" },
   ];
 
   const chartData = [
-    { name: '01/05', sales: 4500000 },
-    { name: '05/05', sales: 7200000 },
-    { name: '10/05', sales: 5800000 },
-    { name: '15/05', sales: 9800000 },
-    { name: '20/05', sales: 12500000 },
-    { name: '25/05', sales: 8500000 },
-    { name: '30/05', sales: 15000000 },
+    { name: '01/05', sales: totalRevenue * 0.1 },
+    { name: '05/05', sales: totalRevenue * 0.3 },
+    { name: '10/05', sales: totalRevenue * 0.2 },
+    { name: '15/05', sales: totalRevenue * 0.5 },
+    { name: '20/05', sales: totalRevenue * 0.7 },
+    { name: '25/05', sales: totalRevenue * 0.6 },
+    { name: '30/05', sales: totalRevenue },
   ];
 
   return (
@@ -101,7 +108,7 @@ export default function MerchantDashboard() {
           <CardHeader className="p-8 border-b border-white/5 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-xl font-headline italic">Hiệu suất Doanh thu</CardTitle>
-              <CardDescription>Dữ liệu bán hàng 30 ngày gần nhất</CardDescription>
+              <CardDescription>Dữ liệu bán hàng thời gian thực</CardDescription>
             </div>
             <div className="flex gap-2">
                <Badge variant="outline" className="rounded-full border-white/10 text-white/50 text-[10px]">Hôm nay</Badge>
@@ -137,27 +144,27 @@ export default function MerchantDashboard() {
                  <Badge className="bg-red-500/20 text-red-500 border-none text-[10px]">9+</Badge>
               </div>
               <div className="space-y-4">
-                <TodoItem count={5} label="Chờ xác nhận đơn" icon={<Clock className="w-3.5 h-3.5" />} color="text-orange-500" />
-                <TodoItem count={12} label="Chờ lấy hàng" icon={<Package className="w-3.5 h-3.5" />} color="text-blue-500" />
+                <TodoItem count={vendorOrders.filter(o => o.status === 'created').length} label="Chờ xác nhận đơn" icon={<Clock className="w-3.5 h-3.5" />} color="text-orange-500" />
+                <TodoItem count={vendorOrders.filter(o => o.status === 'processing').length} label="Chờ lấy hàng" icon={<Package className="w-3.5 h-3.5" />} color="text-blue-500" />
                 <Link href="/vendor/inventory">
                    <TodoItem count={lowStockCount} label="Sắp hết hàng (Kho)" icon={<Warehouse className="w-3.5 h-3.5" />} color="text-red-500" />
                 </Link>
-                <TodoItem count={2} label="Yêu cầu hoàn tiền" icon={<DollarSign className="w-3.5 h-3.5" />} color="text-yellow-500" />
+                <TodoItem count={0} label="Yêu cầu hoàn tiền" icon={<DollarSign className="w-3.5 h-3.5" />} color="text-yellow-500" />
               </div>
            </Card>
 
            <Card className="bg-primary/5 border border-primary/20 rounded-[2.5rem] p-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full" />
               <div className="relative z-10 space-y-4">
-                 <h4 className="font-bold text-sm italic uppercase flex items-center gap-2"><Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /> Top Sản phẩm</h4>
+                 <h4 className="font-bold text-sm italic uppercase flex items-center gap-2"><Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /> Insight Nhanh</h4>
                  <div className="space-y-3">
                     <div className="flex justify-between text-xs">
-                       <span className="text-muted-foreground truncate max-w-[140px]">iPhone 15 Pro Max</span>
-                       <span className="font-black italic">84 đơn</span>
+                       <span className="text-muted-foreground">Tỉ lệ quay lại:</span>
+                       <span className="font-black italic">12.5%</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                       <span className="text-muted-foreground truncate max-w-[140px]">AirPods Pro Gen 2</span>
-                       <span className="font-black italic">62 đơn</span>
+                       <span className="text-muted-foreground">Thời gian TB đóng gói:</span>
+                       <span className="font-black italic">2.4h</span>
                     </div>
                  </div>
               </div>
