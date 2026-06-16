@@ -2,11 +2,14 @@
 "use client";
 
 import { useBuilderStore, SectionType, SectionConfig } from "@/store/builderStore";
+import { useVendorStore } from "@/store/vendorStore";
+import { useUserStore } from "@/store/userStore";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { 
   Plus, 
   Trash2, 
@@ -25,27 +28,42 @@ import {
   Search,
   Sparkles,
   Layout,
-  MousePointer2
+  MousePointer2,
+  Loader2
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { useVendorStore } from "@/store/vendorStore";
-import { useUserStore } from "@/store/userStore";
 import Image from "next/image";
 import { formatVND } from "@/lib/currency";
 
 export default function StorefrontBuilderPage() {
   const { sections, theme, activeSectionId, addSection, removeSection, setActiveSection, updateSection, updateTheme } = useBuilderStore();
   const { profile } = useUserStore();
-  const { getVendorByUserId } = useVendorStore();
+  const { getVendorByUserId, updateStorefrontConfig } = useVendorStore();
   const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const vendor = profile ? getVendorByUserId(profile.email) : null;
   const activeSection = sections.find(s => s.id === activeSectionId);
 
   const handlePublish = () => {
-    toast({ title: "Đã xuất bản!", description: "Giao diện mới của bạn đã được cập nhật thành công." });
+    if (!vendor) {
+      toast({ variant: "destructive", title: "Lỗi", description: "Không tìm thấy hồ sơ người bán để xuất bản." });
+      return;
+    }
+
+    setIsPublishing(true);
+    
+    // Giả lập gửi cấu hình lên máy chủ
+    setTimeout(() => {
+      updateStorefrontConfig(vendor.id, { sections, theme });
+      setIsPublishing(false);
+      toast({ 
+        title: "Đã xuất bản thành công!", 
+        description: "Website của bạn hiện đã được cập nhật giao diện mới nhất.",
+      });
+    }, 1500);
   };
 
   return (
@@ -152,15 +170,20 @@ export default function StorefrontBuilderPage() {
 
           <div className="flex items-center gap-3">
              <Button variant="ghost" className="rounded-full gap-2 text-xs font-bold" asChild>
-                <Link href={`/shop/${vendor?.storeSlug || 'demo'}`} target="_blank"><Eye className="w-4 h-4" /> Xem trước</Link>
+                <Link href={`/shop/${vendor?.storeSlug || 'demo'}`} target="_blank"><Eye className="w-4 h-4" /> Xem thực tế</Link>
              </Button>
-             <Button className="rounded-full px-8 h-9 font-bold shadow-xl shadow-primary/20 gap-2" onClick={handlePublish}>
-                <Save className="w-4 h-4" /> Xuất bản ngay
+             <Button 
+              className="rounded-full px-8 h-9 font-bold shadow-xl shadow-primary/20 gap-2" 
+              onClick={handlePublish}
+              disabled={isPublishing}
+             >
+                {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {isPublishing ? "Đang xuất bản..." : "Xuất bản ngay"}
              </Button>
           </div>
         </header>
 
-        {/* The Preview Iframe/Container */}
+        {/* The Preview Container */}
         <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
            <div className={`bg-background shadow-2xl transition-all duration-500 overflow-y-auto custom-scrollbar border border-white/10 ${
              viewMode === 'desktop' ? 'w-full h-full rounded-none' : 
@@ -365,8 +388,4 @@ function DeviceButton({ active, icon, onClick }: any) {
       {icon}
     </button>
   );
-}
-
-function Badge({ children, className, variant }: any) {
-  return <span className={`inline-flex px-2 py-0.5 rounded-full text-[8px] font-bold ${className}`}>{children}</span>;
 }

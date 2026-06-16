@@ -22,8 +22,13 @@ export interface Vendor {
   commissionRate: number;
   totalRevenue: number;
   balance: number;
-  pendingBalance: number; // Tiền đang đối soát T+7
+  pendingBalance: number;
   createdAt: string;
+  // Cấu hình giao diện từ Builder
+  storefrontConfig?: {
+    sections: any[];
+    theme: any;
+  };
 }
 
 export interface VendorOrder {
@@ -72,6 +77,7 @@ interface VendorState {
   deleteVendorProduct: (productId: string) => void;
   updateVendorOrder: (id: string, status: VendorOrder['status'], tracking?: string) => void;
   updateStoreBranding: (id: string, updates: { logo?: string, banner?: string, description?: string }) => void;
+  updateStorefrontConfig: (vendorId: string, config: { sections: any[], theme: any }) => void;
   replyToReview: (reviewId: string, reply: string) => void;
   setCurrentVendor: (vendor: Vendor | null) => void;
   
@@ -101,7 +107,8 @@ export const useVendorStore = create<VendorState>()(
           totalRevenue: 50000000,
           balance: 4500000,
           pendingBalance: 1200000,
-          createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+          createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
+          storefrontConfig: undefined
         }
       ],
       vendorOrders: [
@@ -118,7 +125,6 @@ export const useVendorStore = create<VendorState>()(
           createdAt: new Date().toISOString()
         }
       ],
-      // Khởi tạo sản phẩm mẫu cho Official Store
       vendorProducts: MOCK_TENANTS[0].products.slice(0, 6).map(p => ({
         ...p,
         vendorId: 'v-1',
@@ -183,6 +189,10 @@ export const useVendorStore = create<VendorState>()(
         } : v)
       })),
 
+      updateStorefrontConfig: (vendorId, config) => set((state) => ({
+        vendors: state.vendors.map(v => v.id === vendorId ? { ...v, storefrontConfig: config } : v)
+      })),
+
       replyToReview: (reviewId, reply) => set((state) => ({
         vendorReviews: state.vendorReviews.map(r => r.id === reviewId ? { ...r, reply } : r)
       })),
@@ -194,7 +204,7 @@ export const useVendorStore = create<VendorState>()(
       getVendorOrders: (vendorId) => get().vendorOrders.filter(o => o.vendorId === vendorId),
     }),
     {
-      name: 'scomhub-vendor-storage-v6',
+      name: 'scomhub-vendor-storage-v7',
     }
   )
 );
