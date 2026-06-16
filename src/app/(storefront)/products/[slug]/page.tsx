@@ -1,6 +1,8 @@
 
+"use client";
+
+import { use, useState, useEffect } from "react";
 import { getTenantConfig } from "@/lib/tenant";
-import { headers } from "next/headers";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { formatVND } from "@/lib/currency";
@@ -17,9 +19,10 @@ import {
   Info,
   Package,
   Heart,
-  ArrowRightLeft,
   Share2,
-  Check
+  Check,
+  ChevronRight,
+  Copy
 } from "lucide-react";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import Link from "next/link";
@@ -27,16 +30,43 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ReviewDialog } from "@/components/product/ReviewDialog";
+import { useUserStore } from "@/store/userStore";
+import { useVendorStore } from "@/store/vendorStore";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { Product, Tenant } from "@/lib/store-data";
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const headerList = await headers();
-  const host = headerList.get("host");
-  const subdomain = host?.split('.')[0] || "demo";
-  const tenant = await getTenantConfig(subdomain);
-  
-  const product = tenant.products.find(p => p.slug === slug);
-  if (!product) notFound();
+export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [activeImage, setActiveImage] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("#9757EA");
+  const [loading, setLoading] = useState(true);
+
+  const { toggleWishlist, isInWishlist } = useUserStore();
+  const { vendors } = useVendorStore();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const subdomain = window.location.host.split('.')[0] || "demo";
+      const config = await getTenantConfig(subdomain);
+      const foundProduct = config.products.find(p => p.slug === slug);
+      
+      setTenant(config);
+      if (foundProduct) {
+        setProduct(foundProduct);
+        setActiveImage(foundProduct.image);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [slug]);
+
+  if (loading) return <div className="container mx-auto p-24 text-center">Đang tải thông tin sản phẩm...</div>;
+  if (!product || !tenant) return notFound();
+
+  const isFavorite = isInWishlist(product.id);
 
   // Mock Gallery
   const images = [
@@ -51,27 +81,66 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: product.description,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({ title: "Đã sao chép liên kết", description: "Bạn có thể gửi link này cho bạn bè." });
+    }
+  };
+
+  const handleChat = () => {
+    toast({ title: "Tính năng Chat", description: "Hệ thống đang kết nối bạn với nhân viên tư vấn..." });
+  };
+
   return (
     <div className="container mx-auto px-4 py-12 space-y-16 animate-in fade-in duration-700">
+      {/* Breadcrumb Breadcrumb Mock */}
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <Link href="/" className="hover:text-primary">Trang chủ</Link>
+        <ChevronRight className="w-3 h-3" />
+        <Link href="/products" className="hover:text-primary">Sản phẩm</Link>
+        <ChevronRight className="w-3 h-3" />
+        <span className="text-primary">{product.category}</span>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* Left: Gallery */}
         <div className="lg:col-span-7 space-y-4">
           <div className="relative aspect-square rounded-[2.5rem] overflow-hidden border border-white/5 bg-card shadow-2xl group">
             <Image
-              src={product.image}
+              src={activeImage}
               alt={product.name}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-1000"
               priority
             />
             <div className="absolute top-4 right-4 flex flex-col gap-2">
-               <Button size="icon" variant="secondary" className="rounded-full shadow-xl"><Share2 className="w-4 h-4" /></Button>
+               <Button size="icon" variant="secondary" className="rounded-full shadow-xl" onClick={handleShare}>
+                 <Share2 className="w-4 h-4" />
+               </Button>
             </div>
           </div>
           <div className="grid grid-cols-4 gap-4">
             {images.map((img, i) => (
-              <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-white/5 cursor-pointer hover:border-primary/50 transition-all bg-card">
-                 <Image src={img} alt="Thumb" fill className="object-cover opacity-60 hover:opacity-100 transition-opacity" />
+              <div 
+                key={i} 
+                className={cn(
+                  "relative aspect-square rounded-2xl overflow-hidden border border-white/5 cursor-pointer transition-all bg-card",
+                  activeImage === img ? "border-primary ring-2 ring-primary/20 scale-95" : "hover:border-primary/50"
+                )}
+                onClick={() => setActiveImage(img)}
+              >
+                 <Image src={img} alt="Thumb" fill className={cn("object-cover transition-opacity", activeImage === img ? "opacity-100" : "opacity-40 hover:opacity-100")} />
               </div>
             ))}
           </div>
@@ -122,12 +191,19 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           </div>
 
           <div className="space-y-6">
-             {/* Variant Selector Mock */}
+             {/* Variant Selector */}
              <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Chọn màu sắc</Label>
                 <div className="flex gap-3">
                    {['#9757EA', '#3B82F6', '#111'].map(color => (
-                     <div key={color} className="h-10 w-10 rounded-full border-2 border-white/10 hover:border-primary transition-all cursor-pointer p-1">
+                     <div 
+                        key={color} 
+                        className={cn(
+                          "h-10 w-10 rounded-full border-2 transition-all cursor-pointer p-1",
+                          selectedColor === color ? "border-primary scale-110 shadow-lg shadow-primary/20" : "border-white/10 hover:border-primary/50"
+                        )}
+                        onClick={() => setSelectedColor(color)}
+                      >
                         <div className="h-full w-full rounded-full" style={{ backgroundColor: color }} />
                      </div>
                    ))}
@@ -142,8 +218,19 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                 
                 <div className="flex gap-4">
                    <AddToCartButton product={product} size="lg" className="flex-1 h-16 rounded-2xl text-xl font-black shadow-xl shadow-primary/20 italic uppercase tracking-tighter" />
-                   <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl border-white/10 hover:bg-red-500/10 hover:text-red-500 transition-all">
-                      <Heart className="w-6 h-6" />
+                   <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className={cn(
+                      "h-16 w-16 rounded-2xl border-white/10 transition-all",
+                      isFavorite ? "bg-red-500/10 text-red-500 border-red-500/30" : "hover:bg-red-500/10 hover:text-red-500"
+                    )}
+                    onClick={() => {
+                      toggleWishlist(product.id);
+                      toast({ title: isFavorite ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích" });
+                    }}
+                   >
+                      <Heart className={cn("w-6 h-6", isFavorite && "fill-current")} />
                    </Button>
                 </div>
              </div>
@@ -287,11 +374,15 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                      </div>
                   </div>
                   <div className="flex flex-col gap-3">
-                     <Button variant="outline" className="rounded-full h-11 border-white/10 hover:bg-white/5 font-bold italic uppercase text-xs">
+                     <Button 
+                      variant="outline" 
+                      className="rounded-full h-11 border-white/10 hover:bg-white/5 font-bold italic uppercase text-xs"
+                      onClick={handleChat}
+                     >
                         <MessageSquare className="w-3.5 h-3.5 mr-2" /> Chat với người bán
                      </Button>
-                     <Button className="rounded-full h-11 font-bold italic uppercase text-xs">
-                        <Store className="w-3.5 h-3.5 mr-2" /> Xem gian hàng
+                     <Button asChild className="rounded-full h-11 font-bold italic uppercase text-xs">
+                        <Link href="/products"><Store className="w-3.5 h-3.5 mr-2" /> Xem gian hàng</Link>
                      </Button>
                   </div>
                </div>
@@ -315,8 +406,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             <h2 className="text-3xl font-black italic tracking-tighter uppercase">Sản phẩm liên quan</h2>
             <p className="text-muted-foreground text-sm">Có thể bạn cũng thích những sản phẩm này.</p>
           </div>
-          <Button variant="link" className="text-primary font-bold italic uppercase text-xs tracking-widest gap-2">
-            Xem tất cả <ArrowRight className="w-3 h-3" />
+          <Button variant="link" className="text-primary font-bold italic uppercase text-xs tracking-widest gap-2" asChild>
+            <Link href="/products">Xem tất cả <ArrowRight className="w-3 h-3" /></Link>
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
