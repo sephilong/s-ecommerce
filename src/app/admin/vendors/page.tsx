@@ -4,7 +4,7 @@
 import { useVendorStore, Vendor } from "@/store/vendorStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { 
@@ -36,7 +36,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -55,7 +54,11 @@ export default function AdminVendorsPage() {
 
   const handleAction = (id: string, status: Vendor['status']) => {
     updateVendorStatus(id, status);
-    toast({ title: "Cập nhật thành công", description: `Nhà bán hàng hiện đã chuyển sang trạng thái ${status}` });
+    toast({ 
+      title: "Cập nhật thành công", 
+      description: `Nhà bán hàng hiện đã chuyển sang trạng thái ${status}`,
+      variant: status === 'rejected' || status === 'suspended' ? 'destructive' : 'default'
+    });
   };
 
   const handleSaveCommission = () => {
@@ -152,7 +155,7 @@ export default function AdminVendorsPage() {
                     </td>
                     <td className="p-6">
                       <Badge variant={v.status === 'approved' ? 'default' : v.status === 'pending' ? 'secondary' : 'destructive'} className="rounded-full">
-                        {v.status === 'approved' ? 'Hoạt động' : v.status === 'pending' ? 'Chờ duyệt' : 'Đang khóa'}
+                        {v.status === 'approved' ? 'Hoạt động' : v.status === 'pending' ? 'Chờ duyệt' : v.status === 'suspended' ? 'Đang khóa' : 'Từ chối'}
                       </Badge>
                     </td>
                     <td className="p-6 text-right">
@@ -162,23 +165,42 @@ export default function AdminVendorsPage() {
                             <MoreHorizontal className="w-5 h-5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
-                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Xử lý tài khoản</DropdownMenuLabel>
+                        <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2">
+                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Quản trị Nhà bán</DropdownMenuLabel>
+                          
                           {v.status === 'pending' && (
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => handleAction(v.id, 'approved')}>
-                              <CheckCircle2 className="w-4 h-4" /> Phê duyệt shop
+                            <>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => handleAction(v.id, 'approved')}>
+                                <CheckCircle2 className="w-4 h-4" /> Phê duyệt gian hàng
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'rejected')}>
+                                <XCircle className="w-4 h-4" /> Từ chối đăng ký
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-white/5 my-2" />
+                            </>
+                          )}
+
+                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/shop/${v.storeSlug}`, '_blank')}>
+                            <ExternalLink className="w-4 h-4" /> Xem cửa hàng thực tế
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => toast({ title: "Đang tải hồ sơ", description: "Vui lòng chờ trong giây lát..." })}>
+                            <ShieldCheck className="w-4 h-4" /> Kiểm tra hồ sơ pháp lý
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setEditingCommission({ id: v.id, rate: v.commissionRate })}>
+                            <Percent className="w-4 h-4" /> Cấu hình chiết khấu riêng
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuSeparator className="bg-white/5 my-2" />
+                          
+                          {v.status === 'approved' ? (
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'suspended')}>
+                              <Ban className="w-4 h-4" /> Tạm đình chỉ kinh doanh
+                            </DropdownMenuItem>
+                          ) : v.status === 'suspended' && (
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-green-500 focus:bg-green-500/10 focus:text-green-500" onClick={() => handleAction(v.id, 'approved')}>
+                              <CheckCircle2 className="w-4 h-4" /> Kích hoạt lại gian hàng
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/shop/${v.storeSlug}`)}>
-                            <ExternalLink className="w-4 h-4" /> Xem cửa hàng
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3">
-                            <ShieldCheck className="w-4 h-4" /> Kiểm tra pháp lý
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-white/5 my-2" />
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'suspended')}>
-                            <Ban className="w-4 h-4" /> Tạm đình chỉ
-                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -194,25 +216,25 @@ export default function AdminVendorsPage() {
       <Dialog open={!!editingCommission} onOpenChange={(open) => !open && setEditingCommission(null)}>
         <DialogContent className="max-w-xs rounded-[2rem] p-8">
           <DialogHeader>
-            <DialogTitle>Tỷ lệ chiết khấu</DialogTitle>
+            <DialogTitle className="font-headline italic">TỶ LỆ CHIẾT KHẤU</DialogTitle>
           </DialogHeader>
           <div className="py-6 space-y-4">
              <div className="space-y-2">
-                <Label>Mức hoa hồng nền tảng (%)</Label>
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Phí nền tảng thu (%)</Label>
                 <div className="relative">
                   <Input 
                     type="number" 
                     value={editingCommission?.rate} 
                     onChange={(e) => setEditingCommission(prev => prev ? { ...prev, rate: parseInt(e.target.value) } : null)}
-                    className="h-12 rounded-xl pr-10"
+                    className="h-12 rounded-xl pr-10 bg-background/50"
                   />
-                  <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Percent className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 </div>
-                <p className="text-[10px] text-muted-foreground italic">Mức thu phí trên mỗi đơn hàng thành công của shop.</p>
+                <p className="text-[10px] text-muted-foreground italic leading-relaxed">Mức phí này sẽ được khấu trừ tự động trên mỗi đơn hàng thành công của Shop.</p>
              </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleSaveCommission} className="w-full rounded-full h-12 font-bold shadow-xl shadow-primary/20">Cập nhật thiết lập</Button>
+            <Button onClick={handleSaveCommission} className="w-full rounded-full h-12 font-bold shadow-xl shadow-primary/20">Lưu thiết lập mới</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -8,25 +8,17 @@ import {
   Plus, 
   Search, 
   MoreHorizontal, 
-  ArrowUpDown, 
   Edit, 
   Trash, 
   Copy,
-  EyeOff,
   CheckCircle2,
   XCircle,
   User,
   Store,
-  Filter
+  Filter,
+  ExternalLink
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,13 +27,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MOCK_TENANTS, Product } from "@/lib/store-data";
+import { MOCK_TENANTS } from "@/lib/store-data";
 import { useVendorStore } from "@/store/vendorStore";
 import { formatVND } from "@/lib/currency";
 import Image from "next/image";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminProductsPage() {
   const { vendorProducts, approveProduct, rejectProduct } = useVendorStore();
@@ -66,6 +58,11 @@ export default function AdminProductsPage() {
   const handleApprove = (id: string) => {
     approveProduct(id);
     toast({ title: "Đã phê duyệt sản phẩm", description: "Sản phẩm hiện đã có thể hiển thị trên Storefront." });
+  };
+
+  const handleReject = (id: string) => {
+    rejectProduct(id);
+    toast({ title: "Đã từ chối sản phẩm", description: "Sản phẩm này sẽ không được hiển thị.", variant: "destructive" });
   };
 
   return (
@@ -148,26 +145,42 @@ export default function AdminProductsPage() {
                         </Badge>
                       </td>
                       <td className="p-6 text-right">
-                        {product.status === 'pending' ? (
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" className="rounded-full h-9 px-4 font-bold" onClick={() => handleApprove(product.id)}>Duyệt</Button>
-                            <Button size="sm" variant="ghost" className="rounded-full h-9 text-destructive hover:bg-destructive/10" onClick={() => rejectProduct(product.id)}>Từ chối</Button>
-                          </div>
-                        ) : (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                              <DropdownMenuItem className="gap-2"><Edit className="w-4 h-4" /> Chỉnh sửa</DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2"><Copy className="w-4 h-4" /> Nhân bản</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="gap-2 text-destructive"><Trash className="w-4 h-4" /> Xóa sản phẩm</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+                            <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Xử lý sản phẩm</DropdownMenuLabel>
+                            
+                            {product.status === 'pending' && (
+                              <>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => handleApprove(product.id)}>
+                                  <CheckCircle2 className="w-4 h-4" /> Phê duyệt đăng
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleReject(product.id)}>
+                                  <XCircle className="w-4 h-4" /> Từ chối đăng
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-white/5 my-2" />
+                              </>
+                            )}
+
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/products/${product.slug}`, '_blank')}>
+                              <ExternalLink className="w-4 h-4" /> Xem Storefront
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3">
+                              <Edit className="w-4 h-4" /> Chỉnh sửa chi tiết
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3">
+                              <Copy className="w-4 h-4" /> Nhân bản sản phẩm
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-white/5 my-2" />
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive">
+                              <Trash className="w-4 h-4" /> Xóa vĩnh viễn
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}

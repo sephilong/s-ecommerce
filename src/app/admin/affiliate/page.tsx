@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useAffiliateStore, AffiliateConversion, AffiliateRequest, PayoutRequest, AffiliateLink, AffiliateProgram } from "@/store/affiliateStore";
+import { useAffiliateStore, AffiliateConversion, AffiliateRequest, PayoutRequest, AffiliateProgram } from "@/store/affiliateStore";
 import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
@@ -22,48 +22,47 @@ import {
 } from "@/components/ui/dialog";
 import { 
   Search, 
-  Filter, 
   CheckCircle2, 
   XCircle, 
   Clock, 
   Download,
-  Users,
   TrendingUp,
-  DollarSign,
   Wallet,
   ArrowUpRight,
   UserPlus,
   Settings2,
   Tag,
-  ShieldCheck,
-  Link as LinkIcon,
-  Info,
-  HelpCircle,
   Briefcase,
   Layers,
   ChevronRight,
-  Save,
   Plus,
   Check,
-  Mail,
   BarChart3,
   Lightbulb,
   MousePointer2,
   ArrowRight,
-  AlertTriangle
+  AlertTriangle,
+  MoreHorizontal,
+  Mail,
+  UserCheck
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
-  BarChart, 
-  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip as ChartTooltip,
-  Cell,
   AreaChart,
   Area
 } from 'recharts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { useState, useMemo, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -78,7 +77,6 @@ export default function AdminAffiliatePage() {
     updateAffiliateRequest,
     payoutRequests,
     updatePayoutStatus,
-    links,
     stats,
     config,
     updateConfig,
@@ -129,6 +127,11 @@ export default function AdminAffiliatePage() {
     const code = `REF-${Math.floor(1000 + Math.random() * 9000)}`;
     setAffiliateActive(code);
     toast({ title: "Đã phê duyệt đối tác!", description: `Mã ${code} đã được cấp cho người dùng.` });
+  };
+
+  const handleRejectAffiliate = (id: string) => {
+    updateAffiliateRequest(id, 'rejected');
+    toast({ title: "Đã từ chối đối tác", description: "Yêu cầu đã bị hủy bỏ.", variant: "destructive" });
   };
 
   const handleSaveConfig = () => {
@@ -324,12 +327,30 @@ export default function AdminAffiliatePage() {
                       </Badge>
                     </td>
                     <td className="p-4 text-right">
-                      {req.status === 'pending' && (
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" className="rounded-full px-4 font-bold" onClick={() => handleApproveAffiliate(req.id)}>Phê duyệt</Button>
-                          <Button size="sm" variant="ghost" className="rounded-full text-destructive" onClick={() => updateAffiliateRequest(req.id, 'rejected')}>Từ chối</Button>
-                        </div>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2">
+                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Xử lý yêu cầu</DropdownMenuLabel>
+                          {req.status === 'pending' ? (
+                            <>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => handleApproveAffiliate(req.id)}>
+                                <UserCheck className="w-4 h-4" /> Phê duyệt đối tác
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleRejectAffiliate(req.id)}>
+                                <XCircle className="w-4 h-4" /> Từ chối yêu cầu
+                              </DropdownMenuItem>
+                            </>
+                          ) : (
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3">
+                              <Mail className="w-4 h-4" /> Gửi email thông báo
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 )}
@@ -358,12 +379,28 @@ export default function AdminAffiliatePage() {
                     <td className="p-4 font-black">{formatVND(conv.commission)}</td>
                     <td className="p-4"><Badge className="rounded-full">{conv.status}</Badge></td>
                     <td className="p-4 text-right">
-                      {conv.status === 'pending' && (
-                        <div className="flex justify-end gap-2">
-                          <Button size="icon" variant="ghost" className="text-green-500 hover:bg-green-500/10" onClick={() => updateConversionStatus(conv.id, 'approved')}><CheckCircle2 className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => updateConversionStatus(conv.id, 'rejected')}><XCircle className="w-4 h-4" /></Button>
-                        </div>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+                           {conv.status === 'pending' && (
+                             <>
+                               <DropdownMenuItem className="gap-3 rounded-xl p-3 text-green-500 focus:bg-green-500/10 focus:text-green-500" onClick={() => updateConversionStatus(conv.id, 'approved')}>
+                                 <CheckCircle2 className="w-4 h-4" /> Phê duyệt hoa hồng
+                               </DropdownMenuItem>
+                               <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => updateConversionStatus(conv.id, 'rejected')}>
+                                 <XCircle className="w-4 h-4" /> Từ chối (Hủy đơn/Hoàn)
+                               </DropdownMenuItem>
+                             </>
+                           )}
+                           <DropdownMenuItem className="gap-3 rounded-xl p-3">
+                             <BarChart3 className="w-4 h-4" /> Xem chi tiết đơn
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 )}
@@ -389,11 +426,23 @@ export default function AdminAffiliatePage() {
                     </td>
                     <td className="p-4"><Badge className="rounded-full">{p.status}</Badge></td>
                     <td className="p-4 text-right">
-                      {p.status === 'pending' && (
-                        <Button size="sm" className="rounded-full font-bold gap-2" onClick={() => updatePayoutStatus(p.id, 'paid')}>
-                          Xác nhận Chi trả <ArrowUpRight className="w-4 h-4" />
-                        </Button>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2">
+                           {p.status === 'pending' && (
+                             <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white font-bold" onClick={() => updatePayoutStatus(p.id, 'paid')}>
+                               <ArrowUpRight className="w-4 h-4" /> Xác nhận đã chuyển tiền
+                             </DropdownMenuItem>
+                           )}
+                           <DropdownMenuItem className="gap-3 rounded-xl p-3">
+                             <Mail className="w-4 h-4" /> Liên hệ đối tác
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 )}
@@ -425,7 +474,7 @@ export default function AdminAffiliatePage() {
                 <CardContent className="pt-6 space-y-4">
                   <div className="space-y-1">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                      <Info className="w-3 h-3" /> Quy định tham gia
+                      <Lightbulb className="w-3 h-3 text-primary" /> Quy định tham gia
                     </Label>
                     <p className="text-xs text-foreground/80 line-clamp-2 italic leading-relaxed">"{prog.conditions}"</p>
                   </div>
@@ -442,6 +491,7 @@ export default function AdminAffiliatePage() {
         </TabsContent>
 
         <TabsContent value="reports" className="pt-6">
+          {/* ... giữ nguyên phần báo cáo ... */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="bg-card/40 border-white/5 rounded-[2rem]">
               <CardHeader><CardTitle className="text-lg">Top Đối tác doanh thu</CardTitle></CardHeader>
@@ -489,7 +539,7 @@ export default function AdminAffiliatePage() {
         </TabsContent>
       </Tabs>
 
-      {/* Modals & Dialogs (Config & Program) */}
+      {/* Modals & Dialogs giữ nguyên ... */}
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
         <DialogContent className="max-w-xl rounded-[2.5rem] p-10">
           <DialogHeader>
@@ -499,16 +549,16 @@ export default function AdminAffiliatePage() {
           <div className="space-y-8 py-6">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-3">
-                <Label className="font-bold text-sm flex items-center gap-2">Hoa hồng mặc định (%) <HelpBox text="Tỷ lệ % hoa hồng cơ bản nếu sản phẩm không có cấu hình riêng." /></Label>
+                <Label className="font-bold text-sm flex items-center gap-2">Hoa hồng mặc định (%)</Label>
                 <Input type="number" className="h-12 rounded-xl" value={localConfig.globalRate} onChange={(e) => setLocalConfig({...localConfig, globalRate: parseInt(e.target.value)})} />
               </div>
               <div className="space-y-3">
-                <Label className="font-bold text-sm flex items-center gap-2">Rút tối thiểu (VNĐ) <HelpBox text="Số dư khả dụng tối thiểu để đối tác gửi yêu cầu rút tiền." /></Label>
+                <Label className="font-bold text-sm flex items-center gap-2">Rút tối thiểu (VNĐ)</Label>
                 <Input type="number" className="h-12 rounded-xl" value={localConfig.minPayout} onChange={(e) => setLocalConfig({...localConfig, minPayout: parseInt(e.target.value)})} />
               </div>
             </div>
             <div className="space-y-3">
-              <Label className="font-bold text-sm flex items-center gap-2">Thời gian Cookie (Ngày) <HelpBox text="Thời gian hệ thống ghi nhớ mã giới thiệu sau khi khách hàng click link." /></Label>
+              <Label className="font-bold text-sm flex items-center gap-2">Thời gian Cookie (Ngày)</Label>
               <Input type="number" className="h-12 rounded-xl" value={localConfig.cookieDays} onChange={(e) => setLocalConfig({...localConfig, cookieDays: parseInt(e.target.value)})} />
             </div>
           </div>
@@ -554,10 +604,6 @@ export default function AdminAffiliatePage() {
                   <div className="flex justify-between items-center">
                     <Label className="font-bold">Lựa chọn áp dụng</Label>
                     <Badge variant="secondary" className="bg-primary text-white">{selectedTargetIds.length} đã chọn</Badge>
-                  </div>
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input placeholder="Tìm kiếm nhanh..." className="pl-11 h-10 rounded-full bg-background" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                   </div>
                   <ScrollArea className="h-48 border rounded-xl p-2 bg-background/50">
                     <div className="space-y-1">
@@ -614,20 +660,6 @@ function TipItem({ title, desc }: { title: string, desc: string }) {
         <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
       </div>
     </div>
-  );
-}
-
-function HelpBox({ text }: { text: string }) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" /></DialogTrigger>
-      <DialogContent className="max-w-xs text-sm p-8 rounded-3xl">
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Info className="w-6 h-6" /></div>
-          <p className="leading-relaxed font-medium text-muted-foreground">{text}</p>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 
