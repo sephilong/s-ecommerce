@@ -1,8 +1,7 @@
 
 /**
- * TRANG NÀY ĐÃ ĐƯỢC DI CHUYỂN RA THƯ MỤC GỐC src/app/page.tsx
- * ĐỂ GIẢI QUYẾT LỖI XUNG ĐỘT ROUTE.
+ * FILE NÀY ĐÃ BỊ VÔ HIỆU HÓA ĐỂ TRÁNH LỖI "TWO PARALLEL PAGES".
+ * TRANG CHỦ CHÍNH NẰM TẠI src/app/page.tsx
  */
-export default function StorefrontHomePlaceholder() {
-  return null;
-}
+export const dynamic = 'force-static';
+// export default function Page() { return null; } // Đã xóa default export để Next.js bỏ qua route này

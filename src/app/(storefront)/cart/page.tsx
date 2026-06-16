@@ -84,7 +84,7 @@ export default function CartPage() {
               </div>
             </div>
             <Button asChild className="w-full h-14 rounded-full text-lg group">
-              <Link href="/checkout" className="flex items-center justify-center gap-2">
+              <Link href="/checkout-vendor" className="flex items-center justify-center gap-2">
                 Tiến hành đặt hàng
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
