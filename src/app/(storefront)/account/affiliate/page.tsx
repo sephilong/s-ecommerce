@@ -41,7 +41,8 @@ import {
   Facebook,
   Info,
   PlayCircle,
-  HelpCircle
+  HelpCircle,
+  Clock
 } from "lucide-react";
 import {
   Dialog,
@@ -66,6 +67,7 @@ import {
 } from 'recharts';
 import Image from "next/image";
 import { MOCK_TENANTS } from "@/lib/store-data";
+import React from "react";
 
 export default function AffiliateDashboard() {
   const { profile, requestAffiliate: markUserPending } = useUserStore();
@@ -80,19 +82,16 @@ export default function AffiliateDashboard() {
     if (!profile) return;
     setLoading(true);
     
-    // 1. Gửi yêu cầu lên hệ thống Admin
     const newRequest: AffiliateRequest = {
       id: `req-${Date.now()}`,
-      userId: "current-user", // Trong thực tế lấy từ Auth
+      userId: "current-user",
       userName: `${profile.firstName} ${profile.lastName}`,
-      email: "user@example.com", // Trong thực tế lấy từ Auth
+      email: "user@example.com",
       status: 'pending',
       createdAt: new Date().toISOString()
     };
     
     submitAffiliateRequest(newRequest);
-    
-    // 2. Cập nhật trạng thái UI người dùng
     markUserPending();
     
     setTimeout(() => {
@@ -149,7 +148,6 @@ export default function AffiliateDashboard() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
-      {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 shrink-0">
         <div className="bg-card/30 border border-white/5 rounded-3xl p-4 sticky top-24 space-y-2">
           <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutDashboard />} label="Bảng điều khiển" />
@@ -164,7 +162,6 @@ export default function AffiliateDashboard() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
         {activeTab === 'dashboard' && <DashboardView stats={stats} conversions={conversions} />}
         {activeTab === 'links' && <LinksView links={links} onAdd={addLink} onDelete={deleteLink} />}
@@ -177,8 +174,6 @@ export default function AffiliateDashboard() {
     </div>
   );
 }
-
-// --- Sub-Views ---
 
 function GuideView() {
   return (
@@ -713,8 +708,6 @@ function MarketingAssetsView() {
     </div>
   );
 }
-
-// --- Internal Helper Components ---
 
 function NavButton({ active, onClick, icon, label }: any) {
   return (
