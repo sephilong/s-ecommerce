@@ -2,13 +2,14 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, User, Menu, Zap } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, Zap, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tenant } from "@/lib/store-data";
 import { useCartStore } from "@/store/cartStore";
 import { useUIStore } from "@/store/uiStore";
 import { useConfigStore } from "@/store/configStore";
 import { usePromotionStore } from "@/store/promotionStore";
+import { useVendorStore } from "@/store/vendorStore";
 import { useState, useEffect } from "react";
 
 export function Header({ tenant }: { tenant: Tenant }) {
@@ -16,6 +17,7 @@ export function Header({ tenant }: { tenant: Tenant }) {
   const toggleMobileMenu = useUIStore((state) => state.toggleMobileMenu);
   const { storeName } = useConfigStore();
   const { promotions } = usePromotionStore();
+  const { currentVendor } = useVendorStore();
 
   const [flashSale, setFlashSale] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState("");
@@ -44,10 +46,13 @@ export function Header({ tenant }: { tenant: Tenant }) {
     }
   }, [promotions]);
 
+  // Ưu tiên hiển thị tên Vendor nếu đang ở trang shop của họ
+  const displayName = currentVendor ? currentVendor.storeName : (storeName || tenant.name);
+
   return (
     <div className="flex flex-col w-full sticky top-0 z-50">
       {/* Promo Top Bar */}
-      {flashSale && (
+      {flashSale && !currentVendor && (
         <div className="bg-gradient-to-r from-orange-600 to-red-600 py-1.5 px-4 text-center">
           <Link href="/flash-sale" className="flex items-center justify-center gap-4 text-[11px] md:text-sm font-bold text-white group">
             <span className="flex items-center gap-1.5">
@@ -65,15 +70,20 @@ export function Header({ tenant }: { tenant: Tenant }) {
       <header className="w-full glass-panel border-b border-white/5">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-xl font-bold font-headline gradient-text">
-                {storeName || tenant.name}
+            <Link href="/" className="flex items-center gap-2 group">
+              {currentVendor && (
+                <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <Store className="w-4 h-4" />
+                </div>
+              )}
+              <span className="text-xl font-bold font-headline gradient-text italic tracking-tighter">
+                {displayName}
               </span>
             </Link>
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
               <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
               <Link href="/products" className="hover:text-primary transition-colors">Sản phẩm</Link>
-              <Link href="/flash-sale" className="hover:text-primary transition-colors text-accent">Flash Sale</Link>
+              {!currentVendor && <Link href="/flash-sale" className="hover:text-primary transition-colors text-accent">Flash Sale</Link>}
             </nav>
           </div>
 

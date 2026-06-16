@@ -41,6 +41,7 @@ interface VendorState {
   vendors: Vendor[];
   vendorOrders: VendorOrder[];
   vendorProducts: (Product & { vendorId: string, status: 'pending' | 'approved' | 'rejected' })[];
+  currentVendor: Vendor | null;
   
   // Actions for Admin
   registerVendor: (vendor: Vendor) => void;
@@ -54,6 +55,7 @@ interface VendorState {
   updateVendorProduct: (product: any) => void;
   deleteVendorProduct: (productId: string) => void;
   updateVendorOrder: (id: string, status: VendorOrder['status']) => void;
+  setCurrentVendor: (vendor: Vendor | null) => void;
   
   // Getters
   getVendorByUserId: (userId: string) => Vendor | undefined;
@@ -68,9 +70,9 @@ export const useVendorStore = create<VendorState>()(
         {
           id: 'v-1',
           userId: 'user-vana',
-          storeName: 'Điện Máy Xanh Mock',
-          storeSlug: 'dien-may-xanh',
-          storeDescription: 'Chuyên cung cấp đồ gia dụng chính hãng.',
+          storeName: 'S-Com Official Store',
+          storeSlug: 's-com-official',
+          storeDescription: 'Chuyên cung cấp các sản phẩm công nghệ chính hãng từ hệ thống S-Com Hub.',
           businessType: 'company',
           idNumber: '0123456789',
           bankName: 'Vietcombank',
@@ -85,6 +87,7 @@ export const useVendorStore = create<VendorState>()(
       ],
       vendorOrders: [],
       vendorProducts: [],
+      currentVendor: null,
 
       registerVendor: (vendor) => set((state) => ({
         vendors: [vendor, ...state.vendors]
@@ -122,12 +125,14 @@ export const useVendorStore = create<VendorState>()(
         vendorOrders: state.vendorOrders.map(o => o.id === id ? { ...o, status } : o)
       })),
 
+      setCurrentVendor: (currentVendor) => set({ currentVendor }),
+
       getVendorByUserId: (userId) => get().vendors.find(v => v.userId === userId),
       getVendorProducts: (vendorId) => get().vendorProducts.filter(p => p.vendorId === vendorId),
       getVendorOrders: (vendorId) => get().vendorOrders.filter(o => o.vendorId === vendorId),
     }),
     {
-      name: 'scomhub-vendor-storage-v2',
+      name: 'scomhub-vendor-storage-v3',
     }
   )
 );
