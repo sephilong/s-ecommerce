@@ -91,24 +91,25 @@ export default function AdminProductsPage() {
 
   const handleDownloadTemplate = () => {
     toast({ 
-      title: "Đang tải mẫu Admin", 
-      description: "File 'SComHub_Admin_Inventory.xlsx' đang được tải xuống..." 
+      title: "Thông báo mô phỏng", 
+      description: "Trong thực tế, file 'SComHub_Admin_Template.xlsx' sẽ được tải về. Hiện tại, bạn có thể nhấn 'Xác nhận nhập dữ liệu' để test luồng Import mẫu." 
     });
   };
 
   const handleImportExcel = () => {
     setLoading(true);
+    // Giả lập thời gian xử lý file Excel
     setTimeout(() => {
       const mockImported = [
-        { id: `sys-imp-1`, name: "Sản phẩm Hệ thống mới 1", price: 1500000, category: "Điện tử" },
-        { id: `sys-imp-2`, name: "Sản phẩm Hệ thống mới 2", price: 2500000, category: "Thời trang" },
+        { id: `sys-imp-${Date.now()}-1`, name: "Sản phẩm Hệ thống mới 1", price: 1500000, category: "Điện tử" },
+        { id: `sys-imp-${Date.now()}-2`, name: "Sản phẩm Hệ thống mới 2", price: 2500000, category: "Thời trang" },
       ];
 
       mockImported.forEach(p => {
         addVendorProduct({
           ...p,
           vendorId: 'system',
-          description: "Sản phẩm hệ thống được nhập hàng loạt.",
+          description: "Sản phẩm hệ thống được nhập hàng loạt từ Excel mẫu.",
           image: `https://picsum.photos/seed/${p.id}/600/600`,
           slug: p.name.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
           inStock: true,
@@ -119,7 +120,10 @@ export default function AdminProductsPage() {
 
       setLoading(false);
       setIsImportOpen(false);
-      toast({ title: "Thành công", description: `Đã nhập ${mockImported.length} sản phẩm hệ thống.` });
+      toast({ 
+        title: "Nhập dữ liệu thành công", 
+        description: `Đã thêm ${mockImported.length} sản phẩm hệ thống vào kho hàng.` 
+      });
     }, 2000);
   };
 
@@ -133,29 +137,34 @@ export default function AdminProductsPage() {
         <div className="flex gap-3">
           <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-full h-11 px-6 font-bold gap-2 border-primary/30 text-primary">
+              <Button variant="outline" className="rounded-full h-11 px-6 font-bold gap-2 border-primary/30 text-primary hover:bg-primary/10 transition-all">
                 <FileSpreadsheet className="w-4 h-4" /> Nhập hàng loạt
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle className="font-headline italic">NHẬP SẢN PHẨM HỆ THỐNG</DialogTitle>
-                <DialogDescription>Dùng file Excel để thêm hàng loạt sản phẩm gốc của nền tảng.</DialogDescription>
+                <DialogDescription>Sử dụng file Excel mẫu để cập nhật danh mục sản phẩm gốc của nền tảng.</DialogDescription>
               </DialogHeader>
               <div className="py-10 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-4">
-                <Upload className="w-10 h-10 text-muted-foreground mx-auto opacity-20" />
-                <p className="text-sm font-bold">Chọn file dữ liệu hệ thống</p>
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Upload className="w-8 h-8 text-primary opacity-60" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold">Thả file dữ liệu tại đây</p>
+                  <p className="text-xs text-muted-foreground">Chấp nhận .xlsx, .csv (Max 10MB)</p>
+                </div>
                 <Button 
                   variant="link" 
                   className="text-xs text-primary underline flex items-center gap-1 mx-auto"
                   onClick={handleDownloadTemplate}
                 >
-                  <Download className="w-3 h-3" /> Tải file mẫu cho Admin
+                  <Download className="w-3 h-3" /> Tải file mẫu cho Admin (.xlsx)
                 </Button>
               </div>
               <DialogFooter>
-                <Button className="w-full rounded-xl h-12 font-bold" onClick={handleImportExcel} disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin mr-2" /> : "Xác nhận nhập dữ liệu"}
+                <Button className="w-full rounded-xl h-12 font-bold shadow-lg shadow-primary/20" onClick={handleImportExcel} disabled={loading}>
+                  {loading ? <><Loader2 className="animate-spin mr-2" /> Đang xử lý...</> : "Xác nhận nhập dữ liệu"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -169,16 +178,16 @@ export default function AdminProductsPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-muted/30 border border-white/5 p-1 rounded-2xl h-14 w-full md:w-auto justify-start">
-           <TabsTrigger value="all" className="rounded-xl px-8 h-full">Tất cả sản phẩm</TabsTrigger>
-           <TabsTrigger value="pending" className="rounded-xl px-8 h-full relative">
+           <TabsTrigger value="all" className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white">Tất cả sản phẩm</TabsTrigger>
+           <TabsTrigger value="pending" className="rounded-xl px-8 h-full relative data-[state=active]:bg-primary data-[state=active]:text-white">
               Chờ kiểm duyệt
               {vendorProducts.filter(p => p.status === 'pending').length > 0 && (
-                <span className="ml-2 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                <span className="ml-2 bg-orange-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
                   {vendorProducts.filter(p => p.status === 'pending').length}
                 </span>
               )}
            </TabsTrigger>
-           <TabsTrigger value="vendor" className="rounded-xl px-8 h-full">Sản phẩm đối tác</TabsTrigger>
+           <TabsTrigger value="vendor" className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white">Sản phẩm đối tác</TabsTrigger>
         </TabsList>
 
         <Card className="border-white/5 bg-card/50 mt-6 rounded-[2rem] overflow-hidden shadow-2xl">
@@ -192,7 +201,7 @@ export default function AdminProductsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc</Button>
+            <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc kết quả</Button>
           </CardHeader>
           <CardContent className="p-0">
             <div className="relative w-full overflow-auto">
@@ -215,7 +224,7 @@ export default function AdminProductsPage() {
                             <Image src={product.image} alt={product.name} fill className="object-cover" />
                           </div>
                           <div>
-                            <div className="font-bold text-base">{product.name}</div>
+                            <div className="font-bold text-base group-hover:text-primary transition-colors">{product.name}</div>
                             <div className="text-[10px] text-muted-foreground">{product.category}</div>
                           </div>
                         </div>
@@ -224,7 +233,7 @@ export default function AdminProductsPage() {
                         {product.vendorId === 'system' ? (
                           <Badge className="bg-primary/10 text-primary border-primary/20 gap-1 rounded-full"><User className="w-3 h-3" /> Hệ thống</Badge>
                         ) : (
-                          <Badge variant="outline" className="border-white/10 gap-1 rounded-full"><Store className="w-3 h-3" /> Vendor #{product.vendorId}</Badge>
+                          <Badge variant="outline" className="border-white/10 gap-1 rounded-full"><Store className="w-3 h-3" /> Vendor #{product.vendorId.substring(0, 4)}</Badge>
                         )}
                       </td>
                       <td className="p-6 font-black">{formatVND(product.price)}</td>
@@ -233,7 +242,7 @@ export default function AdminProductsPage() {
                           {product.status}
                         </Badge>
                         {product.status === 'rejected' && product.rejectReason && (
-                          <p className="text-[8px] text-red-400 mt-1 italic">Lý do: {product.rejectReason}</p>
+                          <p className="text-[8px] text-red-400 mt-1 italic font-medium">Lý do: {product.rejectReason}</p>
                         )}
                       </td>
                       <td className="p-6 text-right">
@@ -255,13 +264,24 @@ export default function AdminProductsPage() {
                               </>
                             )}
                             <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/products/${product.slug}`, '_blank')}>
-                              <ExternalLink className="w-4 h-4" /> Xem Storefront
+                              <ExternalLink className="w-4 h-4" /> Xem trên Storefront
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-white/5" />
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10">
+                              <Trash className="w-4 h-4" /> Xóa sản phẩm
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
                     </tr>
                   ))}
+                  {filteredProducts.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-20 text-center text-muted-foreground italic">
+                        Không tìm thấy sản phẩm nào khớp với tìm kiếm.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -270,22 +290,22 @@ export default function AdminProductsPage() {
       </Tabs>
 
       <Dialog open={!!rejectingId} onOpenChange={() => setRejectingId(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-3xl">
            <DialogHeader>
-              <DialogTitle>Lý do từ chối sản phẩm</DialogTitle>
-              <DialogDescription>Vui lòng cung cấp lý do để Vendor có thể chỉnh sửa lại sản phẩm.</DialogDescription>
+              <DialogTitle className="font-headline italic">LÝ DO TỪ CHỐI SẢN PHẨM</DialogTitle>
+              <DialogDescription>Vui lòng cung cấp lý do chi tiết để Vendor có thể chỉnh sửa và cập nhật lại sản phẩm.</DialogDescription>
            </DialogHeader>
            <div className="py-4">
               <Textarea 
-                placeholder="VD: Hình ảnh không rõ nét, mô tả thiếu thông số kỹ thuật..." 
+                placeholder="VD: Hình ảnh không rõ nét, mô tả thiếu thông số kỹ thuật, giá bán không hợp lệ..." 
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                className="min-h-[100px]"
+                className="min-h-[120px] rounded-2xl bg-muted/50 border-white/5"
               />
            </div>
-           <DialogFooter>
-              <Button variant="outline" onClick={() => setRejectingId(null)}>Hủy</Button>
-              <Button variant="destructive" onClick={handleReject}>Gửi phản hồi</Button>
+           <DialogFooter className="gap-2">
+              <Button variant="ghost" className="rounded-xl" onClick={() => setRejectingId(null)}>Hủy bỏ</Button>
+              <Button variant="destructive" className="rounded-xl font-bold" onClick={handleReject}>Gửi phản hồi từ chối</Button>
            </DialogFooter>
         </DialogContent>
       </Dialog>

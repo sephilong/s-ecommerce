@@ -66,7 +66,6 @@ function ProductsContent() {
   const vendor = profile ? getVendorByUserId(profile.email) : null;
   const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
 
-  // Logic: Tự động mở form nếu có param ?add=true từ Header
   useEffect(() => {
     if (searchParams.get("add") === "true") {
       setIsAddOpen(true);
@@ -104,8 +103,8 @@ function ProductsContent() {
 
   const handleDownloadTemplate = () => {
     toast({ 
-      title: "Đang tải mẫu Excel", 
-      description: "Mẫu sản phẩm Vendor đang được chuẩn bị..." 
+      title: "Thông báo mô phỏng", 
+      description: "Trong thực tế, file 'SComHub_Product_Template.xlsx' sẽ được tải về máy của bạn. Hiện tại bạn có thể nhấn 'Bắt đầu nhập kho' để test dữ liệu mẫu." 
     });
   };
 
@@ -114,15 +113,15 @@ function ProductsContent() {
     setLoading(true);
     setTimeout(() => {
       const mockImported = [
-        { id: `v-imp-1`, name: "Sản phẩm từ Excel 1", price: 500000, category: "Điện tử" },
-        { id: `v-imp-2`, name: "Sản phẩm từ Excel 2", price: 800000, category: "Thời trang" },
+        { id: `v-imp-${Date.now()}-1`, name: "Sản phẩm từ Excel 1", price: 500000, category: "Điện tử" },
+        { id: `v-imp-${Date.now()}-2`, name: "Sản phẩm từ Excel 2", price: 800000, category: "Thời trang" },
       ];
 
       mockImported.forEach(p => {
         addVendorProduct({
           ...p,
           vendorId: vendor.id,
-          description: "Nhập dữ liệu từ Excel.",
+          description: "Nhập dữ liệu tự động từ file mẫu Excel.",
           image: `https://picsum.photos/seed/${p.id}/600/600`,
           slug: p.name.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
           inStock: true,
@@ -133,45 +132,49 @@ function ProductsContent() {
 
       setLoading(false);
       setIsImportOpen(false);
-      toast({ title: "Thành công", description: `Đã nhập ${mockImported.length} sản phẩm mới.` });
+      toast({ title: "Thành công", description: `Đã nhập thêm ${mockImported.length} sản phẩm mới vào danh sách chờ duyệt.` });
     }, 2000);
   };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <h1 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Quản lý Kho hàng</h1>
-          <p className="text-muted-foreground">Tự do đăng bán và quản lý danh mục sản phẩm của bạn.</p>
+          <p className="text-muted-foreground">Tự do đăng bán và quản lý danh mục sản phẩm của bạn trên hệ thống.</p>
         </div>
         
         <div className="flex gap-3">
           <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-full h-12 px-6 border-white/10 gap-2">
+              <Button variant="outline" className="rounded-full h-12 px-6 border-white/10 gap-2 hover:bg-white/5 transition-all">
                 <FileSpreadsheet className="w-4 h-4" /> Nhập hàng loạt
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md rounded-[2.5rem]">
               <DialogHeader>
                 <DialogTitle className="font-headline italic">NHẬP KHO HÀNG LOẠT</DialogTitle>
-                <DialogDescription>Sử dụng mẫu Excel để cập nhật danh mục sản phẩm nhanh hơn.</DialogDescription>
+                <DialogDescription>Sử dụng mẫu Excel chuẩn của S-Com Hub để cập nhật sản phẩm nhanh chóng.</DialogDescription>
               </DialogHeader>
               <div className="py-10 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-4">
-                <Upload className="w-10 h-10 text-muted-foreground mx-auto opacity-20" />
-                <p className="text-sm font-bold">Thả file Excel tại đây</p>
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Upload className="w-8 h-8 text-primary opacity-60" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold">Thả file Excel tại đây</p>
+                  <p className="text-xs text-muted-foreground">Hỗ trợ .xlsx, .csv (Tối đa 5MB)</p>
+                </div>
                 <Button 
                   variant="link" 
                   className="text-xs text-primary underline flex items-center gap-1 mx-auto"
                   onClick={handleDownloadTemplate}
                 >
-                  <Download className="w-3 h-3" /> Tải file mẫu sản phẩm
+                  <Download className="w-3 h-3" /> Tải file Excel mẫu tại đây
                 </Button>
               </div>
               <DialogFooter>
-                <Button className="w-full rounded-xl h-12 font-bold" onClick={handleImportExcel} disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin mr-2" /> : "Bắt đầu nhập kho"}
+                <Button className="w-full rounded-xl h-12 font-bold shadow-xl shadow-primary/20" onClick={handleImportExcel} disabled={loading}>
+                  {loading ? <><Loader2 className="animate-spin mr-2" /> Đang tải lên...</> : "Bắt đầu nhập kho"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -183,21 +186,21 @@ function ProductsContent() {
                 <Plus className="w-5 h-5" /> Đăng sản phẩm mới
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl rounded-[2.5rem]">
               <form onSubmit={handleAddProduct}>
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-headline italic">ĐĂNG SẢN PHẨM MỚI</DialogTitle>
+                  <DialogTitle className="text-2xl font-headline italic">THIẾT LẬP SẢN PHẨM MỚI</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6 py-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Tên sản phẩm</Label>
-                      <Input name="name" placeholder="VD: iPhone 15 Pro Max..." required className="h-11 rounded-xl" />
+                      <Input name="name" placeholder="VD: iPhone 15 Pro Max..." required className="h-11 rounded-xl bg-background/50" />
                     </div>
                     <div className="space-y-2">
                       <Label>Danh mục</Label>
                       <Select name="category" defaultValue="Điện tử">
-                        <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl bg-background/50"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Điện tử">Điện tử</SelectItem>
                           <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
@@ -210,25 +213,25 @@ function ProductsContent() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Giá bán (VNĐ)</Label>
-                      <Input name="price" type="number" placeholder="25000000" required className="h-11 rounded-xl" />
+                      <Input name="price" type="number" placeholder="25000000" required className="h-11 rounded-xl bg-background/50" />
                     </div>
                      <div className="space-y-2">
-                      <Label>Tồn kho ban đầu</Label>
-                      <Input name="stock" type="number" defaultValue="10" className="h-11 rounded-xl" />
+                      <Label>Số lượng tồn kho</Label>
+                      <Input name="stock" type="number" defaultValue="10" className="h-11 rounded-xl bg-background/50" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Mô tả chi tiết</Label>
-                    <Textarea name="description" placeholder="Thông tin chi tiết, cấu hình sản phẩm..." className="min-h-[120px] rounded-xl" />
+                    <Textarea name="description" placeholder="Thông tin chi tiết, cấu hình sản phẩm..." className="min-h-[120px] rounded-xl bg-background/50" />
                   </div>
                   <div className="p-8 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-2 cursor-pointer hover:bg-white/10 transition-colors">
                     <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto" />
                     <p className="text-sm font-bold">Tải lên hình ảnh sản phẩm</p>
-                    <p className="text-[10px] text-muted-foreground italic">Hỗ trợ JPG, PNG, WEBP (Max 2MB)</p>
+                    <p className="text-[10px] text-muted-foreground italic">Dung lượng tối đa 2MB (Hỗ trợ JPG, PNG, WEBP)</p>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/30">Gửi duyệt sản phẩm</Button>
+                  <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/30">Gửi sản phẩm đi phê duyệt</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -236,7 +239,6 @@ function ProductsContent() {
         </div>
       </div>
 
-      {/* Giao diện Chào mừng (Empty State) khi chưa có sản phẩm */}
       {myProducts.length === 0 ? (
         <Card className="bg-primary/5 border-dashed border-primary/20 rounded-[2.5rem] p-12 text-center space-y-6 mt-12 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none" />
@@ -244,51 +246,54 @@ function ProductsContent() {
             <Package className="w-12 h-12 text-primary" />
           </div>
           <div className="space-y-2 relative z-10">
-            <h2 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Chào mừng người bán mới!</h2>
+            <h2 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Gian hàng đang trống!</h2>
             <p className="text-muted-foreground max-w-md mx-auto text-lg leading-relaxed">
-              Gian hàng của bạn hiện đang trống. Hãy bắt đầu hành trình bứt phá doanh thu bằng cách đăng sản phẩm đầu tiên ngay bây giờ.
+              Hãy bắt đầu kinh doanh trên S-Com Hub bằng cách đăng sản phẩm đầu tiên của bạn ngay bây giờ.
             </p>
           </div>
           <Button onClick={() => setIsAddOpen(true)} size="lg" className="rounded-full px-12 h-16 font-bold gap-3 shadow-2xl shadow-primary/40 relative z-10 text-lg">
-            <Plus className="w-6 h-6" /> Đăng sản phẩm đầu tiên
+            <Plus className="w-6 h-6" /> Đăng ngay sản phẩm đầu tiên
           </Button>
         </Card>
       ) : (
         <>
-          {/* Dashboard Stats */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <StatCard label="Sản phẩm của tôi" value={myProducts.length} icon={<Package />} color="text-primary" />
-            <StatCard label="Đang hiển thị" value={myProducts.filter(p => p.status === 'approved').length} icon={<CheckCircle2 />} color="text-green-500" />
-            <StatCard label="Chờ duyệt" value={myProducts.filter(p => p.status === 'pending').length} icon={<Clock />} color="text-orange-500" />
-            <StatCard label="Bị từ chối" value={myProducts.filter(p => p.status === 'rejected').length} icon={<XCircle />} color="text-red-500" />
+            <StatCard label="Tổng sản phẩm" value={myProducts.length} icon={<Package />} color="text-primary" />
+            <StatCard label="Đang kinh doanh" value={myProducts.filter(p => p.status === 'approved').length} icon={<CheckCircle2 />} color="text-green-500" />
+            <StatCard label="Đang chờ duyệt" value={myProducts.filter(p => p.status === 'pending').length} icon={<Clock />} color="text-orange-500" />
+            <StatCard label="Từ chối/Khóa" value={myProducts.filter(p => p.status === 'rejected').length} icon={<XCircle />} color="text-red-500" />
           </div>
 
-          {/* Product Table */}
           <Card className="bg-[#151515] border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
             <CardHeader className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between gap-4">
               <div className="relative w-full md:w-96">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Tìm kiếm trong kho hàng..." 
+                  placeholder="Tìm kiếm trong danh mục của bạn..." 
                   className="pl-10 h-11 rounded-xl bg-background/50 border-white/10" 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc</Button>
+                <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc kho</Button>
+                {vendor && (
+                  <Button asChild variant="outline" className="rounded-xl h-11 border-primary/20 text-primary">
+                    <Link href={`/shop/${vendor.storeSlug}`} target="_blank"><Store className="w-4 h-4 mr-2" /> Xem shop thực tế</Link>
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/20 border-b border-white/5">
-                    <tr className="text-left">
-                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Sản phẩm</th>
-                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Phân loại</th>
-                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Giá bán</th>
-                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Trạng thái</th>
-                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Ngày đăng</th>
+                    <tr className="text-left font-black">
+                      <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground">Sản phẩm</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground">Phân loại</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground">Giá bán</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground">Trạng thái</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground">Ngày đăng</th>
                       <th className="p-6"></th>
                     </tr>
                   </thead>
@@ -315,13 +320,18 @@ function ProductsContent() {
                         </td>
                         <td className="p-6 text-muted-foreground text-xs">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
                         <td className="p-6 text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary"><Edit2 className="w-4 h-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => deleteVendorProduct(p.id)}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         </td>
                       </tr>
                     ))}
+                    {myProducts.length === 0 && (
+                       <tr>
+                         <td colSpan={6} className="p-20 text-center text-muted-foreground italic">Bạn chưa có sản phẩm nào.</td>
+                       </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -332,8 +342,8 @@ function ProductsContent() {
             <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-6 flex items-start gap-4">
                <AlertCircle className="w-6 h-6 text-orange-500 shrink-0 mt-0.5" />
                <div className="space-y-1">
-                  <h4 className="font-bold text-orange-500">Sản phẩm đang chờ phê duyệt</h4>
-                  <p className="text-sm text-muted-foreground">Admin sẽ kiểm tra nội dung và hình ảnh sản phẩm của bạn trong vòng 24h. Sau khi được duyệt, sản phẩm sẽ tự động xuất hiện trên gian hàng thực tế.</p>
+                  <h4 className="font-bold text-orange-500 uppercase text-xs tracking-widest">Lưu ý kiểm duyệt</h4>
+                  <p className="text-sm text-muted-foreground">Admin sẽ kiểm tra nội dung và hình ảnh của các sản phẩm mới trong vòng 24h. Sau khi được duyệt, sản phẩm sẽ tự động xuất hiện trên gian hàng thực tế của bạn.</p>
                </div>
             </div>
           )}
