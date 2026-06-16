@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { QrCode, CreditCard, Truck, Star, Tag, Check, Info, AlertCircle } from "lucide-react";
 import { Coupon } from "@/lib/store-data";
+import { getTenantConfig } from "@/lib/tenant";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
@@ -35,6 +36,7 @@ export default function CheckoutPage() {
   const [selectedShipping, setSelectedShipping] = useState<string>("");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | undefined>(undefined);
+  const [activeTenant, setActiveTenant] = useState<any>(null);
 
   const [formData, setFormData] = useState({ firstName: "", lastName: "", phone: "", address: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -46,6 +48,14 @@ export default function CheckoutPage() {
       phone: profile.phone || "",
       address: profile.address || ""
     });
+    
+    // Resolve current tenant to check for Reseller Commission
+    const resolveTenant = async () => {
+      const subdomain = window.location.host.split('.')[0] || "demo";
+      const tenant = await getTenantConfig(subdomain);
+      setActiveTenant(tenant);
+    };
+    resolveTenant();
   }, [profile]);
 
   useEffect(() => {
@@ -83,21 +93,6 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleApplyCoupon = () => {
-    if (!couponCode) return;
-    const found = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase() && c.isActive);
-    if (found) {
-      if (totalPrice() < (found.minOrderAmount || 0)) {
-        toast({ title: "Chưa đủ điều kiện", description: `Đơn hàng tối thiểu ${formatVND(found.minOrderAmount || 0)} để dùng mã này.`, variant: "destructive" });
-        return;
-      }
-      setAppliedCoupon(found);
-      toast({ title: "Đã áp dụng mã", description: `Mã ${found.code} đã được kích hoạt thành công.` });
-    } else {
-      toast({ title: "Mã không hợp lệ", description: "Vui lòng kiểm tra lại mã giảm giá của bạn.", variant: "destructive" });
-    }
-  };
-
   const completeOrder = () => {
     if (!validateForm()) return;
 
@@ -122,25 +117,36 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
-    // Affiliate Attribution Logic
-    const storedRef = localStorage.getItem("scomhub_affiliate_ref");
-    if (storedRef) {
-      const { code, timestamp } = JSON.parse(storedRef);
-      const windowDays = 30;
-      const isWithinWindow = (Date.now() - timestamp) < (windowDays * 24 * 60 * 60 * 1000);
-      
-      if (isWithinWindow) {
-        // Calculate 10% commission for the affiliate
-        const commission = finalTotal * 0.1; 
-        addConversion({
-          id: `conv-${Date.now()}`,
+    // Attribution Logic: 
+    // 1. Reseller Attribution (Priority if on reseller storefront)
+    if (activeTenant && activeTenant.type === 'reseller' && activeTenant.ownerId) {
+       addConversion({
+          id: `conv-reseller-${Date.now()}`,
           orderId: orderId,
-          affiliateCode: code,
+          affiliateCode: `RESELLER-${activeTenant.subdomain.toUpperCase()}`,
           amount: finalTotal,
-          commission: commission,
+          commission: finalTotal * 0.15, // Reseller commission rate is 15%
           status: 'pending',
           createdAt: new Date().toISOString()
         });
+    } else {
+      // 2. Product Affiliate Attribution (Catch ?ref= from localStorage)
+      const storedRef = localStorage.getItem("scomhub_affiliate_ref");
+      if (storedRef) {
+        const { code, timestamp } = JSON.parse(storedRef);
+        const windowDays = 30;
+        const isWithinWindow = (Date.now() - timestamp) < (windowDays * 24 * 60 * 60 * 1000);
+        if (isWithinWindow) {
+          addConversion({
+            id: `conv-aff-${Date.now()}`,
+            orderId: orderId,
+            affiliateCode: code,
+            amount: finalTotal,
+            commission: finalTotal * 0.1, // Affiliate rate is 10%
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          });
+        }
       }
     }
 

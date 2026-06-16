@@ -15,7 +15,8 @@ import {
   Tag,
   Ticket,
   Star,
-  UserCheck
+  UserCheck,
+  Rocket
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -46,6 +47,7 @@ export function AdminSidebar() {
     { name: "Mã giảm giá", icon: <Ticket />, href: "/admin/coupons" },
     { name: "Loyalty / Điểm thưởng", icon: <Star />, href: "/admin/loyalty" },
     { name: "Quản lý Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
+    { name: "Quản lý Resellers", icon: <Rocket />, href: "/admin/resellers" },
   ];
 
   return (

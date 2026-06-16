@@ -21,22 +21,22 @@ export default function StorefrontLayout({
 
   useEffect(() => {
     const fetchData = async () => {
-      const config = await getTenantConfig("demo");
+      // Resolve subdomain from current host
+      const host = window.location.host;
+      const subdomain = host.split('.')[0] || "demo";
+      const config = await getTenantConfig(subdomain);
       setTenant(config);
     };
     fetchData();
 
-    // Attribution Logic: Catch ?ref= in URL
+    // Attribution Logic: Catch ?ref= in URL for Product Affiliate
     const refCode = searchParams.get("ref");
     if (refCode) {
-      // Save to localStorage with 30-day window
       const attribution = {
         code: refCode,
         timestamp: Date.now()
       };
       localStorage.setItem("scomhub_affiliate_ref", JSON.stringify(attribution));
-      
-      // Track click in store
       incrementClick(refCode);
     }
   }, [searchParams]);
@@ -45,6 +45,13 @@ export default function StorefrontLayout({
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Inject Tenant Branding Colors */}
+      <style jsx global>{`
+        :root {
+          --primary: ${tenant.primaryColor};
+        }
+      `}</style>
+      
       <Header tenant={tenant} />
       <main className="flex-1">{children}</main>
       <Footer tenant={tenant} />
