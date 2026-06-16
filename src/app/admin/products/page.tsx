@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
@@ -10,14 +10,12 @@ import {
   MoreHorizontal, 
   Edit, 
   Trash, 
-  Copy,
-  CheckCircle2,
+  CheckCircle2, 
   XCircle,
   User,
   Store,
   Filter,
   ExternalLink,
-  MessageSquare,
   FileSpreadsheet,
   Upload,
   Download,
@@ -91,14 +89,13 @@ export default function AdminProductsPage() {
 
   const handleDownloadTemplate = () => {
     toast({ 
-      title: "Thông báo mô phỏng", 
-      description: "Trong thực tế, file 'SComHub_Admin_Template.xlsx' sẽ được tải về. Hiện tại, bạn có thể nhấn 'Xác nhận nhập dữ liệu' để test luồng Import mẫu." 
+      title: "Thông báo", 
+      description: "Đang chuẩn bị file mẫu..." 
     });
   };
 
   const handleImportExcel = () => {
     setLoading(true);
-    // Giả lập thời gian xử lý file Excel
     setTimeout(() => {
       const mockImported = [
         { id: `sys-imp-${Date.now()}-1`, name: "Sản phẩm Hệ thống mới 1", price: 1500000, category: "Điện tử" },
@@ -141,9 +138,9 @@ export default function AdminProductsPage() {
                 <FileSpreadsheet className="w-4 h-4" /> Nhập hàng loạt
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md bg-[#0f0f0f] border-white/10 rounded-[2rem]">
               <DialogHeader>
-                <DialogTitle className="font-headline italic">NHẬP SẢN PHẨM HỆ THỐNG</DialogTitle>
+                <DialogTitle className="font-headline italic uppercase">NHẬP SẢN PHẨM HỆ THỐNG</DialogTitle>
                 <DialogDescription>Sử dụng file Excel mẫu để cập nhật danh mục sản phẩm gốc của nền tảng.</DialogDescription>
               </DialogHeader>
               <div className="py-10 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-4">
@@ -220,12 +217,12 @@ export default function AdminProductsPage() {
                     <tr key={`${product.vendorId}-${product.id}`} className="hover:bg-white/5 transition-colors group">
                       <td className="p-6">
                         <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 relative rounded-xl overflow-hidden border border-white/10">
+                          <div className="h-12 w-12 relative rounded-xl overflow-hidden border border-white/10 bg-background">
                             <Image src={product.image} alt={product.name} fill className="object-cover" />
                           </div>
                           <div>
                             <div className="font-bold text-base group-hover:text-primary transition-colors">{product.name}</div>
-                            <div className="text-[10px] text-muted-foreground">{product.category}</div>
+                            <div className="text-[10px] text-muted-foreground uppercase">{product.category}</div>
                           </div>
                         </div>
                       </td>
@@ -241,47 +238,38 @@ export default function AdminProductsPage() {
                         <Badge variant={product.status === 'approved' ? 'default' : product.status === 'rejected' ? 'destructive' : 'secondary'} className="rounded-full">
                           {product.status}
                         </Badge>
-                        {product.status === 'rejected' && product.rejectReason && (
-                          <p className="text-[8px] text-red-400 mt-1 italic font-medium">Lý do: {product.rejectReason}</p>
-                        )}
                       </td>
                       <td className="p-6 text-right">
-                        <DropdownMenu>
+                        <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+                          <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 bg-[#0f0f0f] border-white/5 z-50">
+                            <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Quản trị Sản phẩm</DropdownMenuLabel>
                             {product.status === 'pending' && (
                               <>
-                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => handleApprove(product.id)}>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" onClick={() => handleApprove(product.id)}>
                                   <CheckCircle2 className="w-4 h-4" /> Phê duyệt đăng
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setRejectingId(product.id)}>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setRejectingId(product.id)}>
                                   <XCircle className="w-4 h-4" /> Từ chối đăng
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-white/5" />
                               </>
                             )}
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/products/${product.slug}`, '_blank')}>
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onClick={() => window.open(`/products/${product.slug}`, '_blank')}>
                               <ExternalLink className="w-4 h-4" /> Xem trên Storefront
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-white/5" />
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10">
-                              <Trash className="w-4 h-4" /> Xóa sản phẩm
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer">
+                              <Edit className="w-4 h-4" /> Chỉnh sửa nhanh
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
                     </tr>
                   ))}
-                  {filteredProducts.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="p-20 text-center text-muted-foreground italic">
-                        Không tìm thấy sản phẩm nào khớp với tìm kiếm.
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -290,14 +278,14 @@ export default function AdminProductsPage() {
       </Tabs>
 
       <Dialog open={!!rejectingId} onOpenChange={() => setRejectingId(null)}>
-        <DialogContent className="rounded-3xl">
+        <DialogContent className="rounded-3xl bg-[#0f0f0f] border-white/10">
            <DialogHeader>
-              <DialogTitle className="font-headline italic">LÝ DO TỪ CHỐI SẢN PHẨM</DialogTitle>
-              <DialogDescription>Vui lòng cung cấp lý do chi tiết để Vendor có thể chỉnh sửa và cập nhật lại sản phẩm.</DialogDescription>
+              <DialogTitle className="font-headline italic uppercase">LÝ DO TỪ CHỐI SẢN PHẨM</DialogTitle>
+              <DialogDescription>Cung cấp lý do để Merchant điều chỉnh lại sản phẩm.</DialogDescription>
            </DialogHeader>
            <div className="py-4">
               <Textarea 
-                placeholder="VD: Hình ảnh không rõ nét, mô tả thiếu thông số kỹ thuật, giá bán không hợp lệ..." 
+                placeholder="Hình ảnh mờ, sai danh mục, giá bất thường..." 
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 className="min-h-[120px] rounded-2xl bg-muted/50 border-white/5"
@@ -305,7 +293,7 @@ export default function AdminProductsPage() {
            </div>
            <DialogFooter className="gap-2">
               <Button variant="ghost" className="rounded-xl" onClick={() => setRejectingId(null)}>Hủy bỏ</Button>
-              <Button variant="destructive" className="rounded-xl font-bold" onClick={handleReject}>Gửi phản hồi từ chối</Button>
+              <Button variant="destructive" className="rounded-xl font-bold" onClick={handleReject}>Gửi phản hồi</Button>
            </DialogFooter>
         </DialogContent>
       </Dialog>
