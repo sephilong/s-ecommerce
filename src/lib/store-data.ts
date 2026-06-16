@@ -61,7 +61,7 @@ export interface Promotion {
   startsAt?: string;
   expiresAt?: string;
   priority: number;
-  config: any; // Flexible config based on type
+  config: any; // Cấu hình linh hoạt cho từng loại
 }
 
 export interface Coupon {
@@ -192,16 +192,16 @@ const mockPromotions: Promotion[] = [
   },
   {
     id: 'promo-4',
-    name: 'Mua 2 tặng 1',
-    description: 'Áp dụng cho Phụ kiện',
-    type: 'buy_x_get_y',
+    name: 'Combo Làm Việc Tại Nhà',
+    description: 'Mua trọn bộ Phụ kiện giảm ngay 15%',
+    type: 'bundle',
     isActive: true,
-    priority: 20,
+    priority: 50,
     config: {
-      buyQuantity: 2,
-      getQuantity: 1,
-      applicableProductIds: ['p2', 'p3', 'p4'],
-      getDiscount: 100
+      bundleProductIds: ['p2', 'p3', 'p4'],
+      discountType: 'percent',
+      discountValue: 15,
+      requireAll: true
     }
   }
 ];
