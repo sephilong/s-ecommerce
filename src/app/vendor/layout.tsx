@@ -16,7 +16,10 @@ import {
   Bell,
   Plus,
   Star,
-  Palette
+  Palette,
+  Users,
+  Box,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
@@ -32,67 +35,88 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const isBuilder = pathname.includes('/builder');
 
   const menuItems = [
-    { name: "Tổng quan", icon: <LayoutDashboard />, href: "/vendor/dashboard" },
-    { name: "Sản phẩm", icon: <Package />, href: "/vendor/products" },
-    { name: "Đơn hàng", icon: <ShoppingCart />, href: "/vendor/orders" },
-    { name: "Tài chính", icon: <Wallet />, href: "/vendor/finance" },
-    { name: "Builder", icon: <Palette />, href: "/vendor/builder" },
-    { name: "Đánh giá", icon: <Star />, href: "/vendor/reviews" },
-    { name: "Cài đặt Shop", icon: <Settings />, href: "/vendor/settings" },
+    { group: "Quản trị", items: [
+      { name: "Tổng quan", icon: <LayoutDashboard />, href: "/vendor/dashboard" },
+      { name: "Sản phẩm", icon: <Package />, href: "/vendor/products" },
+      { name: "Kho hàng", icon: <Box />, href: "/vendor/inventory" },
+      { name: "Đơn hàng", icon: <ShoppingCart />, href: "/vendor/orders" },
+      { name: "Khách hàng (CRM)", icon: <Users />, href: "/vendor/customers" },
+    ]},
+    { group: "Marketing & Phát triển", items: [
+      { name: "Builder (Website)", icon: <Palette />, href: "/vendor/builder" },
+      { name: "Khuyến mãi", icon: <Star />, href: "/admin/promotions" }, // Shared logic
+      { name: "Tài chính", icon: <Wallet />, href: "/vendor/finance" },
+      { name: "Đánh giá", icon: <Star />, href: "/vendor/reviews" },
+    ]},
+    { group: "Hệ thống", items: [
+      { name: "Báo cáo", icon: <BarChart3 />, href: "/vendor/reports" },
+      { name: "Cấu hình Shop", icon: <Settings />, href: "/vendor/settings" },
+    ]}
   ];
 
-  // Nếu đang ở Builder, ẩn layout chung để tối ưu không gian làm việc
   if (isBuilder) return <>{children}</>;
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0a] text-white">
-      {/* Sidebar */}
-      <aside className="w-72 border-r border-white/5 bg-[#0f0f0f] hidden lg:flex flex-col">
+    <div className="flex min-h-screen bg-[#070707] text-white">
+      {/* Sidebar Chuyên nghiệp */}
+      <aside className="w-72 border-r border-white/5 bg-[#0f0f0f] hidden lg:flex flex-col sticky top-0 h-screen shrink-0">
         <div className="p-8 border-b border-white/5">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 group-hover:rotate-0 transition-transform">
               <span className="font-black text-xl italic">S</span>
             </div>
             <div>
-              <span className="font-bold text-lg block leading-none">VENDORS</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Kênh Người Bán</span>
+              <span className="font-black text-lg block leading-none tracking-tighter italic">MERCHANT</span>
+              <span className="text-[10px] text-primary uppercase tracking-widest font-black">S-Com Hub</span>
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 p-4 py-8 space-y-1 overflow-y-auto custom-scrollbar">
-          {menuItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-medium text-sm",
-                pathname === item.href 
-                  ? "bg-primary text-white shadow-xl shadow-primary/10" 
-                  : "text-muted-foreground hover:bg-white/5 hover:text-white"
-              )}
-            >
-              <span className="w-5 h-5">{item.icon}</span>
-              {item.name}
-            </Link>
+        <nav className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
+          {menuItems.map((group, i) => (
+            <div key={i} className="space-y-2">
+               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] px-4 mb-4">{group.group}</p>
+               <div className="space-y-1">
+                {group.items.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-xs uppercase tracking-wider",
+                      pathname === item.href 
+                        ? "bg-primary text-white shadow-xl shadow-primary/20 italic" 
+                        : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                    )}
+                  >
+                    <span className="w-5 h-5">{item.icon}</span>
+                    {item.name}
+                  </Link>
+                ))}
+               </div>
+            </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
-           <Link href="/account" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-white/5 transition-colors">
+        <div className="p-6 border-t border-white/5 space-y-4">
+           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Hỗ trợ đối tác</p>
+              <div className="flex items-center gap-2 text-xs font-bold text-primary hover:underline cursor-pointer">
+                 <MessageSquare className="w-3.5 h-3.5" /> Hotline 1900 1234
+              </div>
+           </div>
+           <Link href="/account" className="flex items-center gap-3 px-4 py-2 rounded-2xl hover:bg-white/5 transition-colors text-xs font-bold text-muted-foreground">
               <ChevronLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">Quay lại Tài khoản</span>
+              Quay lại Tài khoản
            </Link>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-20 border-b border-white/5 bg-[#0f0f0f]/50 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
+        <header className="h-20 border-b border-white/5 bg-[#0f0f0f]/80 backdrop-blur-xl px-8 flex items-center justify-between shrink-0 z-50">
           <div className="flex items-center gap-4">
-             <div className="lg:hidden h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center">S</div>
-             <h2 className="text-xl font-bold font-headline hidden md:block">
-                {vendor?.storeName || 'Nhà bán hàng'} 👋
+             <h2 className="text-xl font-black font-headline italic tracking-tighter">
+                {vendor?.storeName || 'Merchant Admin'} ⚡️
              </h2>
           </div>
           
@@ -100,23 +124,29 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
              <Button variant="outline" size="sm" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/10" asChild>
                 <Link href="/vendor/products?add=true">
                   <Plus className="w-4 h-4" /> 
-                  <span className="hidden sm:inline">Đăng sản phẩm mới</span>
+                  <span className="hidden sm:inline italic">ĐĂNG SẢN PHẨM</span>
                 </Link>
              </Button>
 
-             <Button variant="ghost" size="icon" className="rounded-full bg-white/5 h-10 w-10 relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
+             <div className="h-10 w-px bg-white/5 mx-2 hidden sm:block" />
+
+             <Button variant="ghost" size="icon" className="rounded-full bg-white/5 h-11 w-11 relative">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0f0f0f]"></span>
              </Button>
              
-             <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-                {vendor?.storeName.substring(0, 2).toUpperCase() || 'VB'}
+             <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary to-accent p-0.5 shadow-lg">
+                <div className="h-full w-full rounded-[0.9rem] bg-[#0f0f0f] flex items-center justify-center font-black text-sm italic">
+                  {vendor?.storeName.substring(0, 1).toUpperCase() || 'M'}
+                </div>
              </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          {children}
+        <main className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar bg-[radial-gradient(circle_at_top_right,_#1a1033_0%,_transparent_40%)]">
+          <div className="max-w-[1600px] mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

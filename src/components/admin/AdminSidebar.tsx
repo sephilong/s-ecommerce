@@ -17,7 +17,11 @@ import {
   Star,
   UserCheck,
   Rocket,
-  Palette
+  Palette,
+  ShieldCheck,
+  Globe,
+  Bell,
+  Activity
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -27,100 +31,111 @@ import {
   SidebarMenuButton, 
   SidebarMenuItem,
   SidebarGroup,
-  SidebarGroupLabel
+  SidebarGroupLabel,
+  SidebarFooter
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 export function AdminSidebar() {
   const pathname = usePathname();
 
-  const menuItems = [
-    { name: "Dashboard", icon: <LayoutDashboard />, href: "/admin" },
-    { name: "Sản phẩm", icon: <Package />, href: "/admin/products" },
-    { name: "Banner Slide", icon: <ImageIcon />, href: "/admin/banners" },
-    { name: "Đơn hàng", icon: <ShoppingCart />, href: "/admin/orders" },
-    { name: "Khách hàng", icon: <Users />, href: "/admin/customers" },
-    { name: "Báo cáo", icon: <BarChart3 />, href: "/admin/analytics" },
-    { name: "Cài đặt", icon: <Settings />, href: "/admin/settings" },
-  ];
-
-  const marketingItems = [
-    { name: "Khuyến mãi", icon: <Tag />, href: "/admin/promotions" },
-    { name: "Mã giảm giá", icon: <Ticket />, href: "/admin/coupons" },
-    { name: "Loyalty / Điểm thưởng", icon: <Star />, href: "/admin/loyalty" },
-    { name: "Quản lý Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
-    { name: "Quản lý Resellers", icon: <Rocket />, href: "/admin/resellers" },
-    { name: "Quản lý Vendor", icon: <Store />, href: "/admin/vendors" },
-    { name: "Kho Giao diện (Themes)", icon: <Palette />, href: "/admin/themes" },
+  const menuGroups = [
+    {
+      label: "Cơ sở hạ tầng",
+      items: [
+        { name: "Dashboard Tổng", icon: <LayoutDashboard />, href: "/admin" },
+        { name: "Quản lý Merchants", icon: <Store />, href: "/admin/vendors" },
+        { name: "Cấu hình Toàn sàn", icon: <Settings />, href: "/admin/settings" },
+      ]
+    },
+    {
+      label: "Catalog & Content",
+      items: [
+        { name: "Sản phẩm hệ thống", icon: <Package />, href: "/admin/products" },
+        { name: "Banner & Slides", icon: <ImageIcon />, href: "/admin/banners" },
+        { name: "Đơn hàng toàn hệ thống", icon: <ShoppingCart />, href: "/admin/orders" },
+      ]
+    },
+    {
+      label: "Marketing Engine",
+      items: [
+        { name: "Chiến dịch sàn", icon: <Tag />, href: "/admin/promotions" },
+        { name: "Kho Voucher", icon: <Ticket />, href: "/admin/coupons" },
+        { name: "Hệ thống Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
+        { name: "Loyalty (Điểm thưởng)", icon: <Star />, href: "/admin/loyalty" },
+      ]
+    },
+    {
+      label: "Giao diện & UI",
+      items: [
+        { name: "Theme Marketplace", icon: <Palette />, href: "/admin/themes" },
+      ]
+    }
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-white/5">
-      <SidebarHeader className="p-4 flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">S</div>
-        <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">S-Com Admin</span>
+    <Sidebar collapsible="icon" className="border-r border-white/5 bg-[#0f0f0f]">
+      <SidebarHeader className="p-6 border-b border-white/5">
+        <Link href="/admin" className="flex items-center gap-3 group">
+          <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black italic shadow-xl shadow-primary/30 group-hover:scale-110 transition-transform">S</div>
+          <div className="group-data-[collapsible=icon]:hidden">
+            <span className="font-black text-lg block leading-none italic tracking-tighter uppercase">PLATFORM</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Control Center</span>
+          </div>
+        </Link>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Quản lý</SidebarGroupLabel>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton 
-                  asChild 
-                  isActive={pathname === item.href}
-                  tooltip={item.name}
-                >
-                  <Link href={item.href}>
-                    {item.icon}
-                    <span>{item.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Marketing Engine</SidebarGroupLabel>
-          <SidebarMenu>
-            {marketingItems.map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton 
-                  asChild 
-                  isActive={pathname === item.href}
-                  tooltip={item.name}
-                >
-                  <Link href={item.href}>
-                    {item.icon}
-                    <span>{item.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup className="mt-auto">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/vendor/builder'}>
-                <Link href="/vendor/builder">
-                  <Palette />
-                  <span>Storefront Builder</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/">
-                  <Store />
-                  <span>Xem cửa hàng</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
+      
+      <SidebarContent className="p-4 space-y-6">
+        {menuGroups.map((group, idx) => (
+          <SidebarGroup key={idx}>
+            <SidebarGroupLabel className="px-4 text-[10px] font-black uppercase text-primary/60 tracking-[0.2em] mb-3">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarMenu>
+              {group.items.map((item) => (
+                <SidebarMenuItem key={item.name}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={pathname === item.href}
+                    tooltip={item.name}
+                    className={cn(
+                      "h-11 rounded-xl px-4 transition-all",
+                      pathname === item.href 
+                        ? "bg-primary/10 text-primary border-r-4 border-primary font-bold italic" 
+                        : "text-muted-foreground hover:bg-white/5"
+                    )}
+                  >
+                    <Link href={item.href}>
+                      <span className="w-5 h-5">{item.icon}</span>
+                      <span className="text-xs uppercase tracking-wider">{item.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
+
+      <SidebarFooter className="p-6 border-t border-white/5 space-y-4">
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-data-[collapsible=icon]:hidden">
+           <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">System Status</span>
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+           </div>
+           <p className="text-[10px] font-bold text-white/80 italic">Nodes: 12 Active</p>
+        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+             <SidebarMenuButton asChild className="h-11 rounded-xl px-4 text-muted-foreground hover:bg-white/5">
+                <Link href="/">
+                   <Globe className="w-5 h-5" />
+                   <span className="text-xs uppercase font-bold group-data-[collapsible=icon]:hidden">Go to Platform</span>
+                </Link>
+             </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
