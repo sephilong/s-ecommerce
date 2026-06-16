@@ -16,7 +16,7 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { QrCode, CreditCard, Truck, Star, Tag, Check, Info } from "lucide-react";
+import { QrCode, CreditCard, Truck, Star, Tag, Check, Info, AlertCircle } from "lucide-react";
 import { Coupon } from "@/lib/store-data";
 
 export default function CheckoutPage() {
@@ -35,6 +35,7 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | undefined>(undefined);
 
   const [formData, setFormData] = useState({ firstName: "", lastName: "", phone: "", address: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Pre-fill form from user profile if exists
   useEffect(() => {
@@ -71,6 +72,18 @@ export default function CheckoutPage() {
 
   const finalTotal = totalPrice() + shippingFee - discountResult.totalDiscount;
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.firstName.trim()) newErrors.firstName = "Vui lòng nhập họ.";
+    if (!formData.lastName.trim()) newErrors.lastName = "Vui lòng nhập tên.";
+    if (!formData.phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại.";
+    else if (!/^\d{10,11}$/.test(formData.phone.trim())) newErrors.phone = "Số điện thoại không hợp lệ.";
+    if (!formData.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ nhận hàng.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleApplyCoupon = () => {
     if (!couponCode) return;
     const found = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase() && c.isActive);
@@ -87,6 +100,15 @@ export default function CheckoutPage() {
   };
 
   const completeOrder = () => {
+    if (!validateForm()) {
+      toast({
+        variant: "destructive",
+        title: "Thông tin chưa đầy đủ",
+        description: "Vui lòng kiểm tra và điền chính xác thông tin nhận hàng."
+      });
+      return;
+    }
+
     const orderId = `SCHUB-${Math.floor(10000 + Math.random() * 90000)}`;
     const currentPayment = paymentMethods.find(p => p.id === selectedPayment);
     
@@ -115,6 +137,24 @@ export default function CheckoutPage() {
       clearCart();
       router.push("/checkout/success");
     }, 1500);
+  };
+
+  const handleCheckoutAction = () => {
+    if (!validateForm()) {
+      toast({
+        variant: "destructive",
+        title: "Thông tin chưa đầy đủ",
+        description: "Vui lòng điền thông tin nhận hàng trước khi thanh toán."
+      });
+      return;
+    }
+
+    const currentPM = paymentMethods.find(p => p.id === selectedPayment);
+    if (currentPM?.type === 'cod') {
+      completeOrder();
+    } else {
+      setShowSandbox(true);
+    }
   };
 
   if (items.length === 0 && !showSandbox) {
@@ -173,21 +213,65 @@ export default function CheckoutPage() {
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Họ</Label>
-                <Input placeholder="Nhập họ..." required value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="rounded-xl bg-card/50" />
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
+                  Họ <span className="text-destructive">*</span>
+                </Label>
+                <Input 
+                  placeholder="Nhập họ..." 
+                  value={formData.firstName} 
+                  onChange={(e) => {
+                    setFormData({...formData, firstName: e.target.value});
+                    if (errors.firstName) setErrors(prev => ({...prev, firstName: ""}));
+                  }} 
+                  className={`rounded-xl bg-card/50 ${errors.firstName ? 'border-destructive ring-1 ring-destructive' : ''}`} 
+                />
+                {errors.firstName && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.firstName}</p>}
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tên</Label>
-                <Input placeholder="Nhập tên..." required value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="rounded-xl bg-card/50" />
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
+                  Tên <span className="text-destructive">*</span>
+                </Label>
+                <Input 
+                  placeholder="Nhập tên..." 
+                  value={formData.lastName} 
+                  onChange={(e) => {
+                    setFormData({...formData, lastName: e.target.value});
+                    if (errors.lastName) setErrors(prev => ({...prev, lastName: ""}));
+                  }} 
+                  className={`rounded-xl bg-card/50 ${errors.lastName ? 'border-destructive ring-1 ring-destructive' : ''}`} 
+                />
+                {errors.lastName && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.lastName}</p>}
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Số điện thoại</Label>
-              <Input placeholder="Nhập số điện thoại..." required value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="rounded-xl bg-card/50" />
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
+                Số điện thoại <span className="text-destructive">*</span>
+              </Label>
+              <Input 
+                placeholder="Ví dụ: 0901234567" 
+                value={formData.phone} 
+                onChange={(e) => {
+                  setFormData({...formData, phone: e.target.value});
+                  if (errors.phone) setErrors(prev => ({...prev, phone: ""}));
+                }} 
+                className={`rounded-xl bg-card/50 ${errors.phone ? 'border-destructive ring-1 ring-destructive' : ''}`} 
+              />
+              {errors.phone && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.phone}</p>}
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Địa chỉ chi tiết</Label>
-              <Input placeholder="Số nhà, tên đường, phường/xã..." required value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl bg-card/50" />
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
+                Địa chỉ chi tiết <span className="text-destructive">*</span>
+              </Label>
+              <Input 
+                placeholder="Số nhà, tên đường, phường/xã..." 
+                value={formData.address} 
+                onChange={(e) => {
+                  setFormData({...formData, address: e.target.value});
+                  if (errors.address) setErrors(prev => ({...prev, address: ""}));
+                }} 
+                className={`rounded-xl bg-card/50 ${errors.address ? 'border-destructive ring-1 ring-destructive' : ''}`} 
+              />
+              {errors.address && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.address}</p>}
             </div>
             <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
               <Info className="w-3 h-3" /> Thông tin này sẽ được lưu lại cho lần mua hàng sau của bạn.
@@ -243,11 +327,7 @@ export default function CheckoutPage() {
           </section>
 
           <Button 
-            onClick={() => {
-              const currentPM = paymentMethods.find(p => p.id === selectedPayment);
-              if (currentPM?.type === 'cod') completeOrder();
-              else setShowSandbox(true);
-            }} 
+            onClick={handleCheckoutAction} 
             size="lg" 
             className="w-full h-16 rounded-2xl text-xl font-bold shadow-2xl group"
           >
