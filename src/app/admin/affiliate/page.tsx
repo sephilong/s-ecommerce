@@ -1,12 +1,14 @@
 
 "use client";
 
-import { useAffiliateStore, AffiliateConversion } from "@/store/affiliateStore";
+import { useAffiliateStore, AffiliateConversion, AffiliateRequest, PayoutRequest } from "@/store/affiliateStore";
+import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Search, 
   Filter, 
@@ -16,12 +18,30 @@ import {
   Download,
   Users,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Wallet,
+  ArrowUpRight,
+  UserPlus
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export default function AdminAffiliatePage() {
-  const { conversions, updateConversionStatus } = useAffiliateStore();
+  const { 
+    conversions, 
+    updateConversionStatus, 
+    affiliateRequests, 
+    updateAffiliateRequest,
+    payoutRequests,
+    updatePayoutStatus
+  } = useAffiliateStore();
+  const { setAffiliateActive } = useUserStore();
+
+  const handleApproveAffiliate = (id: string) => {
+    updateAffiliateRequest(id, 'approved');
+    const code = `REF-${Math.floor(1000 + Math.random() * 9000)}`;
+    setAffiliateActive(code);
+    toast({ title: "Đã phê duyệt", description: "Người dùng đã trở thành Affiliate." });
+  };
 
   const handleStatusUpdate = (id: string, status: AffiliateConversion['status']) => {
     updateConversionStatus(id, status);
@@ -29,10 +49,10 @@ export default function AdminAffiliatePage() {
   };
 
   const stats = [
-    { label: "Tổng chuyển đổi", value: conversions.length, icon: <TrendingUp />, color: "text-blue-500" },
-    { label: "Đang chờ duyệt", value: conversions.filter(c => c.status === 'pending').length, icon: <Clock />, color: "text-yellow-500" },
-    { label: "Đã phê duyệt", value: conversions.filter(c => c.status === 'approved').length, icon: <CheckCircle2 />, color: "text-green-500" },
     { label: "Tổng hoa hồng", value: formatVND(conversions.reduce((acc, c) => acc + c.commission, 0)), icon: <DollarSign />, color: "text-primary" },
+    { label: "Đang chờ duyệt", value: conversions.filter(c => c.status === 'pending').length, icon: <Clock />, color: "text-yellow-500" },
+    { label: "Yêu cầu Affiliate", value: affiliateRequests.filter(r => r.status === 'pending').length, icon: <UserPlus />, color: "text-blue-500" },
+    { label: "Tổng chuyển đổi", value: conversions.length, icon: <TrendingUp />, color: "text-green-500" },
   ];
 
   return (
@@ -40,11 +60,8 @@ export default function AdminAffiliatePage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight font-headline">Quản lý Affiliate</h1>
-          <p className="text-muted-foreground">Phê duyệt hoa hồng và quản lý đối tác tiếp thị.</p>
+          <p className="text-muted-foreground">Phê duyệt hồ sơ, hoa hồng và các khoản thanh toán.</p>
         </div>
-        <Button variant="outline" className="gap-2 rounded-full">
-          <Download className="w-4 h-4" /> Xuất báo cáo
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -55,7 +72,7 @@ export default function AdminAffiliatePage() {
                 {s.icon}
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">{s.label}</p>
                 <p className="text-xl font-bold">{s.value}</p>
               </div>
             </CardContent>
@@ -63,33 +80,20 @@ export default function AdminAffiliatePage() {
         ))}
       </div>
 
-      <Card className="border-white/5 bg-card/50">
-        <CardHeader className="p-4 border-b border-white/5">
-          <div className="flex flex-col md:flex-row gap-4 justify-between">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Mã đơn hàng, mã Ref..." className="pl-8 h-9" />
-            </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" /> Lọc
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b border-white/5">
-                <tr className="text-left font-medium">
-                  <th className="p-4">Ngày</th>
-                  <th className="p-4">Mã Ref</th>
-                  <th className="p-4">Đơn hàng</th>
-                  <th className="p-4">Hoa hồng</th>
-                  <th className="p-4">Trạng thái</th>
-                  <th className="p-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {conversions.length > 0 ? conversions.map((conv) => (
+      <Tabs defaultValue="conversions" className="w-full">
+        <TabsList className="rounded-xl h-11 p-1 bg-muted/50 w-full md:w-auto">
+          <TabsTrigger value="conversions" className="rounded-lg">Đơn hàng hoa hồng</TabsTrigger>
+          <TabsTrigger value="requests" className="rounded-lg">Đăng ký mới</TabsTrigger>
+          <TabsTrigger value="payouts" className="rounded-lg">Rút tiền</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="conversions" className="pt-4">
+          <Card className="border-white/5 bg-card/50">
+            <CardContent className="p-0">
+              <TableLayout 
+                headers={["Ngày", "Mã Ref", "Đơn hàng", "Hoa hồng", "Trạng thái", "Thao tác"]}
+                items={conversions}
+                renderRow={(conv: AffiliateConversion) => (
                   <tr key={conv.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="p-4 text-xs text-muted-foreground">{new Date(conv.createdAt).toLocaleDateString('vi-VN')}</td>
                     <td className="p-4 font-mono font-bold text-primary">{conv.affiliateCode}</td>
@@ -107,10 +111,10 @@ export default function AdminAffiliatePage() {
                       <div className="flex justify-end gap-2">
                         {conv.status === 'pending' && (
                           <>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500 hover:bg-green-500/10" onClick={() => handleStatusUpdate(conv.id, 'approved')}>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500" onClick={() => handleStatusUpdate(conv.id, 'approved')}>
                               <CheckCircle2 className="w-4 h-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleStatusUpdate(conv.id, 'rejected')}>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => handleStatusUpdate(conv.id, 'rejected')}>
                               <XCircle className="w-4 h-4" />
                             </Button>
                           </>
@@ -118,16 +122,91 @@ export default function AdminAffiliatePage() {
                       </div>
                     </td>
                   </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={6} className="p-12 text-center text-muted-foreground italic">Chưa có đơn hàng hoa hồng nào cần xử lý.</td>
+                )}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="requests" className="pt-4">
+          <Card className="border-white/5 bg-card/50">
+            <CardContent className="p-0">
+              <TableLayout 
+                headers={["Ngày", "Tên người dùng", "Email", "Trạng thái", "Thao tác"]}
+                items={affiliateRequests}
+                renderRow={(req: AffiliateRequest) => (
+                  <tr key={req.id} className="border-b border-white/5">
+                    <td className="p-4 text-xs">{new Date(req.createdAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="p-4 font-bold">{req.userName}</td>
+                    <td className="p-4">{req.email}</td>
+                    <td className="p-4">
+                      <Badge variant={req.status === 'approved' ? 'default' : 'secondary'}>{req.status}</Badge>
+                    </td>
+                    <td className="p-4 text-right">
+                      {req.status === 'pending' && (
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" className="rounded-full" onClick={() => handleApproveAffiliate(req.id)}>Phê duyệt</Button>
+                          <Button size="sm" variant="ghost" className="rounded-full text-destructive" onClick={() => updateAffiliateRequest(req.id, 'rejected')}>Từ chối</Button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payouts" className="pt-4">
+          <Card className="border-white/5 bg-card/50">
+            <CardContent className="p-0">
+              <TableLayout 
+                headers={["Ngày", "Người rút", "Số tiền", "Thông tin thanh toán", "Trạng thái", "Thao tác"]}
+                items={payoutRequests}
+                renderRow={(p: PayoutRequest) => (
+                  <tr key={p.id} className="border-b border-white/5">
+                    <td className="p-4 text-xs">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="p-4 font-bold">{p.userName}</td>
+                    <td className="p-4 font-black text-primary">{formatVND(p.amount)}</td>
+                    <td className="p-4 text-xs text-muted-foreground">{p.accountInfo}</td>
+                    <td className="p-4">
+                      <Badge variant={p.status === 'completed' ? 'default' : 'secondary'}>{p.status}</Badge>
+                    </td>
+                    <td className="p-4 text-right">
+                      {p.status === 'pending' && (
+                        <Button size="sm" variant="outline" className="rounded-full gap-1" onClick={() => updatePayoutStatus(p.id, 'completed')}>
+                          Xác nhận đã chuyển <ArrowUpRight className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function TableLayout({ headers, items, renderRow }: any) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/50 border-b border-white/5 text-left font-medium">
+          <tr>
+            {headers.map((h: string) => <th key={h} className="p-4">{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {items.length > 0 ? items.map(renderRow) : (
+            <tr>
+              <td colSpan={headers.length} className="p-12 text-center text-muted-foreground italic">Chưa có dữ liệu.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

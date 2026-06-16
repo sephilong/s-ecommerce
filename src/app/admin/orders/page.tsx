@@ -2,6 +2,7 @@
 "use client";
 
 import { useOrderStore, Order } from "@/store/orderStore";
+import { useAffiliateStore } from "@/store/affiliateStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -13,7 +14,8 @@ import {
   Truck, 
   CheckCircle2, 
   XCircle,
-  Clock
+  Clock,
+  Zap
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,9 +30,20 @@ import { toast } from "@/hooks/use-toast";
 
 export default function AdminOrdersPage() {
   const { orders, updateOrderStatus } = useOrderStore();
+  const { conversions, updateConversionStatus } = useAffiliateStore();
 
   const handleUpdateStatus = (orderId: string, status: Order['status']) => {
     updateOrderStatus(orderId, status);
+    
+    // Auto-approve conversion if order is completed
+    if (status === 'Hoàn thành') {
+      const conversion = conversions.find(c => c.orderId === orderId);
+      if (conversion && conversion.status === 'pending') {
+        updateConversionStatus(conversion.id, 'approved');
+        toast({ title: "Affiliate", description: "Hoa hồng cho đơn hàng này đã được tự động phê duyệt." });
+      }
+    }
+
     toast({
       title: "Cập nhật thành công",
       description: `Đơn hàng ${orderId} đã chuyển sang trạng thái ${status}`,
@@ -41,7 +54,7 @@ export default function AdminOrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Đơn hàng</h1>
+          <h1 className="text-3xl font-bold tracking-tight font-headline">Quản lý Đơn hàng</h1>
           <p className="text-muted-foreground">Theo dõi và cập nhật trạng thái đơn hàng của khách.</p>
         </div>
         <Button variant="outline" className="gap-2 rounded-full">
@@ -50,12 +63,12 @@ export default function AdminOrdersPage() {
         </Button>
       </div>
 
-      <Card className="border-white/5 bg-card/50">
+      <Card className="border-white/5 bg-card/50 shadow-xl">
         <CardHeader className="p-4 border-b border-white/5">
           <div className="flex flex-col md:flex-row gap-4 justify-between">
             <div className="relative w-full md:w-96">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Mã đơn, tên khách hàng..." className="pl-8 h-9" />
+              <Input placeholder="Mã đơn, tên khách hàng..." className="pl-8 h-9 rounded-full bg-background/50" />
             </div>
           </div>
         </CardHeader>
@@ -75,14 +88,14 @@ export default function AdminOrdersPage() {
               <tbody>
                 {orders.length > 0 ? orders.map((order) => (
                   <tr key={order.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-bold text-primary">{order.id}</td>
+                    <td className="p-4 font-bold text-primary italic">#{order.id}</td>
                     <td className="p-4">
                       <div className="font-medium">{order.customerName}</div>
-                      <div className="text-xs text-muted-foreground">{order.customerPhone}</div>
+                      <div className="text-[10px] text-muted-foreground">{order.customerPhone}</div>
                     </td>
                     <td className="p-4 font-bold">{formatVND(order.total)}</td>
                     <td className="p-4">
-                      <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         order.status === 'Chờ xử lý' ? 'bg-yellow-500/10 text-yellow-500' : 
                         order.status === 'Đang giao' ? 'bg-blue-500/10 text-blue-500' : 
                         order.status === 'Đã hủy' ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-500'
@@ -128,7 +141,7 @@ export default function AdminOrdersPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">Chưa có đơn hàng nào.</td>
+                    <td colSpan={6} className="p-8 text-center text-muted-foreground italic">Chưa có đơn hàng nào được đặt.</td>
                   </tr>
                 )}
               </tbody>
