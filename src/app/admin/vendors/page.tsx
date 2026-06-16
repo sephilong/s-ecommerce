@@ -23,8 +23,6 @@ import {
   Building2,
   Filter,
   FileText,
-  User,
-  CreditCard,
   AlertTriangle,
   SearchCode
 } from "lucide-react";
@@ -47,7 +45,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 export default function AdminVendorsPage() {
   const { vendors, updateVendorStatus, updateVendorCommission } = useVendorStore();
@@ -168,49 +166,50 @@ export default function AdminVendorsPage() {
                       </Badge>
                     </td>
                     <td className="p-6 text-right">
-                      <DropdownMenu>
+                      <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted">
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2">
+                        <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 z-50">
                           <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Quản trị Nhà bán</DropdownMenuLabel>
                           
                           {v.status === 'pending' ? (
                             <>
-                              <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => setCheckingLegal(v)}>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" onSelect={() => setCheckingLegal(v)}>
                                 <ShieldCheck className="w-4 h-4" /> Kiểm tra & Phê duyệt
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onSelect={() => handleAction(v.id, 'rejected')}>
+                                <XCircle className="w-4 h-4" /> Từ chối yêu cầu
                               </DropdownMenuItem>
                             </>
                           ) : (
                             <>
-                              <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/shop/${v.storeSlug}`, '_blank')}>
-                                <ExternalLink className="w-4 h-4" /> Xem cửa hàng thực tế
+                              <DropdownMenuItem asChild>
+                                <Link href={`/shop/${v.storeSlug}`} target="_blank" className="flex items-center gap-3 rounded-xl p-3 cursor-pointer w-full">
+                                  <ExternalLink className="w-4 h-4" /> Xem cửa hàng thực tế
+                                </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setCheckingLegal(v)}>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => setCheckingLegal(v)}>
                                 <FileText className="w-4 h-4" /> Xem hồ sơ pháp lý
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setEditingCommission({ id: v.id, rate: v.commissionRate })}>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => setEditingCommission({ id: v.id, rate: v.commissionRate })}>
                                 <Percent className="w-4 h-4" /> Cấu hình chiết khấu riêng
                               </DropdownMenuItem>
+                              
+                              <DropdownMenuSeparator className="bg-white/5 my-2" />
+                              
+                              {v.status === 'approved' ? (
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onSelect={() => handleAction(v.id, 'suspended')}>
+                                  <Ban className="w-4 h-4" /> Tạm đình chỉ kinh doanh
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-green-500 focus:bg-green-500/10 focus:text-green-500 cursor-pointer" onSelect={() => handleAction(v.id, 'approved')}>
+                                  <CheckCircle2 className="w-4 h-4" /> Kích hoạt lại gian hàng
+                                </DropdownMenuItem>
+                              )}
                             </>
-                          )}
-                          
-                          <DropdownMenuSeparator className="bg-white/5 my-2" />
-                          
-                          {v.status === 'approved' ? (
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'suspended')}>
-                              <Ban className="w-4 h-4" /> Tạm đình chỉ kinh doanh
-                            </DropdownMenuItem>
-                          ) : v.status === 'suspended' ? (
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-green-500 focus:bg-green-500/10 focus:text-green-500" onClick={() => handleAction(v.id, 'approved')}>
-                              <CheckCircle2 className="w-4 h-4" /> Kích hoạt lại gian hàng
-                            </DropdownMenuItem>
-                          ) : v.status === 'pending' && (
-                             <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'rejected')}>
-                              <XCircle className="w-4 h-4" /> Từ chối yêu cầu
-                            </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -258,61 +257,65 @@ export default function AdminVendorsPage() {
             <DialogDescription>Kiểm tra kỹ các thông tin định danh trước khi cho phép Vendor tham gia Marketplace.</DialogDescription>
           </DialogHeader>
           
-          <div className="py-8 space-y-8">
-             <section className="space-y-4">
-                <div className="flex justify-between items-center">
+          {checkingLegal && (
+            <div className="py-8 space-y-8">
+               <section className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-xs uppercase font-black text-primary tracking-widest flex items-center gap-2">
+                      <FileText className="w-4 h-4" /> Thông tin Định danh
+                    </h4>
+                    <Button asChild variant="link" className="text-[10px] h-auto p-0 gap-1 text-blue-500">
+                      <a href={`https://tracuunnt.gdt.gov.vn/tcnnt/mstxn.jsp`} target="_blank">
+                        <SearchCode className="w-3 h-3" /> Tra cứu MST chính thống
+                      </a>
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
+                     <div className="space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Loại hình</p>
+                        <p className="font-bold flex items-center gap-2">
+                          {checkingLegal.businessType === 'company' ? <><Building2 className="w-4 h-4" /> Doanh nghiệp</> : <><UserCheck className="w-4 h-4" /> Cá nhân</>}
+                        </p>
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Số CCCD / MST</p>
+                        <p className="font-mono font-bold text-primary">{checkingLegal.idNumber}</p>
+                     </div>
+                     <div className="col-span-2 space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Tên Shop / Thương hiệu</p>
+                        <p className="font-bold text-lg">{checkingLegal.storeName}</p>
+                     </div>
+                  </div>
+               </section>
+
+               <section className="space-y-4">
                   <h4 className="text-xs uppercase font-black text-primary tracking-widest flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Thông tin Định danh
+                    <CreditCard className="w-4 h-4" /> Thông tin Tài chính (Payout)
                   </h4>
-                  <Button variant="link" className="text-[10px] h-auto p-0 gap-1 text-blue-500" onClick={() => window.open(`https://tracuunnt.gdt.gov.vn/tcnnt/mstxn.jsp`, '_blank')}>
-                    <SearchCode className="w-3 h-3" /> Tra cứu MST chính thống
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
-                   <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Loại hình</p>
-                      <p className="font-bold flex items-center gap-2">
-                        {checkingLegal?.businessType === 'company' ? <><Building2 className="w-4 h-4" /> Doanh nghiệp</> : <><User className="w-4 h-4" /> Cá nhân</>}
-                      </p>
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Số CCCD / MST</p>
-                      <p className="font-mono font-bold text-primary">{checkingLegal?.idNumber}</p>
-                   </div>
-                   <div className="col-span-2 space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Tên Shop / Thương hiệu</p>
-                      <p className="font-bold text-lg">{checkingLegal?.storeName}</p>
-                   </div>
-                </div>
-             </section>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
+                     <div className="space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Ngân hàng</p>
+                        <p className="font-bold">{checkingLegal.bankName}</p>
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Số tài khoản</p>
+                        <p className="font-mono font-bold">{checkingLegal.accountNumber}</p>
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Chủ tài khoản</p>
+                        <p className="font-bold">{checkingLegal.accountName}</p>
+                     </div>
+                  </div>
+               </section>
 
-             <section className="space-y-4">
-                <h4 className="text-xs uppercase font-black text-primary tracking-widest flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" /> Thông tin Tài chính (Payout)
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
-                   <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Ngân hàng</p>
-                      <p className="font-bold">{checkingLegal?.bankName}</p>
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Số tài khoản</p>
-                      <p className="font-mono font-bold">{checkingLegal?.accountNumber}</p>
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Chủ tài khoản</p>
-                      <p className="font-bold">{checkingLegal?.accountName}</p>
-                   </div>
-                </div>
-             </section>
-
-             <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex gap-4">
-                <AlertTriangle className="w-6 h-6 text-orange-500 shrink-0" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  <strong>Lưu ý:</strong> Vui lòng đối chiếu tên chủ tài khoản ngân hàng và tên trên giấy tờ định danh/MST. Nếu không trùng khớp, hãy yêu cầu đối tác cập nhật lại trước khi phê duyệt.
-                </p>
-             </div>
-          </div>
+               <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex gap-4">
+                  <AlertTriangle className="w-6 h-6 text-orange-500 shrink-0" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    <strong>Lưu ý:</strong> Vui lòng đối chiếu tên chủ tài khoản ngân hàng và tên trên giấy tờ định danh/MST. Nếu không trùng khớp, hãy yêu cầu đối tác cập nhật lại trước khi phê duyệt.
+                  </p>
+               </div>
+            </div>
+          )}
 
           <DialogFooter className="gap-3">
             <Button variant="outline" className="flex-1 rounded-full h-12 font-bold text-destructive hover:bg-destructive/10" onClick={() => handleAction(checkingLegal!.id, 'rejected')}>
@@ -332,7 +335,7 @@ export default function AdminVendorsPage() {
 
 function StatCard({ title, value, icon, color }: any) {
   return (
-    <Card className="bg-card/40 border-white/5 rounded-3xl p-6 space-y-4 hover:border-primary/30 transition-all group">
+    <div className="bg-card/40 border border-white/5 rounded-3xl p-6 space-y-4 hover:border-primary/30 transition-all group">
       <div className={`h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
@@ -340,6 +343,6 @@ function StatCard({ title, value, icon, color }: any) {
         <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{title}</p>
         <h3 className="text-2xl font-black italic tracking-tighter mt-1">{value}</h3>
       </div>
-    </Card>
+    </div>
   );
 }
