@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Copy, Trash2, Edit } from "lucide-react";
+import { Plus, Search, Copy, Trash2, Edit, CalendarDays } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -32,7 +32,9 @@ export default function AdminCouponsPage() {
     discountType: "fixed",
     discountValue: 0,
     minOrderAmount: 0,
-    isActive: true
+    isActive: true,
+    startsAt: "",
+    expiresAt: ""
   });
 
   const handleSave = () => {
@@ -64,7 +66,9 @@ export default function AdminCouponsPage() {
       discountType: "fixed",
       discountValue: 0,
       minOrderAmount: 0,
-      isActive: true
+      isActive: true,
+      startsAt: "",
+      expiresAt: ""
     });
     setEditingCoupon(null);
   };
@@ -94,7 +98,7 @@ export default function AdminCouponsPage() {
               Tạo mã mới
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingCoupon ? 'Chỉnh sửa mã' : 'Tạo mã giảm giá mới'}</DialogTitle>
             </DialogHeader>
@@ -126,13 +130,37 @@ export default function AdminCouponsPage() {
                   <Input type="number" value={formData.minOrderAmount} onChange={(e) => setFormData({...formData, minOrderAmount: parseInt(e.target.value)})} />
                 </div>
               </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><CalendarDays className="w-3 h-3" /> Hiệu lực từ</Label>
+                  <Input 
+                    type="datetime-local" 
+                    value={formData.startsAt ? formData.startsAt.slice(0, 16) : ''} 
+                    onChange={(e) => setFormData({...formData, startsAt: e.target.value ? new Date(e.target.value).toISOString() : ''})} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><CalendarDays className="w-3 h-3" /> Hết hạn vào</Label>
+                  <Input 
+                    type="datetime-local" 
+                    value={formData.expiresAt ? formData.expiresAt.slice(0, 16) : ''} 
+                    onChange={(e) => setFormData({...formData, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : ''})} 
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label>Mô tả hiển thị</Label>
                 <Input value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Giảm 50k cho đơn từ 500k..." />
               </div>
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox id="isActive" checked={formData.isActive} onCheckedChange={(val) => setFormData({...formData, isActive: !!val})} />
+                <Label htmlFor="isActive" className="cursor-pointer">Kích hoạt mã giảm giá này</Label>
+              </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleSave} className="w-full rounded-full">Lưu mã giảm giá</Button>
+              <Button onClick={handleSave} className="w-full rounded-full h-12 font-bold">Lưu mã giảm giá</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -153,7 +181,7 @@ export default function AdminCouponsPage() {
                   <th className="p-4">Mã CODE</th>
                   <th className="p-4">Ưu đãi</th>
                   <th className="p-4">Điều kiện</th>
-                  <th className="p-4">Đã dùng</th>
+                  <th className="p-4">Thời gian</th>
                   <th className="p-4">Trạng thái</th>
                   <th className="p-4 text-right">Thao tác</th>
                 </tr>
@@ -173,7 +201,9 @@ export default function AdminCouponsPage() {
                     <td className="p-4 text-xs text-muted-foreground">
                       {cp.minOrderAmount ? `Đơn từ ${cp.minOrderAmount.toLocaleString()}₫` : 'Mọi đơn hàng'}
                     </td>
-                    <td className="p-4">{cp.usageCount} lần</td>
+                    <td className="p-4 text-[10px] text-muted-foreground">
+                      {cp.expiresAt ? `Hết hạn: ${new Date(cp.expiresAt).toLocaleDateString('vi-VN')}` : 'Vĩnh viễn'}
+                    </td>
                     <td className="p-4">
                       <Badge variant={cp.isActive ? 'default' : 'secondary'}>
                         {cp.isActive ? 'Bật' : 'Tắt'}

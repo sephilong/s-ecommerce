@@ -20,7 +20,8 @@ import {
   Search,
   Check,
   Clock,
-  Settings2
+  Settings2,
+  CalendarDays
 } from "lucide-react";
 import { 
   Dialog, 
@@ -68,7 +69,9 @@ export default function AdminPromotionsPage() {
       products: [], // For Flash Sale
       buyQuantity: 1,
       getQuantity: 1,
-      getDiscount: 100
+      getDiscount: 100,
+      startTime: "",
+      endTime: ""
     }
   });
 
@@ -110,7 +113,9 @@ export default function AdminPromotionsPage() {
         products: [],
         buyQuantity: 1,
         getQuantity: 1,
-        getDiscount: 100
+        getDiscount: 100,
+        startTime: "",
+        endTime: ""
       }
     });
     setEditingPromo(null);
@@ -292,12 +297,20 @@ export default function AdminPromotionsPage() {
                   <h3 className="text-sm font-bold flex items-center gap-2"><Zap className="w-4 h-4 text-yellow-500" /> Cấu hình Flash Sale</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Bắt đầu</Label>
-                      <Input type="datetime-local" value={formData.config?.startTime?.slice(0, 16)} onChange={(e) => handleConfigChange('startTime', new Date(e.target.value).toISOString())} />
+                      <Label className="flex items-center gap-2"><CalendarDays className="w-3 h-3" /> Bắt đầu</Label>
+                      <Input 
+                        type="datetime-local" 
+                        value={formData.config?.startTime ? formData.config.startTime.slice(0, 16) : ''} 
+                        onChange={(e) => handleConfigChange('startTime', e.target.value ? new Date(e.target.value).toISOString() : '')} 
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label>Kết thúc</Label>
-                      <Input type="datetime-local" value={formData.config?.endTime?.slice(0, 16)} onChange={(e) => handleConfigChange('endTime', new Date(e.target.value).toISOString())} />
+                      <Label className="flex items-center gap-2"><CalendarDays className="w-3 h-3" /> Kết thúc</Label>
+                      <Input 
+                        type="datetime-local" 
+                        value={formData.config?.endTime ? formData.config.endTime.slice(0, 16) : ''} 
+                        onChange={(e) => handleConfigChange('endTime', e.target.value ? new Date(e.target.value).toISOString() : '')} 
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -341,7 +354,7 @@ export default function AdminPromotionsPage() {
                 </div>
               )}
 
-              {/* Other types (Buy X Get Y, etc.) omitted for brevity but should follow similar patterns */}
+              {/* Buy X Get Y Configuration */}
               {formData.type === 'buy_x_get_y' && (
                 <div className="space-y-4 p-4 rounded-2xl bg-pink-500/5 border border-pink-500/10">
                   <h3 className="text-sm font-bold flex items-center gap-2"><Gift className="w-4 h-4 text-pink-500" /> Cấu hình Mua X Tặng Y</h3>
