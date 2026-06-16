@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   Search,
   Sparkles,
-  Layout
+  Layout,
+  MousePointer2
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
