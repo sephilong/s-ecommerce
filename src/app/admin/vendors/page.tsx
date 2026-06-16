@@ -25,7 +25,8 @@ import {
   FileText,
   User,
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  SearchCode
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -176,24 +177,25 @@ export default function AdminVendorsPage() {
                         <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2">
                           <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Quản trị Nhà bán</DropdownMenuLabel>
                           
-                          {v.status === 'pending' && (
+                          {v.status === 'pending' ? (
                             <>
                               <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => setCheckingLegal(v)}>
                                 <ShieldCheck className="w-4 h-4" /> Kiểm tra & Phê duyệt
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-white/5 my-2" />
+                            </>
+                          ) : (
+                            <>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/shop/${v.storeSlug}`, '_blank')}>
+                                <ExternalLink className="w-4 h-4" /> Xem cửa hàng thực tế
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setCheckingLegal(v)}>
+                                <FileText className="w-4 h-4" /> Xem hồ sơ pháp lý
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setEditingCommission({ id: v.id, rate: v.commissionRate })}>
+                                <Percent className="w-4 h-4" /> Cấu hình chiết khấu riêng
+                              </DropdownMenuItem>
                             </>
                           )}
-
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/shop/${v.storeSlug}`, '_blank')}>
-                            <ExternalLink className="w-4 h-4" /> Xem cửa hàng thực tế
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setCheckingLegal(v)}>
-                            <FileText className="w-4 h-4" /> Xem hồ sơ pháp lý
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setEditingCommission({ id: v.id, rate: v.commissionRate })}>
-                            <Percent className="w-4 h-4" /> Cấu hình chiết khấu riêng
-                          </DropdownMenuItem>
                           
                           <DropdownMenuSeparator className="bg-white/5 my-2" />
                           
@@ -201,9 +203,13 @@ export default function AdminVendorsPage() {
                             <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'suspended')}>
                               <Ban className="w-4 h-4" /> Tạm đình chỉ kinh doanh
                             </DropdownMenuItem>
-                          ) : v.status === 'suspended' && (
+                          ) : v.status === 'suspended' ? (
                             <DropdownMenuItem className="gap-3 rounded-xl p-3 text-green-500 focus:bg-green-500/10 focus:text-green-500" onClick={() => handleAction(v.id, 'approved')}>
                               <CheckCircle2 className="w-4 h-4" /> Kích hoạt lại gian hàng
+                            </DropdownMenuItem>
+                          ) : v.status === 'pending' && (
+                             <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'rejected')}>
+                              <XCircle className="w-4 h-4" /> Từ chối yêu cầu
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -254,9 +260,14 @@ export default function AdminVendorsPage() {
           
           <div className="py-8 space-y-8">
              <section className="space-y-4">
-                <h4 className="text-xs uppercase font-black text-primary tracking-widest flex items-center gap-2">
-                  <FileText className="w-4 h-4" /> Thông tin Định danh
-                </h4>
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs uppercase font-black text-primary tracking-widest flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> Thông tin Định danh
+                  </h4>
+                  <Button variant="link" className="text-[10px] h-auto p-0 gap-1 text-blue-500" onClick={() => window.open(`https://tracuunnt.gdt.gov.vn/tcnnt/mstxn.jsp`, '_blank')}>
+                    <SearchCode className="w-3 h-3" /> Tra cứu MST chính thống
+                  </Button>
+                </div>
                 <div className="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
                    <div className="space-y-1">
                       <p className="text-[10px] uppercase font-bold text-muted-foreground">Loại hình</p>
@@ -307,9 +318,11 @@ export default function AdminVendorsPage() {
             <Button variant="outline" className="flex-1 rounded-full h-12 font-bold text-destructive hover:bg-destructive/10" onClick={() => handleAction(checkingLegal!.id, 'rejected')}>
               <XCircle className="w-4 h-4 mr-2" /> Từ chối hồ sơ
             </Button>
-            <Button className="flex-1 rounded-full h-12 font-bold shadow-xl shadow-primary/20" onClick={() => handleAction(checkingLegal!.id, 'approved')}>
-              <CheckCircle2 className="w-4 h-4 mr-2" /> Phê duyệt & Kích hoạt
-            </Button>
+            {checkingLegal?.status === 'pending' && (
+              <Button className="flex-1 rounded-full h-12 font-bold shadow-xl shadow-primary/20" onClick={() => handleAction(checkingLegal!.id, 'approved')}>
+                <CheckCircle2 className="w-4 h-4 mr-2" /> Phê duyệt & Kích hoạt
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
