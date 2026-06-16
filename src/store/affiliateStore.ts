@@ -72,6 +72,13 @@ export interface ClickLog {
   timestamp: string;
 }
 
+export interface AffiliateTier {
+  name: string;
+  minSales: number;
+  rate: number;
+  color: string;
+}
+
 interface AffiliateState {
   conversions: AffiliateConversion[];
   links: AffiliateLink[];
@@ -79,6 +86,12 @@ interface AffiliateState {
   affiliateRequests: AffiliateRequest[];
   transactions: AffiliateTransaction[];
   clickLogs: ClickLog[];
+  config: {
+    tiers: AffiliateTier[];
+    globalRate: number;
+    cookieDays: number;
+    minPayout: number;
+  };
   stats: {
     totalClicks: number;
     totalConversions: number;
@@ -94,6 +107,7 @@ interface AffiliateState {
   addLink: (link: AffiliateLink) => void;
   deleteLink: (id: string) => void;
   logClick: (log: ClickLog) => void;
+  updateConfig: (config: Partial<AffiliateState['config']>) => void;
   
   // Requests & Payouts
   submitAffiliateRequest: (req: AffiliateRequest) => void;
@@ -111,6 +125,16 @@ export const useAffiliateStore = create<AffiliateState>()(
       affiliateRequests: [],
       transactions: [],
       clickLogs: [],
+      config: {
+        tiers: [
+          { name: 'Bronze', minSales: 0, rate: 10, color: 'bg-orange-500' },
+          { name: 'Silver', minSales: 50, rate: 12, color: 'bg-gray-400' },
+          { name: 'Gold', minSales: 200, rate: 15, color: 'bg-yellow-400' },
+        ],
+        globalRate: 10,
+        cookieDays: 30,
+        minPayout: 50000,
+      },
       stats: {
         totalClicks: 0,
         totalConversions: 0,
@@ -148,8 +172,6 @@ export const useAffiliateStore = create<AffiliateState>()(
             createdAt: new Date().toISOString()
           };
           state.transactions = [tx, ...state.transactions];
-        } else if (status === 'paid' && conv.status === 'approved') {
-          // Logic usually handled via payout
         } else if (status === 'rejected' && conv.status === 'pending') {
           pendingCommission -= conv.commission;
         }
@@ -168,6 +190,9 @@ export const useAffiliateStore = create<AffiliateState>()(
       logClick: (log) => set((state) => ({
         clickLogs: [log, ...state.clickLogs],
         stats: { ...state.stats, totalClicks: state.stats.totalClicks + 1 }
+      })),
+      updateConfig: (newConfig) => set((state) => ({
+        config: { ...state.config, ...newConfig }
       })),
       submitAffiliateRequest: (req) => set((state) => ({
         affiliateRequests: [req, ...state.affiliateRequests]
@@ -203,7 +228,7 @@ export const useAffiliateStore = create<AffiliateState>()(
       })
     }),
     {
-      name: 'scomhub-affiliate-storage-v2',
+      name: 'scomhub-affiliate-storage-v3',
     }
   )
 );

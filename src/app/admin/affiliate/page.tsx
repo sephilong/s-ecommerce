@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useAffiliateStore, AffiliateConversion, AffiliateRequest, PayoutRequest, AffiliateLink } from "@/store/affiliateStore";
+import { useAffiliateStore, AffiliateConversion, AffiliateRequest, PayoutRequest, AffiliateLink, AffiliateTier } from "@/store/affiliateStore";
 import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { 
   Search, 
   Filter, 
@@ -28,7 +38,8 @@ import {
   ShieldCheck,
   Ban,
   Link as LinkIcon,
-  PieChart
+  PieChart,
+  Save
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -42,7 +53,7 @@ import {
   Legend
 } from 'recharts';
 import { toast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function AdminAffiliatePage() {
   const { 
@@ -53,10 +64,15 @@ export default function AdminAffiliatePage() {
     payoutRequests,
     updatePayoutStatus,
     links,
-    stats
+    stats,
+    config,
+    updateConfig
   } = useAffiliateStore();
   const { setAffiliateActive } = useUserStore();
+  
   const [searchTerm, setSearchTerm] = useState("");
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [localConfig, setLocalConfig] = useState(config);
 
   const handleApproveAffiliate = (id: string) => {
     updateAffiliateRequest(id, 'approved');
@@ -70,13 +86,27 @@ export default function AdminAffiliatePage() {
     toast({ title: "Cập nhật", description: `Đã chuyển trạng thái hoa hồng thành ${status}` });
   };
 
-  // Mock data for charts
-  const performanceData = [
-    { name: 'Đơn hàng', value: conversions.length, color: '#9757EA' },
+  const handleSaveConfig = () => {
+    updateConfig(localConfig);
+    setIsConfigOpen(false);
+    toast({ title: "Thành công", description: "Đã lưu cấu hình Affiliate mới." });
+  };
+
+  const handleExport = () => {
+    toast({ title: "Đang xuất báo cáo", description: "Báo cáo Affiliate đang được tải xuống..." });
+    // Simulate download
+    setTimeout(() => {
+      toast({ title: "Thành công", description: "Báo cáo đã sẵn sàng." });
+    }, 1500);
+  };
+
+  // Performance data calculation
+  const performanceData = useMemo(() => [
+    { name: 'Đơn hàng', value: conversions.length, color: 'hsl(var(--primary))' },
     { name: 'Chờ duyệt', value: conversions.filter(c => c.status === 'pending').length, color: '#FBBF24' },
     { name: 'Đã duyệt', value: conversions.filter(c => c.status === 'approved').length, color: '#10B981' },
     { name: 'Đã hủy', value: conversions.filter(c => c.status === 'rejected').length, color: '#EF4444' },
-  ];
+  ], [conversions]);
 
   const adminStats = [
     { label: "Tổng hoa hồng đã duyệt", value: formatVND(stats.totalEarnings), icon: <DollarSign />, color: "text-primary" },
@@ -86,23 +116,103 @@ export default function AdminAffiliatePage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight font-headline italic">Quản trị Hệ thống Affiliate</h1>
           <p className="text-muted-foreground">Phê duyệt đối tác, kiểm soát hoa hồng và chi trả thu nhập.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full gap-2"><Download className="w-4 h-4" /> Export Report</Button>
-          <Button className="rounded-full gap-2"><Settings2 className="w-4 h-4" /> Affiliate Config</Button>
+          <Button variant="outline" className="rounded-full gap-2" onClick={handleExport}>
+            <Download className="w-4 h-4" /> Export Report
+          </Button>
+          
+          <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+            <DialogTrigger asChild>
+              <Button className="rounded-full gap-2 shadow-lg shadow-primary/20">
+                <Settings2 className="w-4 h-4" /> Affiliate Config
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Cấu hình Hệ thống Affiliate</DialogTitle>
+                <DialogDescription>Thiết lập tỷ lệ hoa hồng và quy tắc vận hành mạng lưới.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Hoa hồng mặc định (%)</Label>
+                    <Input 
+                      type="number" 
+                      value={localConfig.globalRate} 
+                      onChange={(e) => setLocalConfig({...localConfig, globalRate: parseInt(e.target.value)})} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Rút tiền tối thiểu (VNĐ)</Label>
+                    <Input 
+                      type="number" 
+                      value={localConfig.minPayout} 
+                      onChange={(e) => setLocalConfig({...localConfig, minPayout: parseInt(e.target.value)})} 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-lg font-bold">Quản lý Cấp bậc (Tiers)</Label>
+                  <div className="space-y-3">
+                    {localConfig.tiers.map((tier, idx) => (
+                      <div key={idx} className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-white/5">
+                        <div className={`h-8 w-8 rounded-lg ${tier.color} shrink-0`} />
+                        <div className="flex-1 grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tên Cấp bậc</Label>
+                            <Input value={tier.name} disabled className="h-8 rounded-lg bg-background/50" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tỷ lệ hoa hồng (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={tier.rate} 
+                              onChange={(e) => {
+                                const newTiers = [...localConfig.tiers];
+                                newTiers[idx].rate = parseInt(e.target.value);
+                                setLocalConfig({...localConfig, tiers: newTiers});
+                              }}
+                              className="h-8 rounded-lg bg-background/50" 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Thời gian lưu Cookie (Ngày)</Label>
+                  <Input 
+                    type="number" 
+                    value={localConfig.cookieDays} 
+                    onChange={(e) => setLocalConfig({...localConfig, cookieDays: parseInt(e.target.value)})} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Khách hàng mua hàng trong vòng X ngày kể từ khi click sẽ được tính cho Affiliate.</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleSaveConfig} className="w-full h-12 rounded-full font-bold gap-2">
+                  <Save className="w-4 h-4" /> Lưu cấu hình
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {adminStats.map((s, i) => (
-          <Card key={i} className="bg-card/50 border-white/5 hover:border-primary/30 transition-all">
+          <Card key={i} className="bg-card/50 border-white/5 hover:border-primary/30 transition-all group">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className={`h-10 w-10 rounded-xl bg-background/50 flex items-center justify-center ${s.color}`}>
+              <div className={`h-12 w-12 rounded-2xl bg-background/50 flex items-center justify-center ${s.color} group-hover:scale-110 transition-transform`}>
                 {s.icon}
               </div>
               <div>
@@ -115,7 +225,7 @@ export default function AdminAffiliatePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-white/5 bg-card/50">
+        <Card className="lg:col-span-2 border-white/5 bg-card/50 shadow-2xl">
           <CardHeader><CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Phân tích chuyển đổi</CardTitle></CardHeader>
           <CardContent className="h-[300px] pt-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -137,14 +247,16 @@ export default function AdminAffiliatePage() {
           </CardContent>
         </Card>
         
-        <Card className="border-white/5 bg-card/50">
-          <CardHeader><CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Cấu hình Tỷ lệ Hoa hồng</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <CommissionTier label="Bronze (Mặc định)" rate="10%" color="bg-orange-500" />
-            <CommissionTier label="Silver (>50 đơn)" rate="12%" color="bg-gray-400" />
-            <CommissionTier label="Gold (>200 đơn)" rate="15%" color="bg-yellow-400" />
+        <Card className="border-white/5 bg-card/50 shadow-2xl overflow-hidden">
+          <CardHeader className="bg-primary/10 border-b border-white/5"><CardTitle className="text-sm font-bold uppercase tracking-widest text-primary">Tỷ lệ Hoa hồng Hiện tại</CardTitle></CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            {config.tiers.map((tier, i) => (
+              <CommissionTier key={i} label={`${tier.name} (${tier.minSales}+ đơn)`} rate={`${tier.rate}%`} color={tier.color} />
+            ))}
             <div className="pt-4 border-t border-white/5">
-              <Button variant="link" className="w-full text-primary font-bold">Chỉnh sửa chính sách &rarr;</Button>
+              <Button variant="link" className="w-full text-primary font-bold text-xs" onClick={() => setIsConfigOpen(true)}>
+                Thay đổi chính sách hoa hồng &rarr;
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -159,7 +271,7 @@ export default function AdminAffiliatePage() {
         </TabsList>
 
         <TabsContent value="conversions" className="pt-4">
-          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden">
+          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden shadow-2xl">
             <CardHeader className="border-b border-white/5 flex flex-row items-center justify-between">
               <div className="relative w-64">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -181,7 +293,7 @@ export default function AdminAffiliatePage() {
                     <td className="p-4 font-medium">{formatVND(conv.amount)}</td>
                     <td className="p-4 font-black">{formatVND(conv.commission)}</td>
                     <td className="p-4">
-                      <Badge variant={conv.status === 'approved' ? 'default' : conv.status === 'pending' ? 'secondary' : 'destructive'} className="rounded-full">
+                      <Badge variant={conv.status === 'approved' || conv.status === 'paid' ? 'default' : conv.status === 'pending' ? 'secondary' : 'destructive'} className="rounded-full">
                         {conv.status}
                       </Badge>
                     </td>
@@ -207,7 +319,7 @@ export default function AdminAffiliatePage() {
         </TabsContent>
 
         <TabsContent value="requests" className="pt-4">
-          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden">
+          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden shadow-2xl">
             <CardContent className="p-0">
               <TableLayout 
                 headers={["Ngày đăng ký", "Tên đối tác", "Email", "Trạng thái", "Thao tác"]}
@@ -236,7 +348,7 @@ export default function AdminAffiliatePage() {
         </TabsContent>
 
         <TabsContent value="payouts" className="pt-4">
-          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden">
+          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden shadow-2xl">
             <CardContent className="p-0">
               <TableLayout 
                 headers={["Ngày yêu cầu", "Đối tác", "Số tiền rút", "Thông tin tài khoản", "Trạng thái", "Thao tác"]}
@@ -268,7 +380,7 @@ export default function AdminAffiliatePage() {
         </TabsContent>
 
         <TabsContent value="links" className="pt-4">
-          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden">
+          <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden shadow-2xl">
             <CardContent className="p-0">
               <TableLayout 
                 headers={["Tên Sản phẩm", "Mã Ref", "Lượt Click", "Đơn hàng", "Hoa hồng phát sinh", "Trạng thái"]}
@@ -276,7 +388,7 @@ export default function AdminAffiliatePage() {
                 renderRow={(link: AffiliateLink) => (
                   <tr key={link.id} className="border-b border-white/5">
                     <td className="p-4 font-bold">{link.productName}</td>
-                    <td className="p-4 font-mono text-xs">{link.code}</td>
+                    <td className="p-4 font-mono text-xs text-primary">{link.code}</td>
                     <td className="p-4 text-center">{link.clicks}</td>
                     <td className="p-4 text-center">{link.conversions}</td>
                     <td className="p-4 font-bold text-primary">{formatVND(link.commission)}</td>
@@ -296,12 +408,12 @@ export default function AdminAffiliatePage() {
 
 function CommissionTier({ label, rate, color }: { label: string, rate: string, color: string }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-white/5">
+    <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-white/5 group hover:bg-primary/5 transition-colors">
       <div className="flex items-center gap-3">
-        <div className={`h-3 w-3 rounded-full ${color}`} />
+        <div className={`h-3 w-3 rounded-full ${color} shadow-[0_0_8px_rgba(0,0,0,0.5)]`} />
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <Badge className="rounded-lg">{rate}</Badge>
+      <Badge className="rounded-lg bg-background border-white/10 group-hover:border-primary/30">{rate}</Badge>
     </div>
   );
 }
