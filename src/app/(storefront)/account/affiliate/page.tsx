@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useAffiliateStore, AffiliateLink, AffiliateConversion, AffiliateTransaction } from "@/store/affiliateStore";
+import { useAffiliateStore, AffiliateLink, AffiliateConversion, AffiliateTransaction, AffiliateRequest } from "@/store/affiliateStore";
 import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,10 @@ import {
   ExternalLink,
   Mail,
   MessageCircle,
-  Facebook
+  Facebook,
+  Info,
+  PlayCircle,
+  HelpCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -65,8 +68,8 @@ import Image from "next/image";
 import { MOCK_TENANTS } from "@/lib/store-data";
 
 export default function AffiliateDashboard() {
-  const { profile, requestAffiliate } = useUserStore();
-  const { links, stats, conversions, transactions, payoutRequests, addLink, deleteLink, requestPayout } = useAffiliateStore();
+  const { profile, requestAffiliate: markUserPending } = useUserStore();
+  const { links, stats, conversions, transactions, payoutRequests, addLink, deleteLink, requestPayout, submitAffiliateRequest } = useAffiliateStore();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(false);
 
@@ -74,38 +77,72 @@ export default function AffiliateDashboard() {
   const isPending = profile?.affiliateStatus === 'pending';
 
   const handleJoin = () => {
+    if (!profile) return;
     setLoading(true);
+    
+    // 1. Gửi yêu cầu lên hệ thống Admin
+    const newRequest: AffiliateRequest = {
+      id: `req-${Date.now()}`,
+      userId: "current-user", // Trong thực tế lấy từ Auth
+      userName: `${profile.firstName} ${profile.lastName}`,
+      email: "user@example.com", // Trong thực tế lấy từ Auth
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    
+    submitAffiliateRequest(newRequest);
+    
+    // 2. Cập nhật trạng thái UI người dùng
+    markUserPending();
+    
     setTimeout(() => {
-      requestAffiliate();
       setLoading(false);
-      toast({ title: "Đã gửi yêu cầu", description: "Vui lòng chờ Admin phê duyệt." });
+      toast({ title: "Đã gửi yêu cầu thành công!", description: "Admin sẽ xem xét và phê duyệt trong vòng 24h." });
     }, 1000);
   };
 
   if (!isAffiliate) {
     return (
-      <div className="max-w-4xl mx-auto py-12 text-center space-y-8">
-        <div className="h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
-          <Rocket className="w-12 h-12" />
+      <div className="max-w-4xl mx-auto py-12 space-y-12">
+        <div className="text-center space-y-8">
+          <div className="h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
+            <Rocket className="w-12 h-12" />
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-4xl font-black font-headline italic tracking-tighter uppercase">KIẾM TIỀN CÙNG S-COM HUB</h1>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+              {isPending 
+                ? "Yêu cầu của bạn đang chờ phê duyệt. Chúng tôi sẽ thông báo cho bạn ngay khi bạn có thể bắt đầu kiếm tiền."
+                : "Tham gia mạng lưới đối tác chuyên nghiệp để nhận hoa hồng lên tới 20% từ mỗi đơn hàng thành công."}
+            </p>
+          </div>
+          {!isPending ? (
+            <Button onClick={handleJoin} size="lg" className="rounded-full h-14 px-12 text-lg font-bold shadow-xl shadow-primary/20">
+              {loading ? <Loader2 className="animate-spin mr-2" /> : "Đăng ký làm Đối tác ngay"}
+            </Button>
+          ) : (
+            <div className="p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-bold inline-flex items-center gap-2">
+              <Clock className="w-5 h-5" /> Trạng thái: Đang chờ Admin phê duyệt
+            </div>
+          )}
         </div>
-        <div className="space-y-4">
-          <h1 className="text-4xl font-black font-headline italic tracking-tighter">KIẾM TIỀN CÙNG S-COM HUB</h1>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            {isPending 
-              ? "Yêu cầu của bạn đang được xem xét. Chúng tôi sẽ thông báo cho bạn ngay khi được duyệt."
-              : "Tham gia mạng lưới tiếp thị liên kết để nhận hoa hồng từ mỗi đơn hàng thành công. Đơn giản, hiệu quả và không cần vốn."}
-          </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <BenefitCard icon={<DollarSign />} title="Hoa hồng hấp dẫn" desc="Nhận đến 15-20% giá trị đơn hàng, cao nhất thị trường." />
+          <BenefitCard icon={<Users />} title="Hệ thống đa tầng" desc="Kiếm thêm từ việc giới thiệu các đối tác mới vào mạng lưới." />
+          <BenefitCard icon={<TrendingUp />} title="Công cụ chuyên nghiệp" desc="Link Builder, Mã QR và Dashboard thống kê thời gian thực." />
         </div>
-        {!isPending && (
-          <Button onClick={handleJoin} size="lg" className="rounded-full h-14 px-12 text-lg font-bold shadow-xl shadow-primary/20">
-            {loading ? <Loader2 className="animate-spin mr-2" /> : "Đăng ký Affiliate ngay"}
-          </Button>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
-          <BenefitCard icon={<DollarSign />} title="Hoa hồng hấp dẫn" desc="Nhận đến 10-15% giá trị mỗi đơn hàng thành công." />
-          <BenefitCard icon={<Users />} title="Hỗ trợ 24/7" desc="Đội ngũ hỗ trợ chuyên nghiệp luôn sẵn sàng giúp đỡ." />
-          <BenefitCard icon={<TrendingUp />} title="Thanh toán nhanh" desc="Rút tiền linh hoạt hàng tuần về tài khoản ngân hàng." />
-        </div>
+
+        <Card className="bg-card/30 border-white/5 rounded-[2.5rem] p-8 md:p-12">
+          <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+            <HelpCircle className="text-primary w-6 h-6" /> Quy trình 3 bước đơn giản
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+             <StepItem num="01" title="Đăng ký" desc="Gửi yêu cầu tham gia và chờ Admin phê duyệt trong 24h." />
+             <StepItem num="02" title="Chia sẻ" desc="Chọn sản phẩm, tạo link và chia sẻ lên mạng xã hội hoặc QR code." />
+             <StepItem num="03" title="Nhận tiền" desc="Khi khách hàng mua qua link, hoa hồng sẽ tự động chảy về ví của bạn." />
+          </div>
+        </Card>
       </div>
     );
   }
@@ -115,14 +152,14 @@ export default function AffiliateDashboard() {
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 shrink-0">
         <div className="bg-card/30 border border-white/5 rounded-3xl p-4 sticky top-24 space-y-2">
-          <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutDashboard />} label="Dashboard" />
-          <NavButton active={activeTab === 'links'} onClick={() => setActiveTab('links')} icon={<LinkIcon />} label="My Links" />
-          <NavButton active={activeTab === 'conversions'} onClick={() => setActiveTab('conversions')} icon={<History />} label="Conversions" />
-          <NavButton active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} icon={<Wallet />} label="Wallet & Withdraw" />
-          <NavButton active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<ImageIcon />} label="Marketing Assets" />
-          <NavButton active={activeTab === 'leaderboard'} onClick={() => setActiveTab('leaderboard')} icon={<Trophy />} label="Leaderboard" />
+          <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutDashboard />} label="Bảng điều khiển" />
+          <NavButton active={activeTab === 'links'} onClick={() => setActiveTab('links')} icon={<LinkIcon />} label="Link của tôi" />
+          <NavButton active={activeTab === 'conversions'} onClick={() => setActiveTab('conversions')} icon={<History />} label="Lịch sử hoa hồng" />
+          <NavButton active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} icon={<Wallet />} label="Ví & Rút tiền" />
+          <NavButton active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<ImageIcon />} label="Tài liệu quảng bá" />
+          <NavButton active={activeTab === 'guide'} onClick={() => setActiveTab('guide')} icon={<PlayCircle />} label="Hướng dẫn sử dụng" />
           <div className="pt-4 mt-4 border-t border-white/5">
-            <NavButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings />} label="Settings" />
+            <NavButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings />} label="Cài đặt shop" />
           </div>
         </div>
       </aside>
@@ -134,7 +171,8 @@ export default function AffiliateDashboard() {
         {activeTab === 'conversions' && <ConversionsView conversions={conversions} />}
         {activeTab === 'wallet' && <WalletView stats={stats} transactions={transactions} payoutRequests={payoutRequests} onRequestPayout={requestPayout} />}
         {activeTab === 'marketing' && <MarketingAssetsView />}
-        {activeTab === 'leaderboard' && <LeaderboardView />}
+        {activeTab === 'guide' && <GuideView />}
+        {activeTab === 'settings' && <SettingsView />}
       </main>
     </div>
   );
@@ -142,30 +180,125 @@ export default function AffiliateDashboard() {
 
 // --- Sub-Views ---
 
+function GuideView() {
+  return (
+    <div className="space-y-8">
+       <div className="space-y-2">
+        <h2 className="text-3xl font-bold font-headline italic">HƯỚNG DẪN KIẾM TIỀN</h2>
+        <p className="text-muted-foreground">Bắt đầu hành trình gia tăng thu nhập thụ động cùng S-Com Hub.</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="bg-card/50 border-white/5 p-8">
+          <div className="flex gap-6">
+            <div className="h-12 w-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+              <LinkIcon className="w-6 h-6" />
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold">1. Cách tạo Link giới thiệu</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Vào mục <strong>"Link của tôi"</strong>, dán đường dẫn sản phẩm bất kỳ từ cửa hàng vào ô <strong>"Link Builder"</strong>. 
+                Hệ thống sẽ tự động thêm mã giới thiệu cá nhân của bạn vào cuối link. Bất kỳ ai click vào link này và mua hàng trong 30 ngày, bạn đều được tính hoa hồng.
+              </p>
+              <div className="bg-background/50 p-4 rounded-xl border border-dashed border-white/10 text-xs font-mono">
+                Ví dụ: https://scomhub.vn/products/iphone-15?ref=CODE_CUA_BAN
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-card/50 border-white/5 p-8">
+          <div className="flex gap-6">
+            <div className="h-12 w-12 rounded-2xl bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0">
+              <QrCode className="w-6 h-6" />
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold">2. Tận dụng Mã QR</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Với mỗi link đã tạo, bạn có thể nhấn vào biểu tượng <strong>QR Code</strong>. Hãy tải mã này về và in ra hoặc chèn vào các video TikTok, bài viết Facebook để khách hàng quét mã mua hàng nhanh chóng.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-card/50 border-white/5 p-8">
+          <div className="flex gap-6">
+            <div className="h-12 w-12 rounded-2xl bg-green-500/20 text-green-500 flex items-center justify-center shrink-0">
+              <Wallet className="w-6 h-6" />
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold">3. Rút tiền về ngân hàng</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Hoa hồng sẽ ở trạng thái <strong>"Chờ duyệt"</strong> cho đến khi đơn hàng hoàn thành (thường là 7 ngày sau khi nhận hàng). 
+                Khi số dư đạt mức tối thiểu (50.000đ), bạn có thể gửi yêu cầu rút tiền tại mục <strong>"Ví & Rút tiền"</strong>.
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function SettingsView() {
+  const { profile } = useUserStore();
+  return (
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h2 className="text-3xl font-bold font-headline italic">CÀI ĐẶT CỬA HÀNG</h2>
+        <p className="text-muted-foreground">Cấu hình thông tin cá nhân và tài khoản nhận hoa hồng.</p>
+      </div>
+      <Card className="bg-card/50 border-white/5 p-8 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Tên hiển thị đối tác</Label>
+            <Input defaultValue={`${profile?.firstName} ${profile?.lastName}`} />
+          </div>
+          <div className="space-y-2">
+            <Label>Mã giới thiệu (Cố định)</Label>
+            <Input defaultValue={profile?.affiliateCode} disabled className="bg-muted/50" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Tài khoản ngân hàng nhận tiền</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input placeholder="Tên ngân hàng" defaultValue="Vietcombank" />
+            <Input placeholder="Số tài khoản" defaultValue="0123456789" />
+            <Input placeholder="Tên chủ tài khoản" defaultValue="NGUYEN VAN A" />
+          </div>
+        </div>
+        <div className="flex justify-end pt-4">
+          <Button className="rounded-full px-8 font-bold">Cập nhật thông tin</Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function DashboardView({ stats, conversions }: any) {
   const chartData = [
-    { name: 'T2', clicks: 45, conv: 2, earn: 250000 },
-    { name: 'T3', clicks: 52, conv: 5, earn: 600000 },
-    { name: 'T4', clicks: 38, conv: 3, earn: 400000 },
-    { name: 'T5', clicks: 65, conv: 8, earn: 1200000 },
-    { name: 'T6', clicks: 48, conv: 4, earn: 500000 },
-    { name: 'T7', clicks: 95, conv: 12, earn: 2100000 },
-    { name: 'CN', clicks: 120, conv: 15, earn: 2800000 },
+    { name: 'T2', clicks: 45, earn: 250000 },
+    { name: 'T3', clicks: 52, earn: 600000 },
+    { name: 'T4', clicks: 38, earn: 400000 },
+    { name: 'T5', clicks: 65, earn: 1200000 },
+    { name: 'T6', clicks: 48, earn: 500000 },
+    { name: 'T7', clicks: 95, earn: 2100000 },
+    { name: 'CN', clicks: 120, earn: 2800000 },
   ];
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Clicks Hôm nay" value="120" icon={<MousePointer2 />} />
-        <StatCard title="Đơn hàng" value={stats.totalConversions} icon={<CheckCircle2 />} />
+        <StatCard title="Lượt click hôm nay" value="120" icon={<MousePointer2 />} />
+        <StatCard title="Tổng đơn hàng" value={stats.totalConversions} icon={<CheckCircle2 />} />
         <StatCard title="Hoa hồng chờ" value={formatVND(stats.pendingCommission)} icon={<History />} />
-        <StatCard title="Đã thanh toán" value={formatVND(stats.paidCommission)} icon={<DollarSign />} color="text-green-500" />
+        <StatCard title="Số dư khả dụng" value={formatVND(stats.balance)} icon={<DollarSign />} color="text-green-500" />
       </div>
 
       <Card className="bg-card/50 border-white/5 overflow-hidden">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Hiệu suất tuần này</CardTitle>
+            <CardTitle>Hiệu suất thu nhập</CardTitle>
             <div className="flex gap-2">
               <Badge variant="outline" className="rounded-full">Clicks</Badge>
               <Badge variant="default" className="rounded-full">Hoa hồng</Badge>
@@ -195,7 +328,7 @@ function DashboardView({ stats, conversions }: any) {
       </Card>
 
       <div className="space-y-4">
-        <h3 className="text-xl font-bold font-headline italic">Chuyển đổi gần đây</h3>
+        <h3 className="text-xl font-bold font-headline italic">Hoa hồng vừa ghi nhận</h3>
         <Card className="bg-card/50 border-white/5">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -266,19 +399,19 @@ function LinksView({ links, onAdd, onDelete }: any) {
       <Card className="bg-card/50 border-white/5 shadow-2xl overflow-hidden relative">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full" />
         <CardHeader>
-          <CardTitle>Link Builder</CardTitle>
-          <CardDescription>Chọn sản phẩm hoặc dán link bất kỳ để tạo mã giới thiệu.</CardDescription>
+          <CardTitle>Link Builder (Tạo Link Giới Thiệu)</CardTitle>
+          <CardDescription>Dán link sản phẩm bất kỳ từ cửa hàng để gắn mã kiếm tiền của bạn.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col md:flex-row gap-3">
             <Input 
-              placeholder="Dán link sản phẩm (VD: /products/ao-thun...)" 
+              placeholder="VD: /products/ao-thun-nam-cao-cap..." 
               value={productUrl}
               onChange={(e) => setProductUrl(e.target.value)}
               className="rounded-xl h-12 bg-background/50"
             />
             <Button onClick={handleCreate} className="rounded-xl h-12 px-8 font-bold gap-2">
-              <Plus className="w-4 h-4" /> Tạo Link
+              <Plus className="w-4 h-4" /> Tạo Link Ngay
             </Button>
           </div>
         </CardContent>
@@ -286,7 +419,7 @@ function LinksView({ links, onAdd, onDelete }: any) {
 
       <div className="space-y-4">
         <h3 className="text-xl font-bold font-headline flex items-center gap-2">
-          Link của bạn <Badge variant="secondary" className="rounded-full">{links.length}</Badge>
+          Danh sách Link <Badge variant="secondary" className="rounded-full">{links.length}</Badge>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {links.map((link: AffiliateLink) => (
@@ -306,15 +439,15 @@ function LinksView({ links, onAdd, onDelete }: any) {
               </div>
               <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/5">
                 <div className="text-center">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Clicks</p>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Lượt Click</p>
                   <p className="font-bold">{link.clicks}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Conv</p>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Đơn hàng</p>
                   <p className="font-bold">{link.conversions}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Earn</p>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Hoa hồng</p>
                   <p className="font-bold text-primary">{formatVND(link.commission)}</p>
                 </div>
               </div>
@@ -322,7 +455,7 @@ function LinksView({ links, onAdd, onDelete }: any) {
           ))}
           {links.length === 0 && (
             <div className="col-span-full py-12 text-center bg-muted/10 rounded-3xl border border-dashed border-white/10 italic text-muted-foreground">
-              Bạn chưa tạo link giới thiệu nào.
+              Bạn chưa tạo link giới thiệu nào. Hãy sử dụng Link Builder phía trên.
             </div>
           )}
         </div>
@@ -581,40 +714,6 @@ function MarketingAssetsView() {
   );
 }
 
-function LeaderboardView() {
-  const topAffiliates = [
-    { name: "Phạm Long", earn: 45000000, conv: 124 },
-    { name: "Trần Thế", earn: 32000000, conv: 98 },
-    { name: "Lê Minh", earn: 28000000, conv: 85 },
-    { name: "Nguyễn Hà", earn: 15000000, conv: 45 },
-  ];
-
-  return (
-    <div className="space-y-8">
-      <h3 className="text-2xl font-bold font-headline italic">Bảng xếp hạng Thu nhập</h3>
-      <div className="grid grid-cols-1 gap-4">
-        {topAffiliates.map((user, i) => (
-          <Card key={i} className={`bg-card/50 border-white/5 p-6 flex items-center justify-between ${i === 0 ? 'border-primary/50 bg-primary/5' : ''}`}>
-            <div className="flex items-center gap-6">
-              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-black text-xl italic ${i === 0 ? 'bg-primary text-white' : 'bg-muted/50 text-muted-foreground'}`}>
-                {i + 1}
-              </div>
-              <div>
-                <h4 className="font-bold text-lg">{user.name}</h4>
-                <p className="text-xs text-muted-foreground">{user.conv} đơn hàng thành công</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Tổng thu nhập</p>
-              <p className="text-2xl font-black text-primary italic">{formatVND(user.earn)}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // --- Internal Helper Components ---
 
 function NavButton({ active, onClick, icon, label }: any) {
@@ -650,6 +749,16 @@ function BenefitCard({ icon, title, desc }: any) {
     <div className="p-6 rounded-3xl bg-card/30 border border-white/5 text-center space-y-3">
       <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">{icon}</div>
       <h4 className="font-bold">{title}</h4>
+      <p className="text-xs text-muted-foreground">{desc}</p>
+    </div>
+  );
+}
+
+function StepItem({ num, title, desc }: { num: string, title: string, desc: string }) {
+  return (
+    <div className="relative z-10 text-center space-y-4">
+      <div className="text-6xl font-black text-white/5 italic absolute -top-8 left-1/2 -translate-x-1/2 select-none">{num}</div>
+      <h4 className="font-bold text-lg relative">{title}</h4>
       <p className="text-xs text-muted-foreground">{desc}</p>
     </div>
   );
