@@ -151,27 +151,57 @@ const mockBanners: Banner[] = [
 const mockPromotions: Promotion[] = [
   {
     id: 'promo-1',
-    name: 'Flash Sale Cuối Tuần',
-    description: 'Giảm 15% cho toàn bộ ngành hàng Điện tử',
+    name: 'Giảm giá Điện tử',
+    description: 'Giảm 20% cho các sản phẩm Điện tử',
     type: 'percentage',
     isActive: true,
-    priority: 1,
+    priority: 10,
     config: {
-      discountPercent: 15,
+      discountPercent: 20,
+      maxDiscountAmount: 500000,
       appliesTo: 'category',
       targetIds: ['Điện tử']
     }
   },
   {
     id: 'promo-2',
+    name: 'Flash Sale Cuối Tuần',
+    description: 'Deal sốc theo giờ',
+    type: 'flash_sale',
+    isActive: true,
+    priority: 100,
+    config: {
+      startTime: new Date().toISOString(),
+      endTime: new Date(Date.now() + 86400000).toISOString(),
+      products: [
+        { productId: 'p1', salePrice: 2000000, saleQuantity: 10 }
+      ]
+    }
+  },
+  {
+    id: 'promo-3',
     name: 'Miễn phí vận chuyển',
-    description: 'Miễn phí vận chuyển cho đơn hàng trên 2.000.000đ',
+    description: 'Đơn từ 500k',
     type: 'free_shipping',
     isActive: true,
-    priority: 2,
+    priority: 5,
     config: {
-      minimumOrderAmount: 2000000,
-      maxShippingFee: 50000
+      minimumOrderAmount: 500000,
+      maxShippingFee: 35000
+    }
+  },
+  {
+    id: 'promo-4',
+    name: 'Mua 2 tặng 1',
+    description: 'Áp dụng cho Phụ kiện',
+    type: 'buy_x_get_y',
+    isActive: true,
+    priority: 20,
+    config: {
+      buyQuantity: 2,
+      getQuantity: 1,
+      applicableProductIds: ['p2', 'p3', 'p4'],
+      getDiscount: 100
     }
   }
 ];
