@@ -1,11 +1,56 @@
 
-import type {Metadata} from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
+export const viewport: Viewport = {
+  themeColor: '#9757EA',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: 'S-Com Hub | Modern Multi-Vendor Ecommerce',
-  description: 'Innovation and premium quality ecommerce platform powered by S-Com Hub.',
+  title: {
+    default: 'S-Com Hub | Nền tảng Thương mại Điện tử Đa chi nhánh',
+    template: '%s | S-Com Hub'
+  },
+  description: 'S-Com Hub cung cấp giải pháp bán hàng hiện đại, đa vendor với công nghệ tối ưu và trải nghiệm người dùng cao cấp.',
+  keywords: ['ecommerce', 'multi-vendor', 'vietnam retail', 'tech shop', 'scomhub'],
+  authors: [{ name: 'S-Com Team' }],
+  creator: 'S-Com Hub Platform',
+  publisher: 'S-Com Hub',
+  metadataBase: new URL('https://demo.scomhub.vn'),
+  openGraph: {
+    type: 'website',
+    locale: 'vi_VN',
+    url: 'https://scomhub.vn',
+    siteName: 'S-Com Hub',
+    images: [
+      {
+        url: 'https://picsum.photos/seed/scom/1200/630',
+        width: 1200,
+        height: 630,
+        alt: 'S-Com Hub Platform Preview',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'S-Com Hub | Modern Ecommerce',
+    description: 'Bứt phá doanh thu cùng hệ sinh thái S-Com Hub.',
+    images: ['https://picsum.photos/seed/scom/1200/630'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({
