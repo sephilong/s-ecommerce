@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useVendorStore } from "@/store/vendorStore";
 import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
@@ -38,15 +38,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function VendorProductsPage() {
+  return (
+    <Suspense fallback={<div>Đang tải kho hàng...</div>}>
+      <ProductsContent />
+    </Suspense>
+  );
+}
+
+function ProductsContent() {
   const { profile } = useUserStore();
   const { getVendorByUserId, vendorProducts, addVendorProduct, deleteVendorProduct } = useVendorStore();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
 
   const vendor = profile ? getVendorByUserId(profile.email) : null;
   const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
+
+  // Tự động mở form nếu có param ?add=true
+  useEffect(() => {
+    if (searchParams.get("add") === "true") {
+      setIsAddOpen(true);
+    }
+  }, [searchParams]);
 
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +77,7 @@ export default function VendorProductsPage() {
     
     const newProduct = {
       id: `v-prod-${Date.now()}`,
-      vendorId: vendor.id, // Đã sửa: Sử dụng ID động của vendor đang đăng nhập
+      vendorId: vendor.id,
       name: productName,
       price: parseInt(formData.get('price') as string),
       category: formData.get('category'),
@@ -87,7 +104,7 @@ export default function VendorProductsPage() {
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button className="rounded-full h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20">
-              <Plus className="w-5 h-5" /> Thêm sản phẩm mới
+              <Plus className="w-5 h-5" /> Đăng sản phẩm mới
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -148,11 +165,11 @@ export default function VendorProductsPage() {
             <Package className="w-10 h-10 text-primary" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold">Chào mừng bạn đến với Marketplace!</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">Bạn chưa có sản phẩm nào trong kho hàng. Hãy bắt đầu bằng cách thêm sản phẩm đầu tiên của bạn để Admin phê duyệt.</p>
+            <h2 className="text-2xl font-bold font-headline italic">CHƯA CÓ SẢN PHẨM NÀO</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">Hãy bắt đầu hành trình kinh doanh bằng cách đăng sản phẩm đầu tiên của bạn để Admin phê duyệt.</p>
           </div>
-          <Button onClick={() => setIsAddOpen(true)} className="rounded-full px-8 h-12 font-bold gap-2">
-            <Plus className="w-4 h-4" /> Đăng sản phẩm ngay
+          <Button onClick={() => setIsAddOpen(true)} size="lg" className="rounded-full px-12 h-14 font-bold gap-3 shadow-2xl shadow-primary/40">
+            <Plus className="w-6 h-6" /> Đăng sản phẩm đầu tiên
           </Button>
         </Card>
       ) : (
@@ -214,6 +231,9 @@ export default function VendorProductsPage() {
                           <Badge variant={p.status === 'approved' ? 'default' : p.status === 'pending' ? 'secondary' : 'destructive'} className="rounded-full">
                             {p.status === 'approved' ? 'Đang bán' : p.status === 'pending' ? 'Chờ duyệt' : 'Bị từ chối'}
                           </Badge>
+                          {p.status === 'rejected' && p.rejectReason && (
+                            <p className="text-[9px] text-red-400 mt-1 italic font-medium">Lý do: {p.rejectReason}</p>
+                          )}
                         </td>
                         <td className="p-6 text-muted-foreground text-xs">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
                         <td className="p-6 text-right">
@@ -248,7 +268,7 @@ export default function VendorProductsPage() {
 function StatCard({ label, value, icon, color }: any) {
   return (
     <Card className="bg-[#151515] border-white/5 rounded-3xl p-6 space-y-4 hover:border-primary/30 transition-all group">
-      <div className={`h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
+      <div className={`h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
       <div>
