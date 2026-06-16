@@ -1,4 +1,6 @@
 
+"use client";
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -16,9 +18,12 @@ export type UserProfile = {
 interface UserState {
   profile: UserProfile | null;
   collectedCouponIds: string[];
+  wishlistIds: string[];
   updateProfile: (profile: Partial<UserProfile>) => void;
   collectCoupon: (couponId: string) => void;
   hasCollected: (couponId: string) => boolean;
+  toggleWishlist: (productId: string) => void;
+  isInWishlist: (productId: string) => boolean;
   requestAffiliate: () => void;
   setAffiliateActive: (code: string) => void;
 }
@@ -36,6 +41,7 @@ export const useUserStore = create<UserState>()(
         affiliateStatus: "none"
       },
       collectedCouponIds: [],
+      wishlistIds: [],
       updateProfile: (updates) => set((state) => ({
         profile: state.profile ? { ...state.profile, ...updates } : null
       })),
@@ -48,6 +54,15 @@ export const useUserStore = create<UserState>()(
       hasCollected: (couponId) => {
         return get().collectedCouponIds.includes(couponId);
       },
+      toggleWishlist: (productId) => set((state) => {
+        const isExist = state.wishlistIds.includes(productId);
+        return {
+          wishlistIds: isExist 
+            ? state.wishlistIds.filter(id => id !== productId) 
+            : [...state.wishlistIds, productId]
+        };
+      }),
+      isInWishlist: (productId) => get().wishlistIds.includes(productId),
       requestAffiliate: () => set((state) => ({
         profile: state.profile ? { ...state.profile, affiliateStatus: "pending" } : null
       })),
@@ -61,7 +76,7 @@ export const useUserStore = create<UserState>()(
       }))
     }),
     {
-      name: 'scomhub-user-storage-v2',
+      name: 'scomhub-user-storage-v3',
     }
   )
 );

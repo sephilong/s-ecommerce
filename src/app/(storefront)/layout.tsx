@@ -4,6 +4,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
+import { CompareBar } from "@/components/product/CompareBar";
 import { getTenantConfig } from "@/lib/tenant";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -53,7 +54,6 @@ export default function StorefrontLayout({
 
   if (!tenant) return null;
 
-  // Lấy cấu hình theme hiện tại của Platform
   const currentTheme = themes.find(t => t.id === platformThemeId);
 
   return (
@@ -69,6 +69,7 @@ export default function StorefrontLayout({
       <main className="flex-1">{children}</main>
       <Footer tenant={tenant} />
       <ChatWidget tenant={tenant} />
+      <CompareBar />
     </div>
   );
 }
