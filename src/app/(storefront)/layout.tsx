@@ -17,11 +17,10 @@ export default function StorefrontLayout({
 }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const searchParams = useSearchParams();
-  const { incrementClick } = useAffiliateStore();
+  const { logClick } = useAffiliateStore();
 
   useEffect(() => {
     const fetchData = async () => {
-      // Resolve subdomain from current host
       const host = window.location.host;
       const subdomain = host.split('.')[0] || "demo";
       const config = await getTenantConfig(subdomain);
@@ -29,23 +28,37 @@ export default function StorefrontLayout({
     };
     fetchData();
 
-    // Attribution Logic: Catch ?ref= in URL for Product Affiliate
+    // Attribution Logic: Click Tracking
     const refCode = searchParams.get("ref");
     if (refCode) {
+      // 1. Capture metadata
+      const ua = navigator.userAgent;
+      const browser = ua.includes("Chrome") ? "Chrome" : ua.includes("Firefox") ? "Firefox" : "Safari";
+      const device = /Mobile|Android|iPhone/i.test(ua) ? "Mobile" : "Desktop";
+      
+      // 2. Log click event
+      logClick({
+        id: `click-${Date.now()}`,
+        code: refCode,
+        ip: "Captured on backend", // Simplified for demo
+        device: device,
+        browser: browser,
+        timestamp: new Date().toISOString()
+      });
+
+      // 3. Store for attribution (Cookie 30 Days)
       const attribution = {
         code: refCode,
         timestamp: Date.now()
       };
       localStorage.setItem("scomhub_affiliate_ref", JSON.stringify(attribution));
-      incrementClick(refCode);
     }
-  }, [searchParams]);
+  }, [searchParams, logClick]);
 
   if (!tenant) return null;
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Inject Tenant Branding Colors */}
       <style jsx global>{`
         :root {
           --primary: ${tenant.primaryColor};
