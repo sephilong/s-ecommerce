@@ -18,7 +18,8 @@ import {
   Package,
   Heart,
   ArrowRightLeft,
-  Share2
+  Share2,
+  Check
 } from "lucide-react";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import Link from "next/link";
