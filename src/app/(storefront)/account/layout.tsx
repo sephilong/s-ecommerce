@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, ShoppingBag, Heart, Gift, LogOut, Ticket } from "lucide-react";
+import { User, ShoppingBag, Heart, Gift, LogOut, Ticket, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AccountLayout({
@@ -19,6 +19,7 @@ export default function AccountLayout({
     { name: "Sản phẩm yêu thích", icon: <Heart className="w-4 h-4" />, href: "/account/wishlist" },
     { name: "Ví Voucher", icon: <Ticket className="w-4 h-4" />, href: "/account/vouchers" },
     { name: "Chương trình Affiliate", icon: <Gift className="w-4 h-4" />, href: "/account/affiliate" },
+    { name: "Kênh Người Bán (Vendor)", icon: <Store className="w-4 h-4" />, href: "/account/vendor" },
   ];
 
   return (

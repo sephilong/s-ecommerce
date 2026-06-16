@@ -48,6 +48,7 @@ export function AdminSidebar() {
     { name: "Loyalty / Điểm thưởng", icon: <Star />, href: "/admin/loyalty" },
     { name: "Quản lý Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
     { name: "Quản lý Resellers", icon: <Rocket />, href: "/admin/resellers" },
+    { name: "Quản lý Vendor", icon: <Store />, href: "/admin/vendors" },
   ];
 
   return (
