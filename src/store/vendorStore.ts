@@ -27,7 +27,7 @@ export interface Vendor {
 
 export interface VendorOrder {
   id: string;
-  orderId: string; // ID đơn hàng tổng
+  orderId: string;
   vendorId: string;
   items: any[];
   subtotal: number;
@@ -40,21 +40,24 @@ export interface VendorOrder {
 interface VendorState {
   vendors: Vendor[];
   vendorOrders: VendorOrder[];
-  vendorProducts: Product[];
+  vendorProducts: (Product & { vendorId: string, status: 'pending' | 'approved' | 'rejected' })[];
   
   // Actions for Admin
   registerVendor: (vendor: Vendor) => void;
   updateVendorStatus: (id: string, status: Vendor['status']) => void;
   updateVendorCommission: (id: string, rate: number) => void;
+  approveProduct: (productId: string) => void;
+  rejectProduct: (productId: string) => void;
   
   // Actions for Vendor
-  addVendorProduct: (product: Product) => void;
-  updateVendorProduct: (product: Product) => void;
+  addVendorProduct: (product: any) => void;
+  updateVendorProduct: (product: any) => void;
+  deleteVendorProduct: (productId: string) => void;
   updateVendorOrder: (id: string, status: VendorOrder['status']) => void;
   
   // Getters
   getVendorByUserId: (userId: string) => Vendor | undefined;
-  getVendorProducts: (vendorId: string) => Product[];
+  getVendorProducts: (vendorId: string) => any[];
   getVendorOrders: (vendorId: string) => VendorOrder[];
 }
 
@@ -96,11 +99,23 @@ export const useVendorStore = create<VendorState>()(
       })),
 
       addVendorProduct: (product) => set((state) => ({
-        vendorProducts: [product, ...state.vendorProducts]
+        vendorProducts: [{ ...product, status: 'pending' }, ...state.vendorProducts]
       })),
 
       updateVendorProduct: (updatedProduct) => set((state) => ({
-        vendorProducts: state.vendorProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
+        vendorProducts: state.vendorProducts.map(p => p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p)
+      })),
+
+      deleteVendorProduct: (productId) => set((state) => ({
+        vendorProducts: state.vendorProducts.filter(p => p.id !== productId)
+      })),
+
+      approveProduct: (productId) => set((state) => ({
+        vendorProducts: state.vendorProducts.map(p => p.id === productId ? { ...p, status: 'approved' } : p)
+      })),
+
+      rejectProduct: (productId) => set((state) => ({
+        vendorProducts: state.vendorProducts.map(p => p.id === productId ? { ...p, status: 'rejected' } : p)
       })),
 
       updateVendorOrder: (id, status) => set((state) => ({
@@ -108,11 +123,11 @@ export const useVendorStore = create<VendorState>()(
       })),
 
       getVendorByUserId: (userId) => get().vendors.find(v => v.userId === userId),
-      getVendorProducts: (vendorId) => get().vendorProducts.filter(p => p.id.startsWith(`v-${vendorId}`)), // Giả định ID sp có prefix vendor
+      getVendorProducts: (vendorId) => get().vendorProducts.filter(p => p.vendorId === vendorId),
       getVendorOrders: (vendorId) => get().vendorOrders.filter(o => o.vendorId === vendorId),
     }),
     {
-      name: 'scomhub-vendor-storage-v1',
+      name: 'scomhub-vendor-storage-v2',
     }
   )
 );
