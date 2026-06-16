@@ -10,8 +10,10 @@ import { useUIStore } from "@/store/uiStore";
 import { useConfigStore } from "@/store/configStore";
 import { usePromotionStore } from "@/store/promotionStore";
 import { useVendorStore } from "@/store/vendorStore";
+import { useUserStore } from "@/store/userStore";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { NotificationBell } from "@/components/notification/NotificationBell";
 
 export function Header({ tenant }: { tenant: Tenant }) {
   const cartCount = useCartStore((state) => state.totalItems());
@@ -19,6 +21,7 @@ export function Header({ tenant }: { tenant: Tenant }) {
   const { storeName } = useConfigStore();
   const { promotions } = usePromotionStore();
   const { currentVendor } = useVendorStore();
+  const { profile } = useUserStore();
   const pathname = usePathname();
 
   const [flashSale, setFlashSale] = useState<any>(null);
@@ -48,7 +51,6 @@ export function Header({ tenant }: { tenant: Tenant }) {
     }
   }, [promotions]);
 
-  // Logic: Ưu tiên tên Vendor nếu đang ở trang shop (bất kể URL nào có chứa /shop/)
   const isShopPage = pathname.includes('/shop/');
   const displayName = (isShopPage && currentVendor) ? currentVendor.storeName : (storeName || tenant.name);
 
@@ -92,17 +94,20 @@ export function Header({ tenant }: { tenant: Tenant }) {
 
           <div className="flex items-center gap-2">
             <Link href="/search">
-              <Button variant="ghost" size="icon" className="hidden sm:flex">
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-10 w-10">
                 <Search className="w-5 h-5" />
               </Button>
             </Link>
+            
+            {profile && <NotificationBell userId={profile.email} />}
+
             <Link href="/account">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="h-10 w-10">
                 <User className="w-5 h-5" />
               </Button>
             </Link>
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative h-10 w-10">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
                   <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-[10px] flex items-center justify-center rounded-full text-white font-bold animate-in zoom-in">
@@ -111,7 +116,7 @@ export function Header({ tenant }: { tenant: Tenant }) {
                 )}
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMobileMenu}>
+            <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={toggleMobileMenu}>
               <Menu className="w-5 h-5" />
             </Button>
           </div>

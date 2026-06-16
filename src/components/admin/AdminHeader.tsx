@@ -5,6 +5,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Bell, Search, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { NotificationBell } from "@/components/notification/NotificationBell";
 
 export function AdminHeader() {
   return (
@@ -13,19 +14,16 @@ export function AdminHeader() {
         <SidebarTrigger />
         <div className="hidden md:flex relative w-64">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Tìm kiếm hệ thống..." className="pl-8 h-9 bg-background/50" />
+          <Input placeholder="Tìm kiếm hệ thống..." className="pl-8 h-9 bg-background/50 border-white/5" />
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full"></span>
-        </Button>
+        <NotificationBell userId="admin" />
         <div className="h-8 w-px bg-white/10 mx-2"></div>
-        <Button variant="ghost" className="gap-2">
-          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">AD</div>
-          <span className="hidden sm:inline-block text-sm font-medium">Administrator</span>
+        <Button variant="ghost" className="gap-2 h-10 px-3 rounded-full hover:bg-white/5">
+          <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-black italic shadow-inner">AD</div>
+          <span className="hidden sm:inline-block text-xs font-bold uppercase tracking-widest text-muted-foreground">Administrator</span>
         </Button>
       </div>
     </header>

@@ -20,11 +20,13 @@ import {
   Users,
   Box,
   FileText,
-  Warehouse
+  Warehouse,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useVendorStore } from "@/store/vendorStore";
+import { NotificationBell } from "@/components/notification/NotificationBell";
 import { cn } from "@/lib/utils";
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
@@ -45,12 +47,13 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     ]},
     { group: "Marketing & Phát triển", items: [
       { name: "Builder (Website)", icon: <Palette />, href: "/vendor/builder" },
-      { name: "Khuyến mãi", icon: <Star />, href: "/admin/promotions" }, // Shared logic
+      { name: "Khuyến mãi", icon: <Star />, href: "/admin/promotions" }, 
       { name: "Tài chính", icon: <Wallet />, href: "/vendor/finance" },
       { name: "Đánh giá", icon: <Star />, href: "/vendor/reviews" },
     ]},
     { group: "Hệ thống", items: [
       { name: "Báo cáo", icon: <BarChart3 />, href: "/vendor/reports" },
+      { name: "Thông báo", icon: <Zap />, href: "/admin/notifications" },
       { name: "Cấu hình Shop", icon: <Settings />, href: "/vendor/settings" },
     ]}
   ];
@@ -59,7 +62,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-screen bg-[#070707] text-white">
-      {/* Sidebar Chuyên nghiệp */}
+      {/* Sidebar */}
       <aside className="w-72 border-r border-white/5 bg-[#0f0f0f] hidden lg:flex flex-col sticky top-0 h-screen shrink-0">
         <div className="p-8 border-b border-white/5">
           <Link href="/" className="flex items-center gap-3 group">
@@ -99,12 +102,6 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         </nav>
 
         <div className="p-6 border-t border-white/5 space-y-4">
-           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Hỗ trợ đối tác</p>
-              <div className="flex items-center gap-2 text-xs font-bold text-primary hover:underline cursor-pointer">
-                 <MessageSquare className="w-3.5 h-3.5" /> Hotline 1900 1234
-              </div>
-           </div>
            <Link href="/account" className="flex items-center gap-3 px-4 py-2 rounded-2xl hover:bg-white/5 transition-colors text-xs font-bold text-muted-foreground">
               <ChevronLeft className="w-4 h-4" />
               Quay lại Tài khoản
@@ -112,7 +109,6 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="h-20 border-b border-white/5 bg-[#0f0f0f]/80 backdrop-blur-xl px-8 flex items-center justify-between shrink-0 z-50">
           <div className="flex items-center gap-4">
@@ -131,10 +127,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
              <div className="h-10 w-px bg-white/5 mx-2 hidden sm:block" />
 
-             <Button variant="ghost" size="icon" className="rounded-full bg-white/5 h-11 w-11 relative">
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0f0f0f]"></span>
-             </Button>
+             {profile && <NotificationBell userId={profile.email} />}
              
              <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary to-accent p-0.5 shadow-lg">
                 <div className="h-full w-full rounded-[0.9rem] bg-[#0f0f0f] flex items-center justify-center font-black text-sm italic">

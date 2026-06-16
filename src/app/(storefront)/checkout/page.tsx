@@ -6,7 +6,7 @@ import { useConfigStore } from "@/store/configStore";
 import { useOrderStore, Order } from "@/store/orderStore";
 import { useUserStore } from "@/store/userStore";
 import { usePromotionStore } from "@/store/promotionStore";
-import { useAffiliateStore } from "@/store/affiliateStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { useAnalyticsStore } from "@/store/analyticsStore";
 import { formatVND } from "@/lib/currency";
 import { calculateDiscount, DiscountResult } from "@/lib/promotion-engine";
@@ -18,7 +18,7 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { QrCode, CreditCard, Truck, Star, Tag, Check, Info, AlertCircle } from "lucide-react";
+import { CreditCard, Check, Star, Truck, AlertCircle } from "lucide-react";
 import { Coupon } from "@/lib/store-data";
 import { getTenantConfig } from "@/lib/tenant";
 
@@ -28,6 +28,7 @@ export default function CheckoutPage() {
   const { addOrder } = useOrderStore();
   const { profile } = useUserStore();
   const { promotions, coupons, loyaltyConfig } = usePromotionStore();
+  const { addNotification } = useNotificationStore();
   const logEvent = useAnalyticsStore((state) => state.logEvent);
   const router = useRouter();
 
@@ -99,12 +100,11 @@ export default function CheckoutPage() {
     if (!validateForm()) return;
     setLoading(true);
 
-    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
     const currentPayment = paymentMethods.find(p => p.id === selectedPayment);
     const orderCode = `SCHUB-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newOrder: Order = {
-      id: orderId,
+      id: `ord-${Date.now()}`,
       code: orderCode,
       tenantId: activeTenant?.id || 'demo',
       customerId: profile?.email || 'guest',
@@ -148,6 +148,26 @@ export default function CheckoutPage() {
       // Track Purchase Event
       logEvent({ type: 'purchase', value: finalTotal });
 
+      // TRIGGER NOTIFICATIONS
+      if (profile) {
+        addNotification({
+          userId: profile.email,
+          title: 'Đặt hàng thành công',
+          message: `Đơn hàng ${orderCode} của bạn đã được tiếp nhận và đang chờ xác nhận.`,
+          type: 'order',
+          link: '/account/orders'
+        });
+      }
+      
+      // Admin notification
+      addNotification({
+        userId: 'admin',
+        title: 'Đơn hàng mới!',
+        message: `Có đơn hàng mới ${orderCode} giá trị ${formatVND(finalTotal)}.`,
+        type: 'order',
+        link: '/admin/orders'
+      });
+
       setLoading(false);
       clearCart();
       router.push("/checkout/success");
@@ -165,7 +185,12 @@ export default function CheckoutPage() {
   };
 
   if (items.length === 0) {
-    return null;
+    return (
+      <div className="container mx-auto px-4 py-32 text-center">
+        <h2 className="text-2xl font-bold">Giỏ hàng của bạn đang trống</h2>
+        <Button className="mt-4 rounded-full" onClick={() => router.push("/products")}>Tiếp tục mua sắm</Button>
+      </div>
+    );
   }
 
   return (
