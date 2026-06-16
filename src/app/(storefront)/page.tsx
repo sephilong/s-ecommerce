@@ -3,17 +3,20 @@
 
 import { getTenantConfig } from "@/lib/tenant";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Star, ShieldCheck, Truck, ArrowRight, Zap, Ticket, Gift, Tag } from "lucide-react";
+import { Star, ShieldCheck, Truck, ArrowRight, Zap, Ticket, Gift, Tag, Check } from "lucide-react";
 import { HeroCarousel } from "@/components/layout/HeroCarousel";
 import Link from "next/link";
 import { usePromotionStore } from "@/store/promotionStore";
+import { useUserStore } from "@/store/userStore";
 import { useEffect, useState } from "react";
-import { Tenant, Product } from "@/lib/store-data";
+import { Tenant, Product, Coupon } from "@/lib/store-data";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 export default function HomePage() {
   const { promotions, coupons } = usePromotionStore();
+  const { collectCoupon, hasCollected } = useUserStore();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [flashSale, setFlashSale] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState({ h: "00", m: "00", s: "00" });
@@ -41,6 +44,22 @@ export default function HomePage() {
       return () => clearInterval(timer);
     }
   }, [promotions]);
+
+  const handleCollectVoucher = (coupon: Coupon) => {
+    if (hasCollected(coupon.id)) {
+      toast({
+        title: "Thông báo",
+        description: "Bạn đã thu thập mã giảm giá này rồi.",
+      });
+      return;
+    }
+
+    collectCoupon(coupon.id);
+    toast({
+      title: "Thành công!",
+      description: `Đã thêm mã ${coupon.code} vào ví của bạn.`,
+    });
+  };
 
   if (!tenant) return null;
 
@@ -125,22 +144,31 @@ export default function HomePage() {
             <p className="text-muted-foreground">Lưu mã để sử dụng khi thanh toán.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {coupons.filter(c => c.isActive).slice(0, 3).map(coupon => (
-              <div key={coupon.id} className="group bg-card/50 border border-white/5 p-6 rounded-3xl relative overflow-hidden hover:border-primary/50 transition-all">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                <div className="flex items-start justify-between mb-4">
-                  <div className="h-12 w-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
-                    <Tag className="w-6 h-6" />
+            {coupons.filter(c => c.isActive).slice(0, 3).map(coupon => {
+              const collected = hasCollected(coupon.id);
+              return (
+                <div key={coupon.id} className="group bg-card/50 border border-white/5 p-6 rounded-3xl relative overflow-hidden hover:border-primary/50 transition-all">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
+                      <Tag className="w-6 h-6" />
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded-full">Code: {coupon.code}</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded-full">Code: {coupon.code}</span>
-                  </div>
+                  <h3 className="text-xl font-bold mb-1">{coupon.discountType === 'percent' ? `Giảm ${coupon.discountValue}%` : `Giảm ${formatVND(coupon.discountValue)}`}</h3>
+                  <p className="text-xs text-muted-foreground mb-6 line-clamp-1">{coupon.description}</p>
+                  <Button 
+                    className={`w-full rounded-full h-10 transition-all ${collected ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' : 'group-hover:bg-primary group-hover:text-white'}`} 
+                    variant="secondary"
+                    onClick={() => handleCollectVoucher(coupon)}
+                  >
+                    {collected ? <span className="flex items-center gap-2"><Check className="w-4 h-4" /> Đã thu thập</span> : "Thu thập ngay"}
+                  </Button>
                 </div>
-                <h3 className="text-xl font-bold mb-1">{coupon.discountType === 'percent' ? `Giảm ${coupon.discountValue}%` : `Giảm ${formatVND(coupon.discountValue)}`}</h3>
-                <p className="text-xs text-muted-foreground mb-6 line-clamp-1">{coupon.description}</p>
-                <Button className="w-full rounded-full h-10 group-hover:bg-primary group-hover:text-white" variant="secondary">Thu thập ngay</Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

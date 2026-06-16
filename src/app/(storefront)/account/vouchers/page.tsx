@@ -2,28 +2,33 @@
 "use client";
 
 import { usePromotionStore } from "@/store/promotionStore";
+import { useUserStore } from "@/store/userStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Ticket, Copy, Timer } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export default function VoucherWalletPage() {
   const { coupons } = usePromotionStore();
+  const { collectedCouponIds } = useUserStore();
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
     toast({ title: "Đã sao chép", description: `Mã ${code} đã được lưu vào bộ nhớ tạm.` });
   };
 
+  const userCoupons = coupons.filter(c => collectedCouponIds.includes(c.id) && c.isActive);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h1 className="text-3xl font-bold font-headline">Ví Voucher</h1>
-        <p className="text-muted-foreground">Danh sách các mã giảm giá dành riêng cho bạn.</p>
+        <p className="text-muted-foreground">Danh sách các mã giảm giá bạn đã thu thập.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {coupons.filter(c => c.isActive).map((coupon) => (
+        {userCoupons.map((coupon) => (
           <Card key={coupon.id} className="bg-card/50 border-white/5 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-2 h-full bg-primary" />
             <CardHeader className="pb-2">
@@ -49,16 +54,21 @@ export default function VoucherWalletPage() {
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
                 <Timer className="w-3 h-3" /> HSD: Không thời hạn
               </div>
-              <Button size="sm" className="rounded-full text-[10px] font-bold h-8 px-4">Dùng ngay</Button>
+              <Button asChild size="sm" className="rounded-full text-[10px] font-bold h-8 px-4">
+                <Link href="/products">Dùng ngay</Link>
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {coupons.length === 0 && (
-        <div className="text-center py-20 bg-muted/20 rounded-3xl border border-dashed border-white/10">
+      {userCoupons.length === 0 && (
+        <div className="text-center py-20 bg-muted/20 rounded-3xl border border-dashed border-white/10 space-y-4">
           <Ticket className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
           <p className="text-muted-foreground">Ví của bạn hiện chưa có voucher nào.</p>
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href="/">Khám phá ưu đãi</Link>
+          </Button>
         </div>
       )}
     </div>
