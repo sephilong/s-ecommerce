@@ -18,14 +18,9 @@ import {
   UserCheck,
   Rocket,
   Palette,
-  ShieldCheck,
   Globe,
-  Bell,
-  Activity,
-  UserCog,
   TrendingUp,
-  FileText,
-  Briefcase
+  Newspaper
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -58,6 +53,7 @@ export function AdminSidebar() {
       items: [
         { name: "Sản phẩm hệ thống", icon: <Package />, href: "/admin/products" },
         { name: "Banner & Slides", icon: <ImageIcon />, href: "/admin/banners" },
+        { name: "Quản lý Blog", icon: <Newspaper />, href: "/admin/blog" },
         { name: "Đơn hàng toàn sàn", icon: <ShoppingCart />, href: "/admin/orders" },
       ]
     },
