@@ -7,6 +7,7 @@ import { useOrderStore, Order } from "@/store/orderStore";
 import { useUserStore } from "@/store/userStore";
 import { usePromotionStore } from "@/store/promotionStore";
 import { useAffiliateStore } from "@/store/affiliateStore";
+import { useAnalyticsStore } from "@/store/analyticsStore";
 import { formatVND } from "@/lib/currency";
 import { calculateDiscount, DiscountResult } from "@/lib/promotion-engine";
 import { Button } from "@/components/ui/button";
@@ -25,13 +26,12 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const { paymentMethods, shippingMethods } = useConfigStore();
   const { addOrder } = useOrderStore();
-  const { profile, updateProfile } = useUserStore();
+  const { profile } = useUserStore();
   const { promotions, coupons, loyaltyConfig } = usePromotionStore();
-  const { addConversion } = useAffiliateStore();
+  const logEvent = useAnalyticsStore((state) => state.logEvent);
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [showSandbox, setShowSandbox] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<string>("");
   const [selectedShipping, setSelectedShipping] = useState<string>("");
   const [couponCode, setCouponCode] = useState("");
@@ -51,19 +51,23 @@ export default function CheckoutPage() {
     });
     
     const resolveTenant = async () => {
-      const subdomain = window.location.host.split('.')[0] || "demo";
+      const host = typeof window !== 'undefined' ? window.location.host : "demo";
+      const subdomain = host.split('.')[0] || "demo";
       const tenant = await getTenantConfig(subdomain);
       setActiveTenant(tenant);
     };
     resolveTenant();
-  }, [profile]);
+
+    // Track Begin Checkout
+    logEvent({ type: 'begin_checkout', value: totalPrice() });
+  }, [profile, logEvent, totalPrice]);
 
   useEffect(() => {
     const activePMs = paymentMethods.filter(p => p.isActive);
     const activeSMs = shippingMethods.filter(s => s.isActive);
     if (activePMs.length > 0 && !selectedPayment) setSelectedPayment(activePMs[0].id);
     if (activeSMs.length > 0 && !selectedShipping) setSelectedShipping(activeSMs[0].id);
-  }, [paymentMethods, shippingMethods]);
+  }, [paymentMethods, shippingMethods, selectedPayment, selectedShipping]);
 
   const currentShipping = shippingMethods.find(s => s.id === selectedShipping);
   const shippingFee = currentShipping?.price || 0;
@@ -104,7 +108,6 @@ export default function CheckoutPage() {
       code: orderCode,
       tenantId: activeTenant?.id || 'demo',
       customerId: profile?.email || 'guest',
-      vendorId: 'system', // Default to platform
       
       items: items.map(i => ({ 
         productId: i.product.id,
@@ -135,14 +138,16 @@ export default function CheckoutPage() {
       total: finalTotal,
       
       appliedCouponCode: appliedCoupon?.code,
-      pointsEarned: discountResult.potentialPoints,
-      
       status: 'created',
       createdAt: new Date().toISOString()
     };
 
     setTimeout(() => {
       addOrder(newOrder);
+      
+      // Track Purchase Event
+      logEvent({ type: 'purchase', value: finalTotal });
+
       setLoading(false);
       clearCart();
       router.push("/checkout/success");
@@ -159,14 +164,13 @@ export default function CheckoutPage() {
     }
   };
 
-  if (items.length === 0 && !showSandbox) {
-    router.push("/cart");
+  if (items.length === 0) {
     return null;
   }
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold font-headline mb-12 text-center italic tracking-tighter">THANH TOÁN ĐƠN HÀNG</h1>
+      <h1 className="text-4xl font-bold font-headline mb-12 text-center italic tracking-tighter uppercase">THANH TOÁN ĐƠN HÀNG</h1>
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
         <div className="space-y-12">
           <section className="space-y-6">
@@ -271,3 +275,5 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}

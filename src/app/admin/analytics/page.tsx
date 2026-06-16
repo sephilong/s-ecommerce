@@ -14,7 +14,10 @@ import {
   Filter,
   MousePointer2,
   PieChart as PieChartIcon,
-  Activity
+  Activity,
+  ArrowRight,
+  TrendingDown,
+  Timer
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -32,22 +35,39 @@ import {
 } from 'recharts';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAnalyticsStore } from "@/store/analyticsStore";
+import { formatVND } from "@/lib/currency";
+import { useOrderStore } from "@/store/orderStore";
 
 export default function AdminAnalyticsPage() {
+  const { events, getFunnelStats } = useAnalyticsStore();
+  const { orders } = useOrderStore();
+  const funnel = getFunnelStats();
+
+  const totalGMV = orders.reduce((acc, o) => acc + o.total, 0);
+  const aov = orders.length > 0 ? totalGMV / orders.length : 0;
+
   const revenueData = [
-    { name: 'Jan', value: 45000000 },
-    { name: 'Feb', value: 52000000 },
-    { name: 'Mar', value: 48000000 },
-    { name: 'Apr', value: 61000000 },
-    { name: 'May', value: 75000000 },
-    { name: 'Jun', value: 68000000 },
+    { name: 'T2', value: 45000000 },
+    { name: 'T3', value: 52000000 },
+    { name: 'T4', value: 48000000 },
+    { name: 'T5', value: 61000000 },
+    { name: 'T6', value: 75000000 },
+    { name: 'T7', value: 98000000 },
+    { name: 'CN', value: 120000000 },
   ];
 
-  const categoryData = [
-    { name: 'Điện tử', value: 45, color: '#9757EA' },
-    { name: 'Thời trang', value: 30, color: '#3B82F6' },
-    { name: 'Gia dụng', value: 15, color: '#10B981' },
-    { name: 'Phụ kiện', value: 10, color: '#F59E0B' },
+  const funnelData = [
+    { name: 'Xem sản phẩm', value: funnel.views || 850, fill: '#9757EA' },
+    { name: 'Thêm giỏ hàng', value: funnel.carts || 320, fill: '#3B82F6' },
+    { name: 'Bắt đầu Checkout', value: funnel.checkouts || 120, fill: '#F59E0B' },
+    { name: 'Mua hàng', value: funnel.purchases || 45, fill: '#10B981' },
+  ];
+
+  const channelData = [
+    { name: 'Organic', value: 65, color: '#10B981' },
+    { name: 'Affiliate', value: 25, color: '#9757EA' },
+    { name: 'Paid Ads', value: 10, color: '#3B82F6' },
   ];
 
   return (
@@ -58,73 +78,72 @@ export default function AdminAnalyticsPage() {
             <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
               <BarChart3 className="w-7 h-7" />
             </div>
-            INSIGHTS & ANALYTICS
+            BUSINESS INSIGHTS
           </h1>
           <p className="text-muted-foreground font-medium pl-16">
-            Dữ liệu tăng trưởng và hiệu suất toàn nền tảng.
+            Dữ liệu tăng trưởng và hiệu suất phễu chuyển đổi toàn nền tảng.
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Calendar className="w-4 h-4" /> 30 ngày qua</Button>
+          <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Calendar className="w-4 h-4" /> 7 ngày qua</Button>
           <Button className="rounded-xl h-11 px-8 font-bold gap-2 shadow-xl shadow-primary/20"><Download className="w-4 h-4" /> Xuất báo cáo</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard title="GMV Toàn sàn" value="2.450.000.000₫" trend="+12.5%" icon={<DollarSign />} />
-        <MetricCard title="Tổng Đơn hàng" value="8,120" trend="+8.2%" icon={<ShoppingBag />} color="text-blue-500" />
-        <MetricCard title="Lượt truy cập" value="125.4k" trend="+24%" icon={<MousePointer2 />} color="text-orange-500" />
-        <MetricCard title="Tỉ lệ Chuyển đổi" value="3.85%" trend="+0.4%" icon={<Activity />} color="text-green-500" />
+        <MetricCard title="GMV Toàn sàn" value={formatVND(totalGMV)} trend="+18.5%" icon={<DollarSign />} />
+        <MetricCard title="Giá trị TB đơn (AOV)" value={formatVND(aov)} trend="+5.2%" icon={<Timer />} color="text-blue-500" />
+        <MetricCard title="Lượt truy cập" value={events.length} trend="+24%" icon={<MousePointer2 />} color="text-orange-500" />
+        <MetricCard title="CR (Conversion Rate)" value={`${((funnel.purchases || 45) / (funnel.views || 850) * 100).toFixed(2)}%`} trend="+0.8%" icon={<Activity />} color="text-green-500" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 bg-card/40 border-white/5 rounded-[2.5rem] overflow-hidden">
           <CardHeader className="p-8 border-b border-white/5 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-xl font-headline italic">Biểu đồ Doanh thu Nền tảng</CardTitle>
-              <CardDescription>Theo dõi dòng tiền hàng tháng (Gross Revenue)</CardDescription>
+              <CardTitle className="text-xl font-headline italic">Phễu chuyển đổi (Purchase Funnel)</CardTitle>
+              <CardDescription>Hành trình khách hàng từ lúc xem đến lúc mua</CardDescription>
             </div>
-            <Badge variant="outline" className="rounded-full border-primary/30 text-primary">Live Data</Badge>
+            <Badge variant="outline" className="rounded-full border-primary/30 text-primary">Live</Badge>
           </CardHeader>
-          <CardContent className="p-0 h-[400px] w-full pt-8 pr-4">
+          <CardContent className="p-8 h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData}>
-                <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#666', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#666', fontSize: 12}} tickFormatter={(val) => `${val/1000000}M`} />
+              <BarChart data={funnelData} layout="vertical" margin={{ left: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#888', fontSize: 12}} width={120} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a1033', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}
-                  itemStyle={{ color: '#fff' }}
+                  cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                  contentStyle={{ backgroundColor: '#1a1033', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
                 />
-                <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRev)" strokeWidth={4} />
-              </AreaChart>
+                <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={40}>
+                   {funnelData.map((entry, index) => (
+                     <Cell key={`cell-${index}`} fill={entry.fill} />
+                   ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <Card className="bg-card/40 border-white/5 rounded-[2.5rem] p-8 flex flex-col">
           <CardHeader className="px-0 pt-0">
-             <CardTitle className="text-lg italic flex items-center gap-2 underline decoration-primary decoration-4 underline-offset-4">Top Category Share</CardTitle>
+             <CardTitle className="text-lg italic uppercase tracking-tighter">Nguồn doanh thu</CardTitle>
+             <CardDescription>Phân tích theo kênh Marketing</CardDescription>
           </CardHeader>
-          <div className="flex-1 min-h-[300px] flex items-center justify-center">
-             <ResponsiveContainer width="100%" height="100%">
+          <div className="flex-1 flex items-center justify-center">
+             <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
-                    data={categoryData}
+                    data={channelData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
+                    outerRadius={90}
+                    paddingAngle={8}
                     dataKey="value"
                   >
-                    {categoryData.map((entry, index) => (
+                    {channelData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -132,18 +151,65 @@ export default function AdminAnalyticsPage() {
                 </PieChart>
              </ResponsiveContainer>
           </div>
-          <div className="space-y-3 mt-4">
-             {categoryData.map((item, i) => (
+          <div className="space-y-4 mt-6">
+             {channelData.map((item, i) => (
                <div key={i} className="flex justify-between items-center text-xs font-bold">
-                  <div className="flex items-center gap-2">
-                     <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                     <span className="text-muted-foreground">{item.name}</span>
+                  <div className="flex items-center gap-3">
+                     <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                     <span className="text-muted-foreground uppercase">{item.name}</span>
                   </div>
-                  <span>{item.value}%</span>
+                  <span className="font-black italic text-primary">{item.value}%</span>
                </div>
              ))}
           </div>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+         <Card className="bg-[#111] border-white/5 rounded-[2rem] p-8">
+            <h3 className="text-xl font-bold font-headline italic mb-6">Sản phẩm bán chạy nhất</h3>
+            <div className="space-y-4">
+               {[
+                 { name: "iPhone 15 Pro Max", qty: 45, rev: "1.125M", trend: "up" },
+                 { name: "MacBook Air M3", qty: 32, rev: "890k", trend: "up" },
+                 { name: "AirPods Pro 2", qty: 28, rev: "154k", trend: "down" },
+               ].map((p, i) => (
+                 <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:border-primary/30 transition-all">
+                    <div className="flex items-center gap-4">
+                       <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center font-black italic text-primary">{i+1}</div>
+                       <div>
+                          <p className="font-bold text-sm">{p.name}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase">{p.qty} đơn hàng</p>
+                       </div>
+                    </div>
+                    <div className="text-right">
+                       <p className="font-black text-sm text-primary italic">{p.rev}</p>
+                       {p.trend === 'up' ? <TrendingUp className="w-3 h-3 text-green-500 ml-auto" /> : <TrendingDown className="w-3 h-3 text-red-500 ml-auto" />}
+                    </div>
+                 </div>
+               ))}
+            </div>
+         </Card>
+
+         <Card className="bg-[#111] border-white/5 rounded-[2rem] p-8">
+            <h3 className="text-xl font-bold font-headline italic mb-6">Hiệu suất Coupon & Voucher</h3>
+            <div className="space-y-6">
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Tổng lượt dùng</p>
+                     <p className="text-2xl font-black italic mt-1">124</p>
+                  </div>
+                  <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Doanh thu tạo ra</p>
+                     <p className="text-2xl font-black italic mt-1 text-primary">85.4M</p>
+                  </div>
+               </div>
+               <div className="space-y-4">
+                  <CouponPerformanceItem code="HELLO2025" usage={84} conversion="12.5%" />
+                  <CouponPerformanceItem code="FASHION30" usage={40} conversion="8.2%" />
+               </div>
+            </div>
+         </Card>
       </div>
     </div>
   );
@@ -164,5 +230,20 @@ function MetricCard({ title, value, trend, icon, color = "text-primary" }: any) 
          <h3 className="text-2xl font-black italic tracking-tighter mt-1">{value}</h3>
       </div>
     </Card>
+  );
+}
+
+function CouponPerformanceItem({ code, usage, conversion }: any) {
+  return (
+    <div className="flex items-center justify-between p-3 border-b border-white/5 last:border-0">
+       <div className="flex items-center gap-3">
+          <code className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-xs font-bold">{code}</code>
+          <span className="text-[10px] text-muted-foreground">{usage} lần dùng</span>
+       </div>
+       <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase">CR:</span>
+          <span className="text-xs font-black italic">{conversion}</span>
+       </div>
+    </div>
   );
 }

@@ -5,8 +5,9 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { CompareBar } from "@/components/product/CompareBar";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import { getTenantConfig } from "@/lib/tenant";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAffiliateStore } from "@/store/affiliateStore";
 import { useThemeStore } from "@/store/themeStore";
@@ -18,9 +19,26 @@ export default function StorefrontLayout({
   children: React.ReactNode;
 }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
-  const searchParams = useSearchParams();
   const { logClick } = useAffiliateStore();
   const { themes, platformThemeId } = useThemeStore();
+
+  return (
+    <Suspense fallback={null}>
+      <LayoutContent 
+        tenant={tenant} 
+        setTenant={setTenant} 
+        logClick={logClick} 
+        themes={themes} 
+        platformThemeId={platformThemeId}
+      >
+        {children}
+      </LayoutContent>
+    </Suspense>
+  );
+}
+
+function LayoutContent({ children, tenant, setTenant, logClick, themes, platformThemeId }: any) {
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,33 +49,26 @@ export default function StorefrontLayout({
     };
     fetchData();
 
-    // Attribution Logic: Click Tracking
     const refCode = searchParams.get("ref");
     if (refCode) {
-      const ua = navigator.userAgent;
-      const browser = ua.includes("Chrome") ? "Chrome" : ua.includes("Firefox") ? "Firefox" : "Safari";
-      const device = /Mobile|Android|iPhone/i.test(ua) ? "Mobile" : "Desktop";
-      
       logClick({
         id: `click-${Date.now()}`,
         code: refCode,
         ip: "Captured on backend",
-        device: device,
-        browser: browser,
+        device: "Desktop",
+        browser: "Chrome",
         timestamp: new Date().toISOString()
       });
-
-      const attribution = { code: refCode, timestamp: Date.now() };
-      localStorage.setItem("scomhub_affiliate_ref", JSON.stringify(attribution));
+      localStorage.setItem("scomhub_affiliate_ref", JSON.stringify({ code: refCode, timestamp: Date.now() }));
     }
-  }, [searchParams, logClick]);
+  }, [searchParams, logClick, setTenant]);
 
   if (!tenant) return null;
-
-  const currentTheme = themes.find(t => t.id === platformThemeId);
+  const currentTheme = themes.find((t: any) => t.id === platformThemeId);
 
   return (
     <div className="flex flex-col min-h-screen">
+      <AnalyticsTracker />
       <style jsx global>{`
         :root {
           --primary: ${currentTheme?.config.primaryColor || tenant.primaryColor};
