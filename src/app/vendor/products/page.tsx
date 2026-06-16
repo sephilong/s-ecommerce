@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useVendorStore } from "@/store/vendorStore";
+import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,9 @@ import {
   CheckCircle2, 
   XCircle,
   Package,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertCircle,
+  ArrowRight
 } from "lucide-react";
 import {
   Dialog,
@@ -34,25 +37,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function VendorProductsPage() {
-  const { vendorProducts, addVendorProduct, deleteVendorProduct } = useVendorStore();
+  const { profile } = useUserStore();
+  const { getVendorByUserId, vendorProducts, addVendorProduct, deleteVendorProduct } = useVendorStore();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const vendor = profile ? getVendorByUserId(profile.email) : null;
+  const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
+
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!vendor) {
+      toast({ title: "Lỗi", description: "Không tìm thấy thông tin nhà bán hàng.", variant: "destructive" });
+      return;
+    }
+
     const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const productName = formData.get('name') as string;
     
     const newProduct = {
       id: `v-prod-${Date.now()}`,
-      vendorId: "v-1", // Demo vendor
-      name: formData.get('name'),
+      vendorId: vendor.id, // Đã sửa: Sử dụng ID động của vendor đang đăng nhập
+      name: productName,
       price: parseInt(formData.get('price') as string),
       category: formData.get('category'),
       description: formData.get('description'),
-      image: "https://picsum.photos/seed/vprod/600/600",
-      slug: (formData.get('name') as string).toLowerCase().replace(/\s+/g, '-'),
+      image: `https://picsum.photos/seed/${Date.now()}/600/600`,
+      slug: productName.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
       inStock: true,
       createdAt: new Date().toISOString(),
       status: 'pending'
@@ -128,75 +142,105 @@ export default function VendorProductsPage() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <StatCard label="Tổng sản phẩm" value={vendorProducts.length} icon={<Package />} color="text-primary" />
-        <StatCard label="Đang hiển thị" value={vendorProducts.filter(p => p.status === 'approved').length} icon={<CheckCircle2 />} color="text-green-500" />
-        <StatCard label="Đang chờ duyệt" value={vendorProducts.filter(p => p.status === 'pending').length} icon={<Clock />} color="text-orange-500" />
-        <StatCard label="Bị từ chối" value={vendorProducts.filter(p => p.status === 'rejected').length} icon={<XCircle />} color="text-red-500" />
-      </div>
+      {myProducts.length === 0 ? (
+        <Card className="bg-primary/5 border-dashed border-primary/20 rounded-[2rem] p-12 text-center space-y-6">
+          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Package className="w-10 h-10 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Chào mừng bạn đến với Marketplace!</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">Bạn chưa có sản phẩm nào trong kho hàng. Hãy bắt đầu bằng cách thêm sản phẩm đầu tiên của bạn để Admin phê duyệt.</p>
+          </div>
+          <Button onClick={() => setIsAddOpen(true)} className="rounded-full px-8 h-12 font-bold gap-2">
+            <Plus className="w-4 h-4" /> Đăng sản phẩm ngay
+          </Button>
+        </Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <StatCard label="Sản phẩm của tôi" value={myProducts.length} icon={<Package />} color="text-primary" />
+            <StatCard label="Đang hiển thị" value={myProducts.filter(p => p.status === 'approved').length} icon={<CheckCircle2 />} color="text-green-500" />
+            <StatCard label="Chờ duyệt" value={myProducts.filter(p => p.status === 'pending').length} icon={<Clock />} color="text-orange-500" />
+            <StatCard label="Bị từ chối" value={myProducts.filter(p => p.status === 'rejected').length} icon={<XCircle />} color="text-red-500" />
+          </div>
 
-      <Card className="bg-[#151515] border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-        <CardHeader className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between gap-4">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Tìm kiếm trong kho hàng..." 
-              className="pl-10 h-11 rounded-xl bg-background/50 border-white/10" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc</Button>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/20 border-b border-white/5">
-                <tr className="text-left">
-                  <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Sản phẩm</th>
-                  <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Phân loại</th>
-                  <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Giá bán</th>
-                  <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Trạng thái</th>
-                  <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Ngày đăng</th>
-                  <th className="p-6"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {vendorProducts.length > 0 ? vendorProducts.map((p) => (
-                  <tr key={p.id} className="hover:bg-white/5 transition-colors group">
-                    <td className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/10">
-                          <Image src={p.image} alt={p.name} width={48} height={48} className="object-cover h-full w-full" />
-                        </div>
-                        <div className="font-bold text-base group-hover:text-primary transition-colors">{p.name}</div>
-                      </div>
-                    </td>
-                    <td className="p-6 text-muted-foreground">{p.category}</td>
-                    <td className="p-6 font-black">{formatVND(p.price)}</td>
-                    <td className="p-6">
-                      <Badge variant={p.status === 'approved' ? 'default' : p.status === 'rejected' ? 'destructive' : 'secondary'} className="rounded-full">
-                        {p.status === 'approved' ? 'Đang bán' : p.status === 'pending' ? 'Chờ duyệt' : 'Bị từ chối'}
-                      </Badge>
-                    </td>
-                    <td className="p-6 text-muted-foreground text-xs">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
-                    <td className="p-6 text-right">
-                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary"><Edit2 className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => deleteVendorProduct(p.id)}><Trash2 className="w-4 h-4" /></Button>
-                       </div>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={6} className="p-20 text-center text-muted-foreground italic">Kho hàng của bạn hiện đang trống.</td>
-                  </tr>
+          <Card className="bg-[#151515] border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+            <CardHeader className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between gap-4">
+              <div className="relative w-full md:w-96">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Tìm kiếm trong kho hàng..." 
+                  className="pl-10 h-11 rounded-xl bg-background/50 border-white/10" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc</Button>
+                {vendor && (
+                  <Button asChild variant="secondary" className="rounded-xl h-11 gap-2">
+                    <Link href={`/shop/${vendor.storeSlug}`} target="_blank">Xem Shop <ArrowRight className="w-4 h-4" /></Link>
+                  </Button>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/20 border-b border-white/5">
+                    <tr className="text-left">
+                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Sản phẩm</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Phân loại</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Giá bán</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Trạng thái</th>
+                      <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Ngày đăng</th>
+                      <th className="p-6"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {myProducts.map((p) => (
+                      <tr key={p.id} className="hover:bg-white/5 transition-colors group">
+                        <td className="p-6">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/10">
+                              <Image src={p.image} alt={p.name} width={48} height={48} className="object-cover h-full w-full" />
+                            </div>
+                            <div className="font-bold text-base group-hover:text-primary transition-colors">{p.name}</div>
+                          </div>
+                        </td>
+                        <td className="p-6 text-muted-foreground">{p.category}</td>
+                        <td className="p-6 font-black">{formatVND(p.price)}</td>
+                        <td className="p-6">
+                          <Badge variant={p.status === 'approved' ? 'default' : p.status === 'pending' ? 'secondary' : 'destructive'} className="rounded-full">
+                            {p.status === 'approved' ? 'Đang bán' : p.status === 'pending' ? 'Chờ duyệt' : 'Bị từ chối'}
+                          </Badge>
+                        </td>
+                        <td className="p-6 text-muted-foreground text-xs">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</td>
+                        <td className="p-6 text-right">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary"><Edit2 className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => deleteVendorProduct(p.id)}><Trash2 className="w-4 h-4" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {myProducts.some(p => p.status === 'pending') && (
+            <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-6 flex items-start gap-4">
+               <AlertCircle className="w-6 h-6 text-orange-500 shrink-0 mt-0.5" />
+               <div className="space-y-1">
+                  <h4 className="font-bold text-orange-500">Sản phẩm đang chờ phê duyệt</h4>
+                  <p className="text-sm text-muted-foreground">Admin sẽ kiểm tra nội dung và hình ảnh sản phẩm của bạn trong vòng 24h. Sau khi được duyệt, sản phẩm sẽ tự động xuất hiện trên gian hàng thực tế.</p>
+               </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
