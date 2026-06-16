@@ -92,16 +92,19 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           </div>
           
           <div className="flex items-center gap-4">
+             {/* Nút Đăng sản phẩm mới tại Header */}
              <Button variant="outline" size="sm" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/10" asChild>
                 <Link href="/vendor/products?add=true">
                   <Plus className="w-4 h-4" /> 
                   <span className="hidden sm:inline">Đăng sản phẩm mới</span>
                 </Link>
              </Button>
+
              <Button variant="ghost" size="icon" className="rounded-full bg-white/5 h-10 w-10 relative">
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
              </Button>
+             
              <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs">
                 {vendor?.storeName.substring(0, 2).toUpperCase() || 'VB'}
              </div>

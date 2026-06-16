@@ -22,7 +22,8 @@ import {
   Package,
   Image as ImageIcon,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Store
 } from "lucide-react";
 import {
   Dialog,
@@ -42,7 +43,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function VendorProductsPage() {
   return (
-    <Suspense fallback={<div>Đang tải kho hàng...</div>}>
+    <Suspense fallback={<div className="p-12 text-center">Đang tải kho hàng...</div>}>
       <ProductsContent />
     </Suspense>
   );
@@ -58,7 +59,7 @@ function ProductsContent() {
   const vendor = profile ? getVendorByUserId(profile.email) : null;
   const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
 
-  // Tự động mở form nếu có param ?add=true
+  // Logic: Tự động mở form nếu có param ?add=true từ Header
   useEffect(() => {
     if (searchParams.get("add") === "true") {
       setIsAddOpen(true);
@@ -96,84 +97,101 @@ function ProductsContent() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <h1 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Quản lý Kho hàng</h1>
           <p className="text-muted-foreground">Tự do đăng bán và quản lý danh mục sản phẩm của bạn.</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="rounded-full h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20">
-              <Plus className="w-5 h-5" /> Đăng sản phẩm mới
+        
+        <div className="flex gap-3">
+          {vendor && (
+            <Button asChild variant="outline" className="rounded-full h-12 px-6 border-white/10 gap-2">
+              <Link href={`/shop/${vendor.storeSlug}`} target="_blank">
+                <Store className="w-4 h-4" /> Xem Shop thực tế
+              </Link>
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <form onSubmit={handleAddProduct}>
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-headline italic">ĐĂNG SẢN PHẨM MỚI</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6 py-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Tên sản phẩm</Label>
-                    <Input name="name" placeholder="VD: iPhone 15 Pro Max..." required className="h-11 rounded-xl" />
+          )}
+          
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="rounded-full h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20">
+                <Plus className="w-5 h-5" /> Đăng sản phẩm mới
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <form onSubmit={handleAddProduct}>
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-headline italic">ĐĂNG SẢN PHẨM MỚI</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 py-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Tên sản phẩm</Label>
+                      <Input name="name" placeholder="VD: iPhone 15 Pro Max..." required className="h-11 rounded-xl" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Danh mục</Label>
+                      <Select name="category" defaultValue="Điện tử">
+                        <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Điện tử">Điện tử</SelectItem>
+                          <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
+                          <SelectItem value="Gia dụng">Gia dụng</SelectItem>
+                          <SelectItem value="Thời trang">Thời trang</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Giá bán (VNĐ)</Label>
+                      <Input name="price" type="number" placeholder="25000000" required className="h-11 rounded-xl" />
+                    </div>
+                     <div className="space-y-2">
+                      <Label>Tồn kho ban đầu</Label>
+                      <Input name="stock" type="number" defaultValue="10" className="h-11 rounded-xl" />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Danh mục</Label>
-                    <Select name="category" defaultValue="Điện tử">
-                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Điện tử">Điện tử</SelectItem>
-                        <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
-                        <SelectItem value="Gia dụng">Gia dụng</SelectItem>
-                        <SelectItem value="Thời trang">Thời trang</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Mô tả chi tiết</Label>
+                    <Textarea name="description" placeholder="Thông tin chi tiết, cấu hình sản phẩm..." className="min-h-[120px] rounded-xl" />
+                  </div>
+                  <div className="p-8 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-2 cursor-pointer hover:bg-white/10 transition-colors">
+                    <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto" />
+                    <p className="text-sm font-bold">Tải lên hình ảnh sản phẩm</p>
+                    <p className="text-[10px] text-muted-foreground italic">Hỗ trợ JPG, PNG, WEBP (Max 2MB)</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Giá bán (VNĐ)</Label>
-                    <Input name="price" type="number" placeholder="25000000" required className="h-11 rounded-xl" />
-                  </div>
-                   <div className="space-y-2">
-                    <Label>Tồn kho ban đầu</Label>
-                    <Input name="stock" type="number" defaultValue="10" className="h-11 rounded-xl" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Mô tả chi tiết</Label>
-                  <Textarea name="description" placeholder="Thông tin chi tiết, cấu hình sản phẩm..." className="min-h-[120px] rounded-xl" />
-                </div>
-                <div className="p-8 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-2 cursor-pointer hover:bg-white/10 transition-colors">
-                  <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto" />
-                  <p className="text-sm font-bold">Tải lên hình ảnh sản phẩm</p>
-                  <p className="text-[10px] text-muted-foreground italic">Hỗ trợ JPG, PNG, WEBP (Max 2MB)</p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/30">Gửi duyệt sản phẩm</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <DialogFooter>
+                  <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/30">Gửi duyệt sản phẩm</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
+      {/* Giao diện Chào mừng (Empty State) khi chưa có sản phẩm */}
       {myProducts.length === 0 ? (
-        <Card className="bg-primary/5 border-dashed border-primary/20 rounded-[2rem] p-12 text-center space-y-6">
-          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-            <Package className="w-10 h-10 text-primary" />
+        <Card className="bg-primary/5 border-dashed border-primary/20 rounded-[2.5rem] p-12 text-center space-y-6 mt-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none" />
+          <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto relative z-10">
+            <Package className="w-12 h-12 text-primary" />
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold font-headline italic">CHƯA CÓ SẢN PHẨM NÀO</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">Hãy bắt đầu hành trình kinh doanh bằng cách đăng sản phẩm đầu tiên của bạn để Admin phê duyệt.</p>
+          <div className="space-y-2 relative z-10">
+            <h2 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Chào mừng người bán mới!</h2>
+            <p className="text-muted-foreground max-w-md mx-auto text-lg leading-relaxed">
+              Gian hàng của bạn hiện đang trống. Hãy bắt đầu hành trình bứt phá doanh thu bằng cách đăng sản phẩm đầu tiên ngay bây giờ.
+            </p>
           </div>
-          <Button onClick={() => setIsAddOpen(true)} size="lg" className="rounded-full px-12 h-14 font-bold gap-3 shadow-2xl shadow-primary/40">
+          <Button onClick={() => setIsAddOpen(true)} size="lg" className="rounded-full px-12 h-16 font-bold gap-3 shadow-2xl shadow-primary/40 relative z-10 text-lg">
             <Plus className="w-6 h-6" /> Đăng sản phẩm đầu tiên
           </Button>
         </Card>
       ) : (
         <>
+          {/* Dashboard Stats */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <StatCard label="Sản phẩm của tôi" value={myProducts.length} icon={<Package />} color="text-primary" />
             <StatCard label="Đang hiển thị" value={myProducts.filter(p => p.status === 'approved').length} icon={<CheckCircle2 />} color="text-green-500" />
@@ -181,6 +199,7 @@ function ProductsContent() {
             <StatCard label="Bị từ chối" value={myProducts.filter(p => p.status === 'rejected').length} icon={<XCircle />} color="text-red-500" />
           </div>
 
+          {/* Product Table */}
           <Card className="bg-[#151515] border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
             <CardHeader className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between gap-4">
               <div className="relative w-full md:w-96">
@@ -194,11 +213,6 @@ function ProductsContent() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc</Button>
-                {vendor && (
-                  <Button asChild variant="secondary" className="rounded-xl h-11 gap-2">
-                    <Link href={`/shop/${vendor.storeSlug}`} target="_blank">Xem Shop <ArrowRight className="w-4 h-4" /></Link>
-                  </Button>
-                )}
               </div>
             </CardHeader>
             <CardContent className="p-0">
