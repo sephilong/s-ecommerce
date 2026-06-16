@@ -30,7 +30,8 @@ import {
   ExternalLink,
   Loader2,
   FileSpreadsheet,
-  Upload
+  Upload,
+  Download
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -117,11 +118,18 @@ export default function VendorOnboardingPage() {
     toast({ title: "Đã đăng sản phẩm!", description: "Sản phẩm đang chờ Admin phê duyệt." });
   };
 
+  const handleDownloadTemplate = () => {
+    toast({ 
+      title: "Đang tải mẫu Excel", 
+      description: "File 'SComHub_Product_Template.xlsx' đang được chuẩn bị..." 
+    });
+    // In a real app, this would trigger a window.location.href or direct file download
+  };
+
   const handleImportExcel = () => {
     if (!vendor) return;
     setLoading(true);
     
-    // Giả lập xử lý file Excel
     setTimeout(() => {
       const mockImported = [
         { id: `imp-1-${Date.now()}`, name: "Sản phẩm Excel 1", price: 150000, category: "Điện tử" },
@@ -216,7 +224,13 @@ export default function VendorOnboardingPage() {
                                <p className="font-bold">Nhấn để chọn hoặc kéo thả file</p>
                                <p className="text-xs text-muted-foreground">Hỗ trợ định dạng .xlsx, .csv (Max 5MB)</p>
                             </div>
-                            <Button variant="link" className="text-xs text-primary underline">Tải file Excel mẫu tại đây</Button>
+                            <Button 
+                              variant="link" 
+                              className="text-xs text-primary underline flex items-center gap-1 mx-auto"
+                              onClick={handleDownloadTemplate}
+                            >
+                              <Download className="w-3 h-3" /> Tải file Excel mẫu tại đây
+                            </Button>
                          </div>
                          <DialogFooter>
                             <Button className="w-full rounded-xl h-12 font-bold" onClick={handleImportExcel} disabled={loading}>

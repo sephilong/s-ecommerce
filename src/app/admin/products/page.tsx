@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
@@ -17,7 +17,11 @@ import {
   Store,
   Filter,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  FileSpreadsheet,
+  Upload,
+  Download,
+  Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,16 +45,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogDescription
+  DialogDescription,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function AdminProductsPage() {
-  const { vendorProducts, approveProduct, rejectProduct } = useVendorStore();
+  const { vendorProducts, approveProduct, rejectProduct, addVendorProduct } = useVendorStore();
   const [products, setProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -82,6 +89,40 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    toast({ 
+      title: "Đang tải mẫu Admin", 
+      description: "File 'SComHub_Admin_Inventory.xlsx' đang được tải xuống..." 
+    });
+  };
+
+  const handleImportExcel = () => {
+    setLoading(true);
+    setTimeout(() => {
+      const mockImported = [
+        { id: `sys-imp-1`, name: "Sản phẩm Hệ thống mới 1", price: 1500000, category: "Điện tử" },
+        { id: `sys-imp-2`, name: "Sản phẩm Hệ thống mới 2", price: 2500000, category: "Thời trang" },
+      ];
+
+      mockImported.forEach(p => {
+        addVendorProduct({
+          ...p,
+          vendorId: 'system',
+          description: "Sản phẩm hệ thống được nhập hàng loạt.",
+          image: `https://picsum.photos/seed/${p.id}/600/600`,
+          slug: p.name.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
+          inStock: true,
+          createdAt: new Date().toISOString(),
+          status: 'approved'
+        });
+      });
+
+      setLoading(false);
+      setIsImportOpen(false);
+      toast({ title: "Thành công", description: `Đã nhập ${mockImported.length} sản phẩm hệ thống.` });
+    }, 2000);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -89,9 +130,41 @@ export default function AdminProductsPage() {
           <h1 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Hệ thống Sản phẩm</h1>
           <p className="text-muted-foreground">Kiểm soát chất lượng hàng hóa trên toàn bộ nền tảng.</p>
         </div>
-        <Button className="rounded-full h-11 px-8 font-bold gap-2">
-          <Plus className="w-4 h-4" /> Thêm SP Hệ thống
-        </Button>
+        <div className="flex gap-3">
+          <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="rounded-full h-11 px-6 font-bold gap-2 border-primary/30 text-primary">
+                <FileSpreadsheet className="w-4 h-4" /> Nhập hàng loạt
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="font-headline italic">NHẬP SẢN PHẨM HỆ THỐNG</DialogTitle>
+                <DialogDescription>Dùng file Excel để thêm hàng loạt sản phẩm gốc của nền tảng.</DialogDescription>
+              </DialogHeader>
+              <div className="py-10 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-4">
+                <Upload className="w-10 h-10 text-muted-foreground mx-auto opacity-20" />
+                <p className="text-sm font-bold">Chọn file dữ liệu hệ thống</p>
+                <Button 
+                  variant="link" 
+                  className="text-xs text-primary underline flex items-center gap-1 mx-auto"
+                  onClick={handleDownloadTemplate}
+                >
+                  <Download className="w-3 h-3" /> Tải file mẫu cho Admin
+                </Button>
+              </div>
+              <DialogFooter>
+                <Button className="w-full rounded-xl h-12 font-bold" onClick={handleImportExcel} disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin mr-2" /> : "Xác nhận nhập dữ liệu"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Button className="rounded-full h-11 px-8 font-bold gap-2 shadow-lg shadow-primary/20">
+            <Plus className="w-4 h-4" /> Thêm SP Hệ thống
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

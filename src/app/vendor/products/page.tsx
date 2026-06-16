@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useVendorStore } from "@/store/vendorStore";
 import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
@@ -23,7 +23,11 @@ import {
   Image as ImageIcon,
   AlertCircle,
   ArrowRight,
-  Store
+  Store,
+  FileSpreadsheet,
+  Upload,
+  Download,
+  Loader2
 } from "lucide-react";
 import {
   Dialog,
@@ -31,7 +35,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +58,8 @@ function ProductsContent() {
   const { profile } = useUserStore();
   const { getVendorByUserId, vendorProducts, addVendorProduct, deleteVendorProduct } = useVendorStore();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const searchParams = useSearchParams();
 
@@ -95,6 +102,41 @@ function ProductsContent() {
     toast({ title: "Đã đăng sản phẩm!", description: "Sản phẩm của bạn đang chờ Admin phê duyệt nội dung." });
   };
 
+  const handleDownloadTemplate = () => {
+    toast({ 
+      title: "Đang tải mẫu Excel", 
+      description: "Mẫu sản phẩm Vendor đang được chuẩn bị..." 
+    });
+  };
+
+  const handleImportExcel = () => {
+    if (!vendor) return;
+    setLoading(true);
+    setTimeout(() => {
+      const mockImported = [
+        { id: `v-imp-1`, name: "Sản phẩm từ Excel 1", price: 500000, category: "Điện tử" },
+        { id: `v-imp-2`, name: "Sản phẩm từ Excel 2", price: 800000, category: "Thời trang" },
+      ];
+
+      mockImported.forEach(p => {
+        addVendorProduct({
+          ...p,
+          vendorId: vendor.id,
+          description: "Nhập dữ liệu từ Excel.",
+          image: `https://picsum.photos/seed/${p.id}/600/600`,
+          slug: p.name.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
+          inStock: true,
+          createdAt: new Date().toISOString(),
+          status: 'pending'
+        });
+      });
+
+      setLoading(false);
+      setIsImportOpen(false);
+      toast({ title: "Thành công", description: `Đã nhập ${mockImported.length} sản phẩm mới.` });
+    }, 2000);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Page Header */}
@@ -105,13 +147,35 @@ function ProductsContent() {
         </div>
         
         <div className="flex gap-3">
-          {vendor && (
-            <Button asChild variant="outline" className="rounded-full h-12 px-6 border-white/10 gap-2">
-              <Link href={`/shop/${vendor.storeSlug}`} target="_blank">
-                <Store className="w-4 h-4" /> Xem Shop thực tế
-              </Link>
-            </Button>
-          )}
+          <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="rounded-full h-12 px-6 border-white/10 gap-2">
+                <FileSpreadsheet className="w-4 h-4" /> Nhập hàng loạt
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="font-headline italic">NHẬP KHO HÀNG LOẠT</DialogTitle>
+                <DialogDescription>Sử dụng mẫu Excel để cập nhật danh mục sản phẩm nhanh hơn.</DialogDescription>
+              </DialogHeader>
+              <div className="py-10 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-4">
+                <Upload className="w-10 h-10 text-muted-foreground mx-auto opacity-20" />
+                <p className="text-sm font-bold">Thả file Excel tại đây</p>
+                <Button 
+                  variant="link" 
+                  className="text-xs text-primary underline flex items-center gap-1 mx-auto"
+                  onClick={handleDownloadTemplate}
+                >
+                  <Download className="w-3 h-3" /> Tải file mẫu sản phẩm
+                </Button>
+              </div>
+              <DialogFooter>
+                <Button className="w-full rounded-xl h-12 font-bold" onClick={handleImportExcel} disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin mr-2" /> : "Bắt đầu nhập kho"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
