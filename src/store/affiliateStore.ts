@@ -79,6 +79,16 @@ export interface AffiliateTier {
   color: string;
 }
 
+export interface AffiliateProgram {
+  id: string;
+  name: string;
+  description: string;
+  conditions: string;
+  eligibleProducts: 'all' | 'categories' | 'specific';
+  targetIds: string[];
+  isActive: boolean;
+}
+
 interface AffiliateState {
   conversions: AffiliateConversion[];
   links: AffiliateLink[];
@@ -86,6 +96,7 @@ interface AffiliateState {
   affiliateRequests: AffiliateRequest[];
   transactions: AffiliateTransaction[];
   clickLogs: ClickLog[];
+  programs: AffiliateProgram[];
   config: {
     tiers: AffiliateTier[];
     globalRate: number;
@@ -108,6 +119,7 @@ interface AffiliateState {
   deleteLink: (id: string) => void;
   logClick: (log: ClickLog) => void;
   updateConfig: (config: Partial<AffiliateState['config']>) => void;
+  updatePrograms: (programs: AffiliateProgram[]) => void;
   
   // Requests & Payouts
   submitAffiliateRequest: (req: AffiliateRequest) => void;
@@ -125,6 +137,17 @@ export const useAffiliateStore = create<AffiliateState>()(
       affiliateRequests: [],
       transactions: [],
       clickLogs: [],
+      programs: [
+        {
+          id: 'prog-global',
+          name: 'Chương trình Affiliate Toàn sàn',
+          description: 'Hợp tác quảng bá toàn bộ sản phẩm trên hệ thống S-Com Hub.',
+          conditions: 'Tất cả thành viên đều có thể tham gia. Yêu cầu có tài khoản mạng xã hội trên 1000 follow.',
+          eligibleProducts: 'all',
+          targetIds: [],
+          isActive: true
+        }
+      ],
       config: {
         tiers: [
           { name: 'Bronze', minSales: 0, rate: 10, color: 'bg-orange-500' },
@@ -162,7 +185,6 @@ export const useAffiliateStore = create<AffiliateState>()(
           pendingCommission -= conv.commission;
           balance += conv.commission;
           totalEarnings += conv.commission;
-          // Add transaction
           const tx: AffiliateTransaction = {
             id: `tx-${Date.now()}`,
             type: 'commission',
@@ -194,6 +216,7 @@ export const useAffiliateStore = create<AffiliateState>()(
       updateConfig: (newConfig) => set((state) => ({
         config: { ...state.config, ...newConfig }
       })),
+      updatePrograms: (programs) => set({ programs }),
       submitAffiliateRequest: (req) => set((state) => ({
         affiliateRequests: [req, ...state.affiliateRequests]
       })),
@@ -228,7 +251,7 @@ export const useAffiliateStore = create<AffiliateState>()(
       })
     }),
     {
-      name: 'scomhub-affiliate-storage-v3',
+      name: 'scomhub-affiliate-storage-v4',
     }
   )
 );
