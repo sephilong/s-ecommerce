@@ -80,10 +80,75 @@ interface OrderState {
   bulkUpdateStatus: (orderIds: string[], status: OrderStatus) => void;
 }
 
+const MOCK_INITIAL_ORDERS: Order[] = [
+  {
+    id: "ord-1",
+    code: "SCHUB-2025-8891",
+    tenantId: "demo",
+    customerId: "vana@gmail.com",
+    vendorId: "v-1",
+    items: [
+      { productId: "p1", name: "Điện tử Premium Model 1", qty: 1, price: 1200000, image: "https://picsum.photos/seed/p1/600/600" }
+    ],
+    shippingAddress: {
+      fullName: "Nguyễn Văn A",
+      phone: "0901234567",
+      email: "vana@gmail.com",
+      street: "123 Lê Lợi",
+      ward: "Bến Thành",
+      district: "Quận 1",
+      province: "TP. Hồ Chí Minh",
+      country: "VN"
+    },
+    shippingProviderId: "ghn",
+    shippingMethod: "Giao Hàng Nhanh",
+    shippingFee: 35000,
+    paymentMethod: "VNPAY",
+    paymentStatus: "paid",
+    subtotal: 1200000,
+    discountTotal: 0,
+    shippingDiscount: 0,
+    total: 1235000,
+    status: "created",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "ord-2",
+    code: "SCHUB-2025-4421",
+    tenantId: "demo",
+    customerId: "thib@yahoo.com",
+    vendorId: "v-1",
+    items: [
+      { productId: "p2", name: "Phụ kiện Model 2", qty: 2, price: 450000, image: "https://picsum.photos/seed/p2/600/600" }
+    ],
+    shippingAddress: {
+      fullName: "Trần Thị B",
+      phone: "0912345678",
+      email: "thib@yahoo.com",
+      street: "456 Nguyễn Huệ",
+      ward: "Bến Nghé",
+      district: "Quận 1",
+      province: "TP. Hồ Chí Minh",
+      country: "VN"
+    },
+    shippingProviderId: "ghtk",
+    shippingMethod: "Giao Hàng Tiết Kiệm",
+    shippingFee: 30000,
+    paymentMethod: "COD",
+    paymentStatus: "pending",
+    subtotal: 900000,
+    discountTotal: 50000,
+    shippingDiscount: 30000,
+    total: 880000,
+    status: "processing",
+    createdAt: new Date(Date.now() - 86400000).toISOString()
+  }
+];
+
 export const useOrderStore = create<OrderState>()(
   persist(
     (set) => ({
-      orders: [],
+      orders: MOCK_INITIAL_ORDERS,
       addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
       updateOrderStatus: (orderId, status, notes) => set((state) => ({
         orders: state.orders.map(o => {
@@ -94,7 +159,7 @@ export const useOrderStore = create<OrderState>()(
             status, 
             merchantNote: notes || o.merchantNote,
             [timestampField]: new Date().toISOString()
-          };
+          } as Order;
         })
       })),
       updateOrderPayment: (orderId, status) => set((state) => ({
@@ -105,7 +170,7 @@ export const useOrderStore = create<OrderState>()(
       })),
     }),
     {
-      name: 'scomhub-order-storage-v16',
+      name: 'scomhub-order-storage-v17',
     }
   )
 );

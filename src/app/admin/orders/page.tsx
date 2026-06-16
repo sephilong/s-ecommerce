@@ -50,7 +50,7 @@ export default function AdminOrdersPage() {
   const handleUpdateStatus = (orderId: string, status: Order['status']) => {
     updateOrderStatus(orderId, status);
     
-    if (status === 'Hoàn thành') {
+    if (status === 'completed') {
       const conversion = conversions.find(c => c.orderId === orderId);
       if (conversion && conversion.status === 'pending') {
         updateConversionStatus(conversion.id, 'approved');
@@ -102,25 +102,19 @@ export default function AdminOrdersPage() {
               <tbody className="divide-y divide-white/5">
                 {orders.length > 0 ? orders.map((order) => (
                   <tr key={order.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-bold text-primary italic">#{order.id}</td>
+                    <td className="p-4 font-bold text-primary italic">{order.code || `#${order.id.substring(0, 8)}`}</td>
                     <td className="p-4">
-                      <div className="font-bold">{order.customerName}</div>
-                      <div className="text-[10px] text-muted-foreground">{order.customerPhone}</div>
+                      <div className="font-bold">{order.shippingAddress.fullName}</div>
+                      <div className="text-[10px] text-muted-foreground">{order.shippingAddress.phone}</div>
                     </td>
                     <td className="p-4 font-black">{formatVND(order.total)}</td>
                     <td className="p-4">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        order.status === 'Chờ xử lý' ? 'bg-yellow-500/10 text-yellow-500' : 
-                        order.status === 'Đang giao' ? 'bg-blue-500/10 text-blue-500' : 
-                        order.status === 'Đã hủy' ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-500'
-                      }`}>
-                        {order.status}
-                      </span>
+                      <StatusBadge status={order.status} />
                     </td>
                     <td className="p-4">
                       <div className="text-xs font-bold">{order.paymentMethod}</div>
-                      <div className={`text-[10px] font-medium ${order.paymentStatus === 'Đã thanh toán' ? 'text-green-500' : 'text-yellow-500'}`}>
-                        {order.paymentStatus}
+                      <div className={`text-[10px] font-medium ${order.paymentStatus === 'paid' ? 'text-green-500' : 'text-orange-500'}`}>
+                        {order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chờ thanh toán'}
                       </div>
                     </td>
                     <td className="p-4 text-right">
@@ -137,16 +131,19 @@ export default function AdminOrdersPage() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-white/5" />
                           <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground px-3 py-2">Trạng thái</DropdownMenuLabel>
-                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'Chờ xử lý')}>
-                            <Clock className="w-4 h-4 text-yellow-500" /> Chờ xử lý
+                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'confirmed')}>
+                            <CheckCircle2 className="w-4 h-4 text-indigo-400" /> Xác nhận đơn
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'Đang giao')}>
-                            <Truck className="w-4 h-4 text-blue-500" /> Đang giao
+                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'processing')}>
+                            <Package className="w-4 h-4 text-blue-500" /> Đóng gói
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'Hoàn thành')}>
+                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'shipped')}>
+                            <Truck className="w-4 h-4 text-orange-500" /> Giao hàng
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'completed')}>
                             <CheckCircle2 className="w-4 h-4 text-green-500" /> Hoàn thành
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 text-destructive rounded-lg focus:bg-destructive/10 cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'Đã hủy')}>
+                          <DropdownMenuItem className="gap-2 text-destructive rounded-lg focus:bg-destructive/10 cursor-pointer" onClick={() => handleUpdateStatus(order.id, 'cancelled')}>
                             <XCircle className="w-4 h-4" /> Hủy đơn
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -171,7 +168,7 @@ export default function AdminOrdersPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] border-white/10 bg-[#0f0f0f]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-headline italic flex items-center gap-2">
-              CHI TIẾT ĐƠN HÀNG <span className="text-primary">#{viewingOrder?.id}</span>
+              CHI TIẾT ĐƠN HÀNG <span className="text-primary">{viewingOrder?.code}</span>
             </DialogTitle>
           </DialogHeader>
           
@@ -183,11 +180,11 @@ export default function AdminOrdersPage() {
                     <User className="w-4 h-4" /> Thông tin nhận hàng
                   </h4>
                   <div className="space-y-2">
-                    <p className="font-bold text-lg">{viewingOrder.customerName}</p>
-                    <p className="text-sm flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> {viewingOrder.customerPhone}</p>
+                    <p className="font-bold text-lg">{viewingOrder.shippingAddress.fullName}</p>
+                    <p className="text-sm flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> {viewingOrder.shippingAddress.phone}</p>
                     <div className="flex gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 shrink-0" />
-                      <p>{viewingOrder.customerAddress}</p>
+                      <p>{viewingOrder.shippingAddress.street}, {viewingOrder.shippingAddress.ward}, {viewingOrder.shippingAddress.district}, {viewingOrder.shippingAddress.province}</p>
                     </div>
                   </div>
                 </div>
@@ -203,7 +200,7 @@ export default function AdminOrdersPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Trạng thái:</span>
-                      <Badge className={viewingOrder.paymentStatus === 'Đã thanh toán' ? 'bg-green-500/10 text-green-500 border-none' : 'bg-yellow-500/10 text-yellow-500 border-none'}>
+                      <Badge className={viewingOrder.paymentStatus === 'paid' ? 'bg-green-500/10 text-green-500 border-none' : 'bg-yellow-500/10 text-yellow-500 border-none'}>
                         {viewingOrder.paymentStatus}
                       </Badge>
                     </div>
@@ -256,4 +253,19 @@ export default function AdminOrdersPage() {
       </Dialog>
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: Order['status'] }) {
+  const configs: Record<string, { label: string, class: string }> = {
+    created: { label: "Đơn mới", class: "bg-primary/10 text-primary border-none" },
+    confirmed: { label: "Đã xác nhận", class: "bg-indigo-500/10 text-indigo-400 border-none" },
+    processing: { label: "Đang đóng gói", class: "bg-blue-500/10 text-blue-400 border-none" },
+    shipped: { label: "Đang giao hàng", class: "bg-orange-500/10 text-orange-400 border-none" },
+    delivered: { label: "Khách đã nhận", class: "bg-emerald-500/10 text-emerald-400 border-none" },
+    completed: { label: "Hoàn tất", class: "bg-green-500/20 text-green-500 border-none" },
+    cancelled: { label: "Đã hủy", class: "bg-red-500/10 text-red-500 border-none" },
+    refunded: { label: "Hoàn tiền", class: "bg-gray-500/10 text-gray-400 border-none" },
+  };
+  const config = configs[status] || configs.created;
+  return <Badge className={`rounded-full px-3 py-0.5 text-[9px] font-black uppercase italic ${config.class}`}>{config.label}</Badge>;
 }

@@ -13,7 +13,7 @@ import {
   ShoppingCart, 
   Truck, 
   CheckCircle2, 
-  Clock,
+  Clock, 
   Printer,
   Download,
   Eye,
@@ -60,7 +60,7 @@ export default function VendorOrdersPage() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
-      const matchesSearch = o.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      const matchesSearch = (o.code || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
                            o.shippingAddress.fullName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesTab = activeTab === "all" || o.status === activeTab;
       return matchesSearch && matchesTab;
@@ -74,7 +74,6 @@ export default function VendorOrdersPage() {
 
   const handlePrint = (type: string, order: Order) => {
     toast({ title: `Đang in ${type}`, description: `Mã đơn: ${order.code}` });
-    // In real app, this would open a window.print() or generate a PDF
   };
 
   return (
@@ -243,7 +242,6 @@ export default function VendorOrdersPage() {
         </Card>
       </Tabs>
 
-      {/* Order Detail Modal */}
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] border-white/10 bg-[#0f0f0f]">
           <DialogHeader>
@@ -251,7 +249,6 @@ export default function VendorOrdersPage() {
               <span>ĐƠN HÀNG {selectedOrder?.code}</span>
               <StatusBadge status={selectedOrder?.status || 'created'} />
             </DialogTitle>
-            <DialogDescription>Chi tiết vận hành và thông tin tài chính của đơn hàng.</DialogDescription>
           </DialogHeader>
           
           {selectedOrder && (
@@ -264,7 +261,6 @@ export default function VendorOrdersPage() {
                     <div className="p-5 rounded-2xl bg-white/5 space-y-2">
                        <p className="font-bold text-lg">{selectedOrder.shippingAddress.fullName}</p>
                        <p className="text-sm font-medium">{selectedOrder.shippingAddress.phone}</p>
-                       <div className="text-xs text-muted-foreground leading-relaxed italic">"{selectedOrder.customerNote || 'Không có ghi chú'}"</div>
                     </div>
                  </div>
 

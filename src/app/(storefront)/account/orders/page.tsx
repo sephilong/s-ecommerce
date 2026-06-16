@@ -33,19 +33,14 @@ export default function MyOrdersPage() {
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">Mã đơn hàng: <span className="text-foreground font-bold">{order.id}</span></div>
+                    <div className="text-sm text-muted-foreground mb-1">Mã đơn hàng: <span className="text-foreground font-bold">{order.code || `#${order.id}`}</span></div>
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                       <Calendar className="w-3 h-3" />
                       Ngày đặt: {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                     </div>
                   </div>
                   <div className="flex flex-col sm:items-end gap-2">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      order.status === 'Chờ xử lý' ? 'bg-yellow-500/10 text-yellow-500' : 
-                      order.status === 'Đang giao' ? 'bg-blue-500/10 text-blue-500' : 'bg-green-500/10 text-green-500'
-                    }`}>
-                      {order.status}
-                    </span>
+                    <StatusBadge status={order.status} />
                     <div className="font-bold text-lg text-primary">{formatVND(order.total)}</div>
                   </div>
                 </div>
@@ -83,6 +78,24 @@ export default function MyOrdersPage() {
   );
 }
 
+function StatusBadge({ status }: { status: Order['status'] }) {
+  const configs: any = {
+    created: { label: "Chờ xác nhận", class: "bg-yellow-500/10 text-yellow-500" },
+    confirmed: { label: "Đã xác nhận", class: "bg-indigo-500/10 text-indigo-500" },
+    processing: { label: "Đang xử lý", class: "bg-blue-500/10 text-blue-500" },
+    shipped: { label: "Đang giao", class: "bg-orange-500/10 text-orange-500" },
+    delivered: { label: "Đã nhận", class: "bg-emerald-500/10 text-emerald-500" },
+    completed: { label: "Hoàn thành", class: "bg-green-500/10 text-green-500" },
+    cancelled: { label: "Đã hủy", class: "bg-red-500/10 text-red-500" },
+  };
+  const config = configs[status] || configs.created;
+  return (
+    <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.class}`}>
+      {config.label}
+    </span>
+  );
+}
+
 function OrderDetailsDialog({ order }: { order: Order }) {
   return (
     <Dialog>
@@ -92,20 +105,19 @@ function OrderDetailsDialog({ order }: { order: Order }) {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-headline flex items-center gap-2">
-            Chi tiết đơn hàng <span className="text-primary">{order.id}</span>
+            Chi tiết đơn hàng <span className="text-primary">{order.code}</span>
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-8 py-4">
-          {/* Status Banner */}
           <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                 <Truck className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Trạng thái vận chuyển</p>
-                <p className="font-bold text-primary">{order.status}</p>
+                <p className="text-xs text-muted-foreground font-medium">Trạng thái hiện tại</p>
+                <p className="font-bold text-primary uppercase">{order.status}</p>
               </div>
             </div>
             <div className="text-right">
@@ -120,11 +132,11 @@ function OrderDetailsDialog({ order }: { order: Order }) {
                 <User className="w-4 h-4" /> Thông tin nhận hàng
               </h4>
               <div className="space-y-1">
-                <p className="font-bold">{order.customerName}</p>
-                <p className="text-sm">{order.customerPhone}</p>
+                <p className="font-bold">{order.shippingAddress.fullName}</p>
+                <p className="text-sm">{order.shippingAddress.phone}</p>
                 <div className="flex gap-2 text-sm text-muted-foreground">
                   <MapPin className="w-4 h-4 shrink-0" />
-                  <p>{order.customerAddress}</p>
+                  <p>{order.shippingAddress.street}, {order.shippingAddress.ward}, {order.shippingAddress.district}, {order.shippingAddress.province}</p>
                 </div>
               </div>
             </div>
@@ -140,8 +152,8 @@ function OrderDetailsDialog({ order }: { order: Order }) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Trạng thái:</span>
-                  <span className={`font-bold ${order.paymentStatus === 'Đã thanh toán' ? 'text-green-500' : 'text-yellow-500'}`}>
-                    {order.paymentStatus}
+                  <span className={`font-bold ${order.paymentStatus === 'paid' ? 'text-green-500' : 'text-yellow-500'}`}>
+                    {order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chờ thanh toán'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -177,7 +189,21 @@ function OrderDetailsDialog({ order }: { order: Order }) {
           </div>
 
           <div className="pt-6 border-t border-white/5 space-y-2">
-            <div className="flex justify-between font-bold text-xl">
+            <div className="flex justify-between text-muted-foreground text-sm">
+              <span>Tạm tính</span>
+              <span>{formatVND(order.subtotal)}</span>
+            </div>
+            {order.discountTotal > 0 && (
+              <div className="flex justify-between text-red-400 text-sm">
+                <span>Giảm giá</span>
+                <span>-{formatVND(order.discountTotal)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-muted-foreground text-sm">
+              <span>Phí vận chuyển</span>
+              <span>{formatVND(order.shippingFee)}</span>
+            </div>
+            <div className="flex justify-between font-bold text-xl pt-2">
               <span>Tổng cộng</span>
               <span className="text-primary">{formatVND(order.total)}</span>
             </div>
