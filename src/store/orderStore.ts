@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -170,7 +169,7 @@ export const useOrderStore = create<OrderState>()(
       })),
     }),
     {
-      name: 'scomhub-order-storage-v17',
+      name: 'scomhub-order-storage-v18',
     }
   )
 );

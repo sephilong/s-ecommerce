@@ -17,7 +17,7 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { CreditCard, Check, Star, Truck, AlertCircle } from "lucide-react";
+import { CreditCard, Check, Star, Truck, AlertCircle, Loader2 } from "lucide-react";
 import { Coupon } from "@/lib/store-data";
 import { getTenantConfig } from "@/lib/tenant";
 
@@ -243,7 +243,7 @@ export default function CheckoutPage() {
           </section>
 
           <Button onClick={completeOrder} size="lg" className="w-full h-16 rounded-2xl text-xl font-bold group" disabled={loading}>
-            {loading ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐẶT HÀNG"} <Check className="w-6 h-6 ml-2" />
+            {loading ? <><Loader2 className="animate-spin mr-2" /> ĐANG XỬ LÝ...</> : <><Check className="w-6 h-6 mr-2" /> XÁC NHẬN ĐẶT HÀNG</>}
           </Button>
         </div>
 

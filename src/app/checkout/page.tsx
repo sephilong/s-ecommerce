@@ -1,12 +1,14 @@
 /**
- * TỆP NÀY ĐÃ BỊ VÔ HIỆU HÓA
- * Để tránh xung đột định tuyến với src/app/(storefront)/checkout/page.tsx
- * Next.js không cho phép hai trang cùng trỏ về một URL /checkout.
+ * TỆP NÀY ĐÃ BỊ VÔ HIỆU HÓA ĐỂ TRÁNH XUNG ĐỘT ĐỊNH TUYẾN
+ * 
+ * Next.js không cho phép hai tệp page.tsx cùng giải quyết một đường dẫn.
+ * Trang thanh toán chính thức hiện nằm tại: src/app/(storefront)/checkout/page.tsx
+ * 
+ * Chúng tôi giữ tệp này ở trạng thái không xuất bản (no default export) để Next.js 
+ * không coi đây là một trang hợp lệ, từ đó giải quyết lỗi "two parallel pages".
  */
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-// Không export default bất kỳ component nào ở đây để gỡ bỏ định tuyến
-export default function ConflictResolverPage() {
-  return null;
-}
+// Không có "export default" ở đây.
