@@ -163,7 +163,7 @@ export default function AdminProductsPage() {
                 </Button>
               </div>
               <DialogFooter>
-                <Button className="w-full rounded-xl h-12 font-bold shadow-lg shadow-primary/20" onClick={handleImportExcel} disabled={loading}>
+                <Button className="w-full rounded-xl h-12 font-bold shadow-xl shadow-primary/20" onClick={handleImportExcel} disabled={loading}>
                   {loading ? <><Loader2 className="animate-spin mr-2" /> Đang xử lý...</> : "Xác nhận nhập dữ liệu"}
                 </Button>
               </DialogFooter>
@@ -217,7 +217,7 @@ export default function AdminProductsPage() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-white/5 transition-colors group">
+                    <tr key={`${product.vendorId}-${product.id}`} className="hover:bg-white/5 transition-colors group">
                       <td className="p-6">
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 relative rounded-xl overflow-hidden border border-white/10">
