@@ -21,7 +21,11 @@ import {
   Wallet,
   Percent,
   Building2,
-  Filter
+  Filter,
+  FileText,
+  User,
+  CreditCard,
+  AlertTriangle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,16 +40,19 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function AdminVendorsPage() {
   const { vendors, updateVendorStatus, updateVendorCommission } = useVendorStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingCommission, setEditingCommission] = useState<{ id: string, rate: number } | null>(null);
+  const [checkingLegal, setCheckingLegal] = useState<Vendor | null>(null);
 
   const filteredVendors = vendors.filter(v => 
     v.storeName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -59,6 +66,7 @@ export default function AdminVendorsPage() {
       description: `Nhà bán hàng hiện đã chuyển sang trạng thái ${status}`,
       variant: status === 'rejected' || status === 'suspended' ? 'destructive' : 'default'
     });
+    setCheckingLegal(null);
   };
 
   const handleSaveCommission = () => {
@@ -162,7 +170,7 @@ export default function AdminVendorsPage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                            <MoreHorizontal className="w-5 h-5" />
+                            <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2">
@@ -170,11 +178,8 @@ export default function AdminVendorsPage() {
                           
                           {v.status === 'pending' && (
                             <>
-                              <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => handleAction(v.id, 'approved')}>
-                                <CheckCircle2 className="w-4 h-4" /> Phê duyệt gian hàng
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleAction(v.id, 'rejected')}>
-                                <XCircle className="w-4 h-4" /> Từ chối đăng ký
+                              <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => setCheckingLegal(v)}>
+                                <ShieldCheck className="w-4 h-4" /> Kiểm tra & Phê duyệt
                               </DropdownMenuItem>
                               <DropdownMenuSeparator className="bg-white/5 my-2" />
                             </>
@@ -183,8 +188,8 @@ export default function AdminVendorsPage() {
                           <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/shop/${v.storeSlug}`, '_blank')}>
                             <ExternalLink className="w-4 h-4" /> Xem cửa hàng thực tế
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => toast({ title: "Đang tải hồ sơ", description: "Vui lòng chờ trong giây lát..." })}>
-                            <ShieldCheck className="w-4 h-4" /> Kiểm tra hồ sơ pháp lý
+                          <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setCheckingLegal(v)}>
+                            <FileText className="w-4 h-4" /> Xem hồ sơ pháp lý
                           </DropdownMenuItem>
                           <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => setEditingCommission({ id: v.id, rate: v.commissionRate })}>
                             <Percent className="w-4 h-4" /> Cấu hình chiết khấu riêng
@@ -235,6 +240,76 @@ export default function AdminVendorsPage() {
           </div>
           <DialogFooter>
             <Button onClick={handleSaveCommission} className="w-full rounded-full h-12 font-bold shadow-xl shadow-primary/20">Lưu thiết lập mới</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Legal Check Dialog */}
+      <Dialog open={!!checkingLegal} onOpenChange={(open) => !open && setCheckingLegal(null)}>
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-10 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-headline italic">XÁC MINH HỒ SƠ PHÁP LÝ</DialogTitle>
+            <DialogDescription>Kiểm tra kỹ các thông tin định danh trước khi cho phép Vendor tham gia Marketplace.</DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-8 space-y-8">
+             <section className="space-y-4">
+                <h4 className="text-xs uppercase font-black text-primary tracking-widest flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Thông tin Định danh
+                </h4>
+                <div className="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
+                   <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Loại hình</p>
+                      <p className="font-bold flex items-center gap-2">
+                        {checkingLegal?.businessType === 'company' ? <><Building2 className="w-4 h-4" /> Doanh nghiệp</> : <><User className="w-4 h-4" /> Cá nhân</>}
+                      </p>
+                   </div>
+                   <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Số CCCD / MST</p>
+                      <p className="font-mono font-bold text-primary">{checkingLegal?.idNumber}</p>
+                   </div>
+                   <div className="col-span-2 space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Tên Shop / Thương hiệu</p>
+                      <p className="font-bold text-lg">{checkingLegal?.storeName}</p>
+                   </div>
+                </div>
+             </section>
+
+             <section className="space-y-4">
+                <h4 className="text-xs uppercase font-black text-primary tracking-widest flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" /> Thông tin Tài chính (Payout)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
+                   <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Ngân hàng</p>
+                      <p className="font-bold">{checkingLegal?.bankName}</p>
+                   </div>
+                   <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Số tài khoản</p>
+                      <p className="font-mono font-bold">{checkingLegal?.accountNumber}</p>
+                   </div>
+                   <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Chủ tài khoản</p>
+                      <p className="font-bold">{checkingLegal?.accountName}</p>
+                   </div>
+                </div>
+             </section>
+
+             <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex gap-4">
+                <AlertTriangle className="w-6 h-6 text-orange-500 shrink-0" />
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <strong>Lưu ý:</strong> Vui lòng đối chiếu tên chủ tài khoản ngân hàng và tên trên giấy tờ định danh/MST. Nếu không trùng khớp, hãy yêu cầu đối tác cập nhật lại trước khi phê duyệt.
+                </p>
+             </div>
+          </div>
+
+          <DialogFooter className="gap-3">
+            <Button variant="outline" className="flex-1 rounded-full h-12 font-bold text-destructive hover:bg-destructive/10" onClick={() => handleAction(checkingLegal!.id, 'rejected')}>
+              <XCircle className="w-4 h-4 mr-2" /> Từ chối hồ sơ
+            </Button>
+            <Button className="flex-1 rounded-full h-12 font-bold shadow-xl shadow-primary/20" onClick={() => handleAction(checkingLegal!.id, 'approved')}>
+              <CheckCircle2 className="w-4 h-4 mr-2" /> Phê duyệt & Kích hoạt
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
