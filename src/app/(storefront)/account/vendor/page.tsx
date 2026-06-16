@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -48,6 +49,7 @@ export default function VendorOnboardingPage() {
   const [step, setStep] = useState(1);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  // Tìm thông tin vendor dựa trên email người dùng hiện tại
   const vendor = profile ? getVendorByUserId(profile.email) : undefined;
   const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
 
@@ -111,6 +113,7 @@ export default function VendorOnboardingPage() {
     toast({ title: "Đã đăng sản phẩm!", description: "Sản phẩm đang chờ Admin phê duyệt." });
   };
 
+  // GIAO DIỆN QUẢN LÝ NHANH KHI ĐÃ LÀ VENDOR
   if (vendor) {
     return (
       <div className="max-w-5xl mx-auto py-8 space-y-12 animate-in fade-in duration-500">
@@ -250,6 +253,7 @@ export default function VendorOnboardingPage() {
     );
   }
 
+  // GIAO DIỆN ĐĂNG KÝ (ONBOARDING) KHI CHƯA CÓ VENDOR
   return (
     <div className="max-w-4xl mx-auto py-12 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="text-center space-y-6">
@@ -418,21 +422,6 @@ export default function VendorOnboardingPage() {
           </Card>
         </div>
       </div>
-    </div>
-  );
-}
-
-function OnboardingStep({ icon, title, desc, status }: any) {
-  const isDone = status === 'done';
-  const isCurrent = status === 'current';
-  
-  return (
-    <div className={`p-6 rounded-3xl border transition-all ${isCurrent ? 'bg-primary/5 border-primary/30' : 'bg-white/5 border-white/5 opacity-60'}`}>
-      <div className={`h-10 w-10 rounded-xl flex items-center justify-center mb-4 ${isDone ? 'bg-green-500/20 text-green-500' : isCurrent ? 'bg-primary/20 text-primary' : 'bg-white/10'}`}>
-        {isDone ? <CheckCircle2 className="w-5 h-5" /> : icon}
-      </div>
-      <h4 className="font-bold text-sm mb-1">{title}</h4>
-      <p className="text-[10px] text-muted-foreground leading-relaxed">{desc}</p>
     </div>
   );
 }
