@@ -1,14 +1,17 @@
 /**
- * TỆP NÀY ĐÃ BỊ VÔ HIỆU HÓA ĐỂ TRÁNH XUNG ĐỘT ĐỊNH TUYẾN
+ * TỆP NÀY ĐÃ BỊ VÔ HIỆU HÓA ĐỂ TRÁNH XUNG ĐỘT ĐỊNH TUYẾN (ROUTE CONFLICT)
  * 
- * Next.js không cho phép hai tệp page.tsx cùng giải quyết một đường dẫn.
- * Trang thanh toán chính thức hiện nằm tại: src/app/(storefront)/checkout/page.tsx
+ * Lỗi: "You cannot have two parallel pages that resolve to the same path. Please check /(storefront)/checkout and /checkout."
  * 
- * Chúng tôi giữ tệp này ở trạng thái không xuất bản (no default export) để Next.js 
- * không coi đây là một trang hợp lệ, từ đó giải quyết lỗi "two parallel pages".
+ * Giải pháp: 
+ * Trang thanh toán chính thức đã được chuyển vào nhóm giao diện cửa hàng: 
+ * ĐỊA CHỈ: src/app/(storefront)/checkout/page.tsx
+ * 
+ * Tệp này hiện tại không xuất bản bất kỳ Page Component nào để Next.js bỏ qua nó khi xây dựng hệ thống định tuyến.
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
-// Không có "export default" ở đây.
+export default function InertPage() {
+  return null;
+}

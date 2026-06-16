@@ -27,7 +27,7 @@ import {
   Mail,
   ArrowRight
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
