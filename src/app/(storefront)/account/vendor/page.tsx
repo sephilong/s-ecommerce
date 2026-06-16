@@ -41,7 +41,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 
 export default function VendorOnboardingPage() {
@@ -233,7 +234,10 @@ export default function VendorOnboardingPage() {
                       </DialogTrigger>
                       <DialogContent className="max-w-xl">
                         <form onSubmit={handleAddProduct}>
-                          <DialogHeader><DialogTitle>THÊM SẢN PHẨM MỚI</DialogTitle></DialogHeader>
+                          <DialogHeader>
+                            <DialogTitle>THÊM SẢN PHẨM MỚI</DialogTitle>
+                            <DialogDescription>Cung cấp thông tin chi tiết về sản phẩm của bạn.</DialogDescription>
+                          </DialogHeader>
                           <div className="space-y-4 py-4">
                              <div className="space-y-2">
                                 <Label>Tên sản phẩm</Label>
