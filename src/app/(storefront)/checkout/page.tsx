@@ -6,6 +6,7 @@ import { useConfigStore } from "@/store/configStore";
 import { useOrderStore, Order } from "@/store/orderStore";
 import { useUserStore } from "@/store/userStore";
 import { usePromotionStore } from "@/store/promotionStore";
+import { useAffiliateStore } from "@/store/affiliateStore";
 import { formatVND } from "@/lib/currency";
 import { calculateDiscount, DiscountResult } from "@/lib/promotion-engine";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export default function CheckoutPage() {
   const { addOrder, orders } = useOrderStore();
   const { profile, updateProfile } = useUserStore();
   const { promotions, coupons, loyaltyConfig } = usePromotionStore();
+  const { addConversion } = useAffiliateStore();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -37,7 +39,6 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({ firstName: "", lastName: "", phone: "", address: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Pre-fill form from user profile if exists
   useEffect(() => {
     if (profile) setFormData({
       firstName: profile.firstName || "",
@@ -47,18 +48,16 @@ export default function CheckoutPage() {
     });
   }, [profile]);
 
-  // Set default selection for payment and shipping
   useEffect(() => {
     const activePMs = paymentMethods.filter(p => p.isActive);
     const activeSMs = shippingMethods.filter(s => s.isActive);
     if (activePMs.length > 0 && !selectedPayment) setSelectedPayment(activePMs[0].id);
     if (activeSMs.length > 0 && !selectedShipping) setSelectedShipping(activeSMs[0].id);
-  }, [paymentMethods, shippingMethods, selectedPayment, selectedShipping]);
+  }, [paymentMethods, shippingMethods]);
 
   const currentShipping = shippingMethods.find(s => s.id === selectedShipping);
   const shippingFee = currentShipping?.price || 0;
 
-  // Calculate discounts using the Promotion Engine
   const discountResult: DiscountResult = useMemo(() => {
     return calculateDiscount(
       items, 
@@ -100,19 +99,11 @@ export default function CheckoutPage() {
   };
 
   const completeOrder = () => {
-    if (!validateForm()) {
-      toast({
-        variant: "destructive",
-        title: "Thông tin chưa đầy đủ",
-        description: "Vui lòng kiểm tra và điền chính xác thông tin nhận hàng."
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     const orderId = `SCHUB-${Math.floor(10000 + Math.random() * 90000)}`;
     const currentPayment = paymentMethods.find(p => p.id === selectedPayment);
     
-    // Save profile for next time
     updateProfile(formData);
 
     const newOrder: Order = {
@@ -130,7 +121,29 @@ export default function CheckoutPage() {
     };
 
     setLoading(true);
-    // Simulate API call
+
+    // Affiliate Attribution Logic
+    const storedRef = localStorage.getItem("scomhub_affiliate_ref");
+    if (storedRef) {
+      const { code, timestamp } = JSON.parse(storedRef);
+      const windowDays = 30;
+      const isWithinWindow = (Date.now() - timestamp) < (windowDays * 24 * 60 * 60 * 1000);
+      
+      if (isWithinWindow) {
+        // Calculate 10% commission for the affiliate
+        const commission = finalTotal * 0.1; 
+        addConversion({
+          id: `conv-${Date.now()}`,
+          orderId: orderId,
+          affiliateCode: code,
+          amount: finalTotal,
+          commission: commission,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
+
     setTimeout(() => {
       addOrder(newOrder);
       setLoading(false);
@@ -141,20 +154,12 @@ export default function CheckoutPage() {
 
   const handleCheckoutAction = () => {
     if (!validateForm()) {
-      toast({
-        variant: "destructive",
-        title: "Thông tin chưa đầy đủ",
-        description: "Vui lòng điền thông tin nhận hàng trước khi thanh toán."
-      });
+      toast({ variant: "destructive", title: "Thông tin chưa đầy đủ", description: "Vui lòng điền thông tin nhận hàng." });
       return;
     }
-
     const currentPM = paymentMethods.find(p => p.id === selectedPayment);
-    if (currentPM?.type === 'cod') {
-      completeOrder();
-    } else {
-      setShowSandbox(true);
-    }
+    if (currentPM?.type === 'cod') completeOrder();
+    else setShowSandbox(true);
   };
 
   if (items.length === 0 && !showSandbox) {
@@ -162,7 +167,6 @@ export default function CheckoutPage() {
     return null;
   }
 
-  // Sandbox Payment Simulator (e.g. VNPAY/MoMo QR)
   if (showSandbox) {
     const currentPayment = paymentMethods.find(p => p.id === selectedPayment);
     return (
@@ -202,10 +206,7 @@ export default function CheckoutPage() {
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-4xl font-bold font-headline mb-12 text-center italic tracking-tighter">THANH TOÁN ĐƠN HÀNG</h1>
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
-        
-        {/* Left Side: Forms */}
         <div className="space-y-12">
-          {/* Section 1: Customer Info */}
           <section className="space-y-6">
             <h2 className="text-2xl font-bold font-headline flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/30 italic">01</span>
@@ -213,72 +214,24 @@ export default function CheckoutPage() {
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
-                  Họ <span className="text-destructive">*</span>
-                </Label>
-                <Input 
-                  placeholder="Nhập họ..." 
-                  value={formData.firstName} 
-                  onChange={(e) => {
-                    setFormData({...formData, firstName: e.target.value});
-                    if (errors.firstName) setErrors(prev => ({...prev, firstName: ""}));
-                  }} 
-                  className={`rounded-xl bg-card/50 ${errors.firstName ? 'border-destructive ring-1 ring-destructive' : ''}`} 
-                />
-                {errors.firstName && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.firstName}</p>}
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Họ <span className="text-destructive">*</span></Label>
+                <Input placeholder="Nhập họ..." value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className={`rounded-xl bg-card/50 ${errors.firstName ? 'border-destructive' : ''}`} />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
-                  Tên <span className="text-destructive">*</span>
-                </Label>
-                <Input 
-                  placeholder="Nhập tên..." 
-                  value={formData.lastName} 
-                  onChange={(e) => {
-                    setFormData({...formData, lastName: e.target.value});
-                    if (errors.lastName) setErrors(prev => ({...prev, lastName: ""}));
-                  }} 
-                  className={`rounded-xl bg-card/50 ${errors.lastName ? 'border-destructive ring-1 ring-destructive' : ''}`} 
-                />
-                {errors.lastName && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.lastName}</p>}
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tên <span className="text-destructive">*</span></Label>
+                <Input placeholder="Nhập tên..." value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className={`rounded-xl bg-card/50 ${errors.lastName ? 'border-destructive' : ''}`} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
-                Số điện thoại <span className="text-destructive">*</span>
-              </Label>
-              <Input 
-                placeholder="Ví dụ: 0901234567" 
-                value={formData.phone} 
-                onChange={(e) => {
-                  setFormData({...formData, phone: e.target.value});
-                  if (errors.phone) setErrors(prev => ({...prev, phone: ""}));
-                }} 
-                className={`rounded-xl bg-card/50 ${errors.phone ? 'border-destructive ring-1 ring-destructive' : ''}`} 
-              />
-              {errors.phone && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.phone}</p>}
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Số điện thoại <span className="text-destructive">*</span></Label>
+              <Input placeholder="0901234567" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`rounded-xl bg-card/50 ${errors.phone ? 'border-destructive' : ''}`} />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center justify-between">
-                Địa chỉ chi tiết <span className="text-destructive">*</span>
-              </Label>
-              <Input 
-                placeholder="Số nhà, tên đường, phường/xã..." 
-                value={formData.address} 
-                onChange={(e) => {
-                  setFormData({...formData, address: e.target.value});
-                  if (errors.address) setErrors(prev => ({...prev, address: ""}));
-                }} 
-                className={`rounded-xl bg-card/50 ${errors.address ? 'border-destructive ring-1 ring-destructive' : ''}`} 
-              />
-              {errors.address && <p className="text-[10px] text-destructive flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.address}</p>}
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Địa chỉ <span className="text-destructive">*</span></Label>
+              <Input placeholder="Số nhà, tên đường..." value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className={`rounded-xl bg-card/50 ${errors.address ? 'border-destructive' : ''}`} />
             </div>
-            <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
-              <Info className="w-3 h-3" /> Thông tin này sẽ được lưu lại cho lần mua hàng sau của bạn.
-            </p>
           </section>
 
-          {/* Section 2: Shipping Method */}
           <section className="space-y-6">
             <h2 className="text-2xl font-bold font-headline flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/30 italic">02</span>
@@ -286,12 +239,12 @@ export default function CheckoutPage() {
             </h2>
             <RadioGroup value={selectedShipping} onValueChange={setSelectedShipping} className="grid grid-cols-1 gap-4">
               {shippingMethods.filter(s => s.isActive).map((sm) => (
-                <Label key={sm.id} className={`flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all ${selectedShipping === sm.id ? 'border-primary bg-primary/10 shadow-lg shadow-primary/5' : 'border-white/5 hover:bg-white/5'}`}>
+                <Label key={sm.id} className={`flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all ${selectedShipping === sm.id ? 'border-primary bg-primary/10' : 'border-white/5'}`}>
                   <div className="flex items-center gap-4">
                     <RadioGroupItem value={sm.id} /> 
                     <div>
                       <span className="font-bold block">{sm.name}</span>
-                      <span className="text-[10px] text-muted-foreground">Dự kiến nhận sau 2-4 ngày</span>
+                      <span className="text-[10px] text-muted-foreground">Dự kiến 2-4 ngày</span>
                     </div>
                   </div>
                   <span className="font-bold text-primary">{formatVND(sm.price)}</span>
@@ -300,7 +253,6 @@ export default function CheckoutPage() {
             </RadioGroup>
           </section>
 
-          {/* Section 3: Payment Method */}
           <section className="space-y-6">
             <h2 className="text-2xl font-bold font-headline flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/30 italic">03</span>
@@ -308,13 +260,11 @@ export default function CheckoutPage() {
             </h2>
             <RadioGroup value={selectedPayment} onValueChange={setSelectedPayment} className="grid grid-cols-1 gap-4">
               {paymentMethods.filter(p => p.isActive).map((pm) => (
-                <Label key={pm.id} className={`flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all ${selectedPayment === pm.id ? 'border-primary bg-primary/10 shadow-lg shadow-primary/5' : 'border-white/5 hover:bg-white/5'}`}>
+                <Label key={pm.id} className={`flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all ${selectedPayment === pm.id ? 'border-primary bg-primary/10' : 'border-white/5'}`}>
                   <div className="flex items-center gap-4">
                     <RadioGroupItem value={pm.id} /> 
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center">
-                        <CreditCard className="w-5 h-5 text-primary" />
-                      </div>
+                      <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center"><CreditCard className="w-5 h-5 text-primary" /></div>
                       <div>
                         <span className="font-bold block">{pm.name}</span>
                         <span className="text-[10px] text-muted-foreground">{pm.description}</span>
@@ -326,22 +276,15 @@ export default function CheckoutPage() {
             </RadioGroup>
           </section>
 
-          <Button 
-            onClick={handleCheckoutAction} 
-            size="lg" 
-            className="w-full h-16 rounded-2xl text-xl font-bold shadow-2xl group"
-          >
-            XÁC NHẬN ĐẶT HÀNG <Check className="w-6 h-6 ml-2 group-hover:scale-125 transition-transform" />
+          <Button onClick={handleCheckoutAction} size="lg" className="w-full h-16 rounded-2xl text-xl font-bold group">
+            XÁC NHẬN ĐẶT HÀNG <Check className="w-6 h-6 ml-2 group-hover:scale-110 transition-transform" />
           </Button>
         </div>
 
-        {/* Right Side: Order Summary */}
         <div className="space-y-8">
           <Card className="border-white/5 bg-card/40 backdrop-blur-xl sticky top-24 rounded-[2.5rem] overflow-hidden shadow-2xl">
             <CardContent className="p-10 space-y-8">
               <h2 className="text-2xl font-bold font-headline border-b border-white/5 pb-4 italic tracking-tighter">TÓM TẮT ĐƠN HÀNG</h2>
-              
-              {/* Product List */}
               <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {items.map((item) => (
                   <div key={item.product.id} className="flex items-center gap-4">
@@ -357,66 +300,32 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* Coupon Input */}
               <div className="space-y-4 pt-4 border-t border-white/5">
                 <div className="flex gap-2">
-                  <Input 
-                    placeholder="Nhập mã ưu đãi..." 
-                    value={couponCode} 
-                    onChange={(e) => setCouponCode(e.target.value)} 
-                    className="rounded-full bg-background/50 border-white/10 h-11" 
-                  />
-                  <Button type="button" variant="secondary" className="rounded-full px-6 h-11" onClick={handleApplyCoupon}>Áp dụng</Button>
-                </div>
-                
-                {/* Applied Promotions Listing */}
-                <div className="space-y-2">
-                  {discountResult.appliedPromotions.map(p => (
-                    <div key={p.id} className="flex items-center gap-2 text-[10px] text-accent font-bold uppercase tracking-widest bg-accent/10 px-3 py-1.5 rounded-full border border-accent/20">
-                      <Tag className="w-3 h-3" /> {p.name}
-                    </div>
-                  ))}
-                  {appliedCoupon && (
-                    <div className="flex items-center gap-2 text-[10px] text-primary font-bold uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-                      <Check className="w-3 h-3" /> Mã: {appliedCoupon.code}
-                    </div>
-                  )}
+                  <Input placeholder="Mã ưu đãi..." value={couponCode} onChange={(e) => setCouponCode(e.target.value)} className="rounded-full h-11" />
+                  <Button variant="secondary" className="rounded-full px-6 h-11" onClick={handleApplyCoupon}>Áp dụng</Button>
                 </div>
               </div>
 
-              {/* Totals */}
               <div className="space-y-4 pt-6 border-t border-white/10">
-                <div className="flex justify-between text-sm text-muted-foreground uppercase tracking-widest font-bold">
-                  <span>Tạm tính</span> 
-                  <span>{formatVND(totalPrice())}</span>
+                <div className="flex justify-between text-sm text-muted-foreground font-bold uppercase tracking-widest">
+                  <span>Tạm tính</span> <span>{formatVND(totalPrice())}</span>
                 </div>
-                <div className="flex justify-between text-sm text-muted-foreground uppercase tracking-widest font-bold">
-                  <span>Phí vận chuyển</span> 
-                  <span>{formatVND(shippingFee)}</span>
+                <div className="flex justify-between text-sm text-muted-foreground font-bold uppercase tracking-widest">
+                  <span>Phí vận chuyển</span> <span>{formatVND(shippingFee)}</span>
                 </div>
                 {discountResult.totalDiscount > 0 && (
                   <div className="flex justify-between text-sm text-primary font-black uppercase tracking-widest">
-                    <span>Tổng giảm giá</span> 
-                    <span>-{formatVND(discountResult.totalDiscount)}</span>
+                    <span>Tổng giảm giá</span> <span>-{formatVND(discountResult.totalDiscount)}</span>
                   </div>
                 )}
-                
                 <div className="flex justify-between font-black text-3xl pt-6 border-t border-white/10 italic tracking-tighter">
-                  <span>TỔNG CỘNG</span> 
-                  <span className="text-primary">{formatVND(finalTotal)}</span>
+                  <span>TỔNG CỘNG</span> <span className="text-primary">{formatVND(finalTotal)}</span>
                 </div>
-                
-                {/* Loyalty Feedback */}
                 <div className="mt-6 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-emerald-500 font-black text-xs uppercase tracking-tighter">
-                      <Star className="w-4 h-4 fill-emerald-500" /> +{discountResult.potentialPoints} Điểm thưởng
-                    </div>
-                    {discountResult.loyaltyMultiplier > 1 && (
-                      <span className="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full">x{discountResult.loyaltyMultiplier} BONUS</span>
-                    )}
+                  <div className="flex items-center gap-2 text-emerald-500 font-black text-xs uppercase tracking-tighter">
+                    <Star className="w-4 h-4 fill-emerald-500" /> +{discountResult.potentialPoints} Điểm thưởng dự kiến
                   </div>
-                  <p className="text-[10px] text-emerald-500/70 italic">Càng mua nhiều, điểm thưởng càng cao để đổi Voucher cho lần sau!</p>
                 </div>
               </div>
             </CardContent>

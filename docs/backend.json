@@ -1,0 +1,65 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Thông tin chi tiết của người dùng và thành viên.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "affiliate", "admin"] },
+        "affiliateCode": { "type": "string" },
+        "balance": { "type": "number" },
+        "totalEarned": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "AffiliateLink": {
+      "title": "Affiliate Link",
+      "description": "Link tiếp thị liên kết do người dùng tạo.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "code": { "type": "string" },
+        "clicks": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "AffiliateConversion": {
+      "title": "Affiliate Conversion",
+      "description": "Bản ghi chuyển đổi hoa hồng từ đơn hàng.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "affiliateCode": { "type": "string" },
+        "orderId": { "type": "string" },
+        "orderAmount": { "type": "number" },
+        "commissionAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "paid", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "Thông tin người dùng"
+    },
+    "/affiliate_links/{linkId}": {
+      "schema": "AffiliateLink",
+      "description": "Danh sách link affiliate"
+    },
+    "/conversions/{convId}": {
+      "schema": "AffiliateConversion",
+      "description": "Dữ liệu chuyển đổi hoa hồng"
+    }
+  }
+}
