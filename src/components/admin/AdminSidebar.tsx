@@ -21,7 +21,10 @@ import {
   ShieldCheck,
   Globe,
   Bell,
-  Activity
+  Activity,
+  UserCog,
+  TrendingUp,
+  FileText
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -45,6 +48,7 @@ export function AdminSidebar() {
       items: [
         { name: "Dashboard Tổng", icon: <LayoutDashboard />, href: "/admin" },
         { name: "Quản lý Merchants", icon: <Store />, href: "/admin/vendors" },
+        { name: "Reseller Storefronts", icon: <Rocket />, href: "/admin/resellers" },
         { name: "Cấu hình Toàn sàn", icon: <Settings />, href: "/admin/settings" },
       ]
     },
@@ -53,21 +57,23 @@ export function AdminSidebar() {
       items: [
         { name: "Sản phẩm hệ thống", icon: <Package />, href: "/admin/products" },
         { name: "Banner & Slides", icon: <ImageIcon />, href: "/admin/banners" },
-        { name: "Đơn hàng toàn hệ thống", icon: <ShoppingCart />, href: "/admin/orders" },
+        { name: "Đơn hàng toàn sàn", icon: <ShoppingCart />, href: "/admin/orders" },
       ]
     },
     {
-      label: "Marketing Engine",
+      label: "Marketing & Growth",
       items: [
         { name: "Chiến dịch sàn", icon: <Tag />, href: "/admin/promotions" },
         { name: "Kho Voucher", icon: <Ticket />, href: "/admin/coupons" },
         { name: "Hệ thống Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
-        { name: "Loyalty (Điểm thưởng)", icon: <Star />, href: "/admin/loyalty" },
+        { name: "Loyalty (Thành viên)", icon: <Star />, href: "/admin/loyalty" },
       ]
     },
     {
-      label: "Giao diện & UI",
+      label: "Dữ liệu & UI",
       items: [
+        { name: "CRM (Khách hàng)", icon: <Users />, href: "/admin/customers" },
+        { name: "Báo cáo & Phân tích", icon: <TrendingUp />, href: "/admin/analytics" },
         { name: "Theme Marketplace", icon: <Palette />, href: "/admin/themes" },
       ]
     }
@@ -130,7 +136,7 @@ export function AdminSidebar() {
              <SidebarMenuButton asChild className="h-11 rounded-xl px-4 text-muted-foreground hover:bg-white/5">
                 <Link href="/">
                    <Globe className="w-5 h-5" />
-                   <span className="text-xs uppercase font-bold group-data-[collapsible=icon]:hidden">Go to Platform</span>
+                   <span className="text-xs uppercase font-bold group-data-[collapsible=icon]:hidden">Go to Storefront</span>
                 </Link>
              </SidebarMenuButton>
           </SidebarMenuItem>
