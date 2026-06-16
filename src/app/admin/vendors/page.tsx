@@ -27,7 +27,10 @@ import {
   TrendingUp,
   Settings2,
   Lock,
-  ArrowUpRight
+  ArrowUpRight,
+  Activity,
+  Plus,
+  Download
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -189,8 +192,10 @@ export default function AdminMerchantManagement() {
                             <ArrowUpRight className="w-4 h-4 text-muted-foreground group-focus:text-white" /> Đăng nhập quản trị shop
                           </DropdownMenuItem>
                           
-                          <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-white/5 cursor-pointer" onSelect={() => window.open(`/shop/${v.storeSlug}`, '_blank')}>
-                            <ExternalLink className="w-4 h-4 text-muted-foreground" /> Xem Storefront thực tế
+                          <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-white/5 cursor-pointer" asChild>
+                            <Link href={`/shop/${v.storeSlug}`} target="_blank" className="flex items-center gap-3">
+                              <ExternalLink className="w-4 h-4 text-muted-foreground" /> Xem Storefront thực tế
+                            </Link>
                           </DropdownMenuItem>
                           
                           <DropdownMenuSeparator className="bg-white/5 my-2" />
