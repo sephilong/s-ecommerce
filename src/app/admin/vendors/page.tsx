@@ -30,7 +30,8 @@ import {
   ArrowUpRight,
   Activity,
   Plus,
-  Download
+  Download,
+  DollarSign
 } from "lucide-react";
 import {
   DropdownMenu,
