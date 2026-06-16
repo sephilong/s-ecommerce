@@ -40,6 +40,52 @@ export type ShippingMethod = {
   price: number;
 };
 
+export type PromotionType = 
+  | 'percentage' 
+  | 'fixed_amount' 
+  | 'buy_x_get_y' 
+  | 'bundle' 
+  | 'tiered' 
+  | 'flash_sale' 
+  | 'free_shipping' 
+  | 'loyalty_multiplier' 
+  | 'first_order' 
+  | 'referral';
+
+export interface Promotion {
+  id: string;
+  name: string;
+  description: string;
+  type: PromotionType;
+  isActive: boolean;
+  startsAt?: string;
+  expiresAt?: string;
+  priority: number;
+  config: any; // Flexible config based on type
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  description: string;
+  discountType: 'percent' | 'fixed' | 'free_shipping';
+  discountValue: number;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  usageLimit?: number;
+  usageCount: number;
+  isActive: boolean;
+  startsAt?: string;
+  expiresAt?: string;
+}
+
+export interface LoyaltyConfig {
+  earnRate: number; // 10000đ = 1 điểm
+  redeemRate: number; // 1 điểm = 100đ
+  minRedeemPoints: number;
+  maxRedeemPercent: number;
+}
+
 export type Tenant = {
   id: string;
   name: string;
@@ -51,6 +97,9 @@ export type Tenant = {
   banners: Banner[];
   paymentMethods: PaymentMethod[];
   shippingMethods: ShippingMethod[];
+  promotions: Promotion[];
+  coupons: Coupon[];
+  loyaltyConfig: LoyaltyConfig;
 };
 
 const categories = ["Điện tử", "Phụ kiện", "Gia dụng", "Thời trang"];
@@ -79,7 +128,7 @@ const generateMockProducts = (count: number): Product[] => {
       price: 500000 + (Math.random() * 10000000),
       compareAtPrice: Math.random() > 0.5 ? 12000000 + (Math.random() * 5000000) : undefined,
       image: PlaceHolderImages[imageIndex].imageUrl,
-      description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng. Thiết kế sang trọng, hiệu năng vượt trội phù hợp với mọi nhu cầu.`,
+      description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng.`,
       category: category,
       inStock: Math.random() > 0.1,
       createdAt: new Date(Date.now() - (i * 86400000)).toISOString()
@@ -96,29 +145,58 @@ const mockBanners: Banner[] = [
     link: "/products",
     type: 'product',
     isActive: true
-  },
-  {
-    id: "b2",
-    title: "Tuần Lễ Phụ Kiện",
-    subtitle: "Mua 1 tặng 1 cho tất cả các loại ốp lưng và cáp sạc cao cấp.",
-    imageUrl: "https://picsum.photos/seed/promo1/1200/600",
-    link: "/flash-sale",
-    type: 'promotion',
-    isActive: true
   }
 ];
 
-const mockPaymentMethods: PaymentMethod[] = [
-  { id: "pm1", name: "Thanh toán VNPAY", type: "vnpay", isActive: true, description: "Cổng thanh toán điện tử VNPAY (QR Pay, Thẻ ATM, Thẻ quốc tế)" },
-  { id: "pm2", name: "Ví MoMo", type: "momo", isActive: true, description: "Thanh toán qua ví điện tử MoMo" },
-  { id: "pm3", name: "Chuyển khoản ngân hàng", type: "banking", isActive: true, description: "Quét mã QR hoặc chuyển khoản thủ công" },
-  { id: "pm4", name: "Thanh toán khi nhận hàng (COD)", type: "cod", isActive: true, description: "Thanh toán bằng tiền mặt khi shipper giao hàng" },
+const mockPromotions: Promotion[] = [
+  {
+    id: 'promo-1',
+    name: 'Flash Sale Cuối Tuần',
+    description: 'Giảm 15% cho toàn bộ ngành hàng Điện tử',
+    type: 'percentage',
+    isActive: true,
+    priority: 1,
+    config: {
+      discountPercent: 15,
+      appliesTo: 'category',
+      targetIds: ['Điện tử']
+    }
+  },
+  {
+    id: 'promo-2',
+    name: 'Miễn phí vận chuyển',
+    description: 'Miễn phí vận chuyển cho đơn hàng trên 2.000.000đ',
+    type: 'free_shipping',
+    isActive: true,
+    priority: 2,
+    config: {
+      minimumOrderAmount: 2000000,
+      maxShippingFee: 50000
+    }
+  }
 ];
 
-const mockShippingMethods: ShippingMethod[] = [
-  { id: "sm1", name: "Giao Hàng Nhanh (GHN)", type: "ghn", isActive: true, price: 35000 },
-  { id: "sm2", name: "Giao Hàng Tiết Kiệm (GHTK)", type: "ghtk", isActive: true, price: 30000 },
-  { id: "sm3", name: "Viettel Post", type: "viettel", isActive: true, price: 32000 },
+const mockCoupons: Coupon[] = [
+  {
+    id: 'cp-1',
+    code: 'SCOMNEW',
+    description: 'Giảm 50.000đ cho đơn hàng đầu tiên từ 500.000đ',
+    discountType: 'fixed',
+    discountValue: 50000,
+    minOrderAmount: 500000,
+    usageCount: 0,
+    isActive: true
+  },
+  {
+    id: 'cp-2',
+    code: 'TECH20',
+    description: 'Giảm 20% tối đa 200.000đ',
+    discountType: 'percent',
+    discountValue: 20,
+    maxDiscountAmount: 200000,
+    usageCount: 0,
+    isActive: true
+  }
 ];
 
 export const MOCK_TENANTS: Tenant[] = [
@@ -130,8 +208,24 @@ export const MOCK_TENANTS: Tenant[] = [
     primaryColor: "#9757EA",
     products: generateMockProducts(20),
     banners: mockBanners,
-    paymentMethods: mockPaymentMethods,
-    shippingMethods: mockShippingMethods
+    paymentMethods: [
+      { id: "pm1", name: "Thanh toán VNPAY", type: "vnpay", isActive: true, description: "Cổng thanh toán điện tử VNPAY" },
+      { id: "pm2", name: "Ví MoMo", type: "momo", isActive: true, description: "Thanh toán qua ví MoMo" },
+      { id: "pm3", name: "Chuyển khoản ngân hàng", type: "banking", isActive: true, description: "Quét mã QR chuyển khoản" },
+      { id: "pm4", name: "Thanh toán khi nhận hàng (COD)", type: "cod", isActive: true, description: "Thanh toán tiền mặt" },
+    ],
+    shippingMethods: [
+      { id: "sm1", name: "Giao Hàng Nhanh (GHN)", type: "ghn", isActive: true, price: 35000 },
+      { id: "sm2", name: "Giao Hàng Tiết Kiệm (GHTK)", type: "ghtk", isActive: true, price: 30000 },
+    ],
+    promotions: mockPromotions,
+    coupons: mockCoupons,
+    loyaltyConfig: {
+      earnRate: 10000,
+      redeemRate: 100,
+      minRedeemPoints: 100,
+      maxRedeemPercent: 30
+    }
   }
 ];
 

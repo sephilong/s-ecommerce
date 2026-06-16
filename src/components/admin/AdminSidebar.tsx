@@ -11,7 +11,10 @@ import {
   Settings, 
   BarChart3, 
   Image as ImageIcon,
-  Store
+  Store,
+  Tag,
+  Ticket,
+  Star
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -37,6 +40,12 @@ export function AdminSidebar() {
     { name: "Cài đặt", icon: <Settings />, href: "/admin/settings" },
   ];
 
+  const marketingItems = [
+    { name: "Khuyến mãi", icon: <Tag />, href: "/admin/promotions" },
+    { name: "Mã giảm giá", icon: <Ticket />, href: "/admin/coupons" },
+    { name: "Loyalty / Điểm thưởng", icon: <Star />, href: "/admin/loyalty" },
+  ];
+
   return (
     <Sidebar collapsible="icon" className="border-r border-white/5">
       <SidebarHeader className="p-4 flex items-center gap-2">
@@ -48,6 +57,26 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Quản lý</SidebarGroupLabel>
           <SidebarMenu>
             {menuItems.map((item) => (
+              <SidebarMenuItem key={item.name}>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={pathname === item.href}
+                  tooltip={item.name}
+                >
+                  <Link href={item.href}>
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Marketing Engine</SidebarGroupLabel>
+          <SidebarMenu>
+            {marketingItems.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton 
                   asChild 
