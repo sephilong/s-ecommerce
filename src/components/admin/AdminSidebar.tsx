@@ -50,6 +50,7 @@ export function AdminSidebar() {
     { name: "Quản lý Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
     { name: "Quản lý Resellers", icon: <Rocket />, href: "/admin/resellers" },
     { name: "Quản lý Vendor", icon: <Store />, href: "/admin/vendors" },
+    { name: "Kho Giao diện (Themes)", icon: <Palette />, href: "/admin/themes" },
   ];
 
   return (

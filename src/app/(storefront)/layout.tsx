@@ -8,6 +8,7 @@ import { getTenantConfig } from "@/lib/tenant";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAffiliateStore } from "@/store/affiliateStore";
+import { useThemeStore } from "@/store/themeStore";
 import { Tenant } from "@/lib/store-data";
 
 export default function StorefrontLayout({
@@ -18,6 +19,7 @@ export default function StorefrontLayout({
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const searchParams = useSearchParams();
   const { logClick } = useAffiliateStore();
+  const { themes, platformThemeId } = useThemeStore();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,37 +33,35 @@ export default function StorefrontLayout({
     // Attribution Logic: Click Tracking
     const refCode = searchParams.get("ref");
     if (refCode) {
-      // 1. Capture metadata
       const ua = navigator.userAgent;
       const browser = ua.includes("Chrome") ? "Chrome" : ua.includes("Firefox") ? "Firefox" : "Safari";
       const device = /Mobile|Android|iPhone/i.test(ua) ? "Mobile" : "Desktop";
       
-      // 2. Log click event
       logClick({
         id: `click-${Date.now()}`,
         code: refCode,
-        ip: "Captured on backend", // Simplified for demo
+        ip: "Captured on backend",
         device: device,
         browser: browser,
         timestamp: new Date().toISOString()
       });
 
-      // 3. Store for attribution (Cookie 30 Days)
-      const attribution = {
-        code: refCode,
-        timestamp: Date.now()
-      };
+      const attribution = { code: refCode, timestamp: Date.now() };
       localStorage.setItem("scomhub_affiliate_ref", JSON.stringify(attribution));
     }
   }, [searchParams, logClick]);
 
   if (!tenant) return null;
 
+  // Lấy cấu hình theme hiện tại của Platform
+  const currentTheme = themes.find(t => t.id === platformThemeId);
+
   return (
     <div className="flex flex-col min-h-screen">
       <style jsx global>{`
         :root {
-          --primary: ${tenant.primaryColor};
+          --primary: ${currentTheme?.config.primaryColor || tenant.primaryColor};
+          --radius: ${currentTheme?.config.borderRadius || '0.75rem'};
         }
       `}</style>
       
