@@ -16,7 +16,8 @@ import {
   Ticket,
   Star,
   UserCheck,
-  Rocket
+  Rocket,
+  Palette
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -100,6 +101,14 @@ export function AdminSidebar() {
 
         <SidebarGroup className="mt-auto">
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/vendor/builder">
+                  <Palette />
+                  <span>Storefront Builder</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="/">

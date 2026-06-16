@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   Bell,
   Plus,
-  Star
+  Star,
+  Palette
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
@@ -28,16 +29,20 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const { getVendorByUserId } = useVendorStore();
 
   const vendor = profile ? getVendorByUserId(profile.email) : null;
+  const isBuilder = pathname.includes('/builder');
 
   const menuItems = [
     { name: "Tổng quan", icon: <LayoutDashboard />, href: "/vendor/dashboard" },
     { name: "Sản phẩm", icon: <Package />, href: "/vendor/products" },
     { name: "Đơn hàng", icon: <ShoppingCart />, href: "/vendor/orders" },
     { name: "Tài chính", icon: <Wallet />, href: "/vendor/finance" },
+    { name: "Builder", icon: <Palette />, href: "/vendor/builder" },
     { name: "Đánh giá", icon: <Star />, href: "/vendor/reviews" },
-    { name: "Phân tích", icon: <BarChart3 />, href: "/vendor/analytics" },
     { name: "Cài đặt Shop", icon: <Settings />, href: "/vendor/settings" },
   ];
+
+  // Nếu đang ở Builder, ẩn layout chung để tối ưu không gian làm việc
+  if (isBuilder) return <>{children}</>;
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-white">
@@ -92,7 +97,6 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           </div>
           
           <div className="flex items-center gap-4">
-             {/* Nút Đăng sản phẩm mới tại Header */}
              <Button variant="outline" size="sm" className="rounded-full bg-primary/10 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all gap-2 h-11 px-6 font-bold shadow-lg shadow-primary/10" asChild>
                 <Link href="/vendor/products?add=true">
                   <Plus className="w-4 h-4" /> 
