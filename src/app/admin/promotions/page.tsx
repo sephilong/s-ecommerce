@@ -16,11 +16,11 @@ import {
   Gift, 
   Layers, 
   TrendingUp, 
-  UserPlus, 
-  Users,
   Target,
-  Package,
-  ShoppingBag
+  ShoppingBag,
+  Search,
+  Check,
+  X
 } from "lucide-react";
 import { 
   Dialog, 
@@ -34,14 +34,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState, useMemo } from "react";
 import { toast } from "@/hooks/use-toast";
-import { Promotion, PromotionType } from "@/lib/store-data";
+import { Promotion, PromotionType, MOCK_TENANTS, Product } from "@/lib/store-data";
 
 export default function AdminPromotionsPage() {
   const { promotions, addPromotion, deletePromotion, updatePromotion } = usePromotionStore();
   const [isOpen, setIsOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState<Promotion | null>(null);
+  
+  // Product Selector State
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [selectorTargetField, setSelectorTargetField] = useState<'targetIds' | 'applicableProductIds' | 'giftProductIds'>('targetIds');
+  const [productSearch, setProductSearch] = useState("");
+  
+  const allProducts = MOCK_TENANTS[0].products;
 
   const [formData, setFormData] = useState<Partial<Promotion>>({
     name: "",
@@ -52,7 +61,12 @@ export default function AdminPromotionsPage() {
     config: { 
       discountPercent: 10, 
       appliesTo: 'order',
-      targetIds: []
+      targetIds: [],
+      applicableProductIds: [],
+      giftProductIds: [],
+      buyQuantity: 1,
+      getQuantity: 1,
+      getDiscount: 100
     }
   });
 
@@ -87,7 +101,12 @@ export default function AdminPromotionsPage() {
       config: { 
         discountPercent: 10, 
         appliesTo: 'order',
-        targetIds: []
+        targetIds: [],
+        applicableProductIds: [],
+        giftProductIds: [],
+        buyQuantity: 1,
+        getQuantity: 1,
+        getDiscount: 100
       }
     });
     setEditingPromo(null);
@@ -99,27 +118,47 @@ export default function AdminPromotionsPage() {
     setIsOpen(true);
   };
 
+  const handleConfigChange = (key: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        [key]: value
+      }
+    }));
+  };
+
+  const openProductSelector = (field: 'targetIds' | 'applicableProductIds' | 'giftProductIds') => {
+    setSelectorTargetField(field);
+    setIsProductSelectorOpen(true);
+    setProductSearch("");
+  };
+
+  const filteredProductsForSelector = useMemo(() => {
+    return allProducts.filter(p => 
+      p.name.toLowerCase().includes(productSearch.toLowerCase()) || 
+      p.id.toLowerCase().includes(productSearch.toLowerCase())
+    );
+  }, [productSearch, allProducts]);
+
+  const toggleProductSelection = (productId: string) => {
+    const currentSelection = formData.config?.[selectorTargetField] || [];
+    const newSelection = currentSelection.includes(productId)
+      ? currentSelection.filter((id: string) => id !== productId)
+      : [...currentSelection, productId];
+    handleConfigChange(selectorTargetField, newSelection);
+  };
+
   const getPromoDetails = (type: string) => {
     switch (type) {
       case 'percentage': return { icon: <Percent className="text-blue-500" />, label: 'Giảm %' };
       case 'fixed_amount': return { icon: <Tag className="text-green-500" />, label: 'Giảm tiền mặt' };
       case 'buy_x_get_y': return { icon: <Gift className="text-pink-500" />, label: 'Mua X tặng Y' };
       case 'bundle': return { icon: <Layers className="text-orange-500" />, label: 'Combo Bundle' };
-      case 'tiered': return { icon: <TrendingUp className="text-indigo-500" />, label: 'Giảm theo cấp độ' };
       case 'flash_sale': return { icon: <Zap className="text-yellow-500" />, label: 'Flash Sale' };
       case 'free_shipping': return { icon: <Truck className="text-cyan-500" />, label: 'Miễn phí ship' };
       default: return { icon: <Tag />, label: 'Khuyến mãi' };
     }
-  };
-
-  const handleConfigChange = (key: string, value: any) => {
-    setFormData({
-      ...formData,
-      config: {
-        ...formData.config,
-        [key]: value
-      }
-    });
   };
 
   return (
@@ -162,82 +201,143 @@ export default function AdminPromotionsPage() {
                 </div>
               </div>
 
-              <div className="space-y-4 p-4 rounded-2xl bg-muted/30 border border-white/5">
-                <h3 className="text-sm font-bold flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Đối tượng áp dụng</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Phạm vi</Label>
-                    <Select 
-                      value={formData.config?.appliesTo || 'order'} 
-                      onValueChange={(val) => handleConfigChange('appliesTo', val)}
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="order">Toàn đơn hàng</SelectItem>
-                        <SelectItem value="category">Theo danh mục</SelectItem>
-                        <SelectItem value="product">Theo sản phẩm cụ thể</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {formData.config?.appliesTo !== 'order' && (
+              {/* Dynamic Config Sections */}
+              {formData.type === 'buy_x_get_y' ? (
+                <div className="space-y-4 p-4 rounded-2xl bg-pink-500/5 border border-pink-500/10">
+                  <h3 className="text-sm font-bold flex items-center gap-2"><Gift className="w-4 h-4 text-pink-500" /> Cấu hình Mua X Tặng Y</h3>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>{formData.config?.appliesTo === 'category' ? 'Tên danh mục' : 'Mã sản phẩm (IDs)'}</Label>
-                      <Input 
-                        placeholder="Cách nhau bằng dấu phẩy..." 
-                        value={formData.config?.targetIds?.join(', ') || ''}
-                        onChange={(e) => handleConfigChange('targetIds', e.target.value.split(',').map(s => s.trim()))}
-                      />
+                      <Label>Số lượng mua (X)</Label>
+                      <Input type="number" value={formData.config?.buyQuantity} onChange={(e) => handleConfigChange('buyQuantity', parseInt(e.target.value))} />
                     </div>
-                  )}
+                    <div className="space-y-2">
+                      <Label>Số lượng tặng (Y)</Label>
+                      <Input type="number" value={formData.config?.getQuantity} onChange={(e) => handleConfigChange('getQuantity', parseInt(e.target.value))} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sản phẩm mua áp dụng</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        readOnly 
+                        placeholder="Chọn sản phẩm mua..." 
+                        value={formData.config?.applicableProductIds?.length ? `${formData.config.applicableProductIds.length} sản phẩm được chọn` : ""} 
+                        onClick={() => openProductSelector('applicableProductIds')}
+                        className="cursor-pointer bg-background/50"
+                      />
+                      <Button variant="outline" type="button" onClick={() => openProductSelector('applicableProductIds')}>Chọn</Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sản phẩm tặng (Quà tặng)</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        readOnly 
+                        placeholder="Chọn sản phẩm tặng..." 
+                        value={formData.config?.giftProductIds?.length ? `${formData.config.giftProductIds.length} sản phẩm quà tặng` : ""} 
+                        onClick={() => openProductSelector('giftProductIds')}
+                        className="cursor-pointer bg-background/50"
+                      />
+                      <Button variant="outline" type="button" onClick={() => openProductSelector('giftProductIds')}>Chọn</Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>% Giảm giá cho sản phẩm quà tặng (100% = Miễn phí)</Label>
+                    <Input type="number" max={100} value={formData.config?.getDiscount} onChange={(e) => handleConfigChange('getDiscount', parseInt(e.target.value))} />
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
-                <h3 className="text-sm font-bold flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> Cấu hình giá trị</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {formData.type === 'percentage' && (
-                    <>
+              ) : (
+                <div className="space-y-4 p-4 rounded-2xl bg-muted/30 border border-white/5">
+                  <h3 className="text-sm font-bold flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Đối tượng áp dụng</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Phạm vi</Label>
+                      <Select 
+                        value={formData.config?.appliesTo || 'order'} 
+                        onValueChange={(val) => handleConfigChange('appliesTo', val)}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="order">Toàn đơn hàng</SelectItem>
+                          <SelectItem value="category">Theo danh mục</SelectItem>
+                          <SelectItem value="product">Sản phẩm cụ thể</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {formData.config?.appliesTo === 'category' ? (
                       <div className="space-y-2">
-                        <Label>Phần trăm giảm (%)</Label>
-                        <Input type="number" value={formData.config?.discountPercent} onChange={(e) => handleConfigChange('discountPercent', parseInt(e.target.value))} />
+                        <Label>Tên danh mục</Label>
+                        <Input 
+                          placeholder="Ví dụ: Điện tử, Phụ kiện..." 
+                          value={formData.config?.targetIds?.join(', ') || ''}
+                          onChange={(e) => handleConfigChange('targetIds', e.target.value.split(',').map(s => s.trim()))}
+                        />
                       </div>
+                    ) : formData.config?.appliesTo === 'product' ? (
                       <div className="space-y-2">
-                        <Label>Giảm tối đa (đ)</Label>
-                        <Input type="number" value={formData.config?.maxDiscountAmount} onChange={(e) => handleConfigChange('maxDiscountAmount', parseInt(e.target.value))} />
+                        <Label>Chọn sản phẩm</Label>
+                        <div className="flex gap-2">
+                          <Input 
+                            readOnly
+                            placeholder="Chọn sản phẩm áp dụng..." 
+                            value={formData.config?.targetIds?.length ? `${formData.config.targetIds.length} sản phẩm đã chọn` : ""}
+                            onClick={() => openProductSelector('targetIds')}
+                            className="cursor-pointer"
+                          />
+                          <Button variant="outline" type="button" onClick={() => openProductSelector('targetIds')}>Chọn</Button>
+                        </div>
                       </div>
-                    </>
-                  )}
-                  
-                  {formData.type === 'fixed_amount' && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Số tiền giảm (đ)</Label>
-                        <Input type="number" value={formData.config?.discountAmount} onChange={(e) => handleConfigChange('discountAmount', parseInt(e.target.value))} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Đơn tối thiểu (đ)</Label>
-                        <Input type="number" value={formData.config?.minimumOrderAmount} onChange={(e) => handleConfigChange('minimumOrderAmount', parseInt(e.target.value))} />
-                      </div>
-                    </>
-                  )}
-
-                  {formData.type === 'free_shipping' && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Đơn tối thiểu (đ)</Label>
-                        <Input type="number" value={formData.config?.minimumOrderAmount} onChange={(e) => handleConfigChange('minimumOrderAmount', parseInt(e.target.value))} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Hỗ trợ ship tối đa (đ)</Label>
-                        <Input type="number" value={formData.config?.maxShippingFee} onChange={(e) => handleConfigChange('maxShippingFee', parseInt(e.target.value))} />
-                      </div>
-                    </>
-                  )}
+                    ) : null}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Reward Value Configuration */}
+              {(formData.type === 'percentage' || formData.type === 'fixed_amount' || formData.type === 'free_shipping') && (
+                <div className="space-y-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                  <h3 className="text-sm font-bold flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> Cấu hình giá trị</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {formData.type === 'percentage' && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Phần trăm giảm (%)</Label>
+                          <Input type="number" value={formData.config?.discountPercent} onChange={(e) => handleConfigChange('discountPercent', parseInt(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Giảm tối đa (đ)</Label>
+                          <Input type="number" value={formData.config?.maxDiscountAmount} onChange={(e) => handleConfigChange('maxDiscountAmount', parseInt(e.target.value))} />
+                        </div>
+                      </>
+                    )}
+                    
+                    {formData.type === 'fixed_amount' && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Số tiền giảm (đ)</Label>
+                          <Input type="number" value={formData.config?.discountAmount} onChange={(e) => handleConfigChange('discountAmount', parseInt(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Đơn tối thiểu (đ)</Label>
+                          <Input type="number" value={formData.config?.minimumOrderAmount} onChange={(e) => handleConfigChange('minimumOrderAmount', parseInt(e.target.value))} />
+                        </div>
+                      </>
+                    )}
+
+                    {formData.type === 'free_shipping' && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Đơn tối thiểu (đ)</Label>
+                          <Input type="number" value={formData.config?.minimumOrderAmount} onChange={(e) => handleConfigChange('minimumOrderAmount', parseInt(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Hỗ trợ ship tối đa (đ)</Label>
+                          <Input type="number" value={formData.config?.maxShippingFee} onChange={(e) => handleConfigChange('maxShippingFee', parseInt(e.target.value))} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Mô tả hiển thị cho khách hàng</Label>
@@ -246,7 +346,7 @@ export default function AdminPromotionsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Độ ưu tiên (Cao nhất sẽ áp dụng trước)</Label>
+                  <Label>Độ ưu tiên (Cao nhất áp dụng trước)</Label>
                   <Input type="number" value={formData.priority} onChange={(e) => setFormData({...formData, priority: parseInt(e.target.value)})} />
                 </div>
                 <div className="space-y-2">
@@ -268,10 +368,68 @@ export default function AdminPromotionsPage() {
         </Dialog>
       </div>
 
+      {/* Product Selector Dialog */}
+      <Dialog open={isProductSelectorOpen} onOpenChange={setIsProductSelectorOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Chọn sản phẩm áp dụng</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Tìm tên hoặc ID sản phẩm..." 
+                className="pl-10"
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+              />
+            </div>
+            <ScrollArea className="h-[400px] border border-white/5 rounded-xl p-2">
+              <div className="space-y-1">
+                {filteredProductsForSelector.map(product => (
+                  <div 
+                    key={product.id} 
+                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                      formData.config?.[selectorTargetField]?.includes(product.id) 
+                        ? 'bg-primary/10 border border-primary/20' 
+                        : 'hover:bg-muted/50 border border-transparent'
+                    }`}
+                    onClick={() => toggleProductSelection(product.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox 
+                        checked={formData.config?.[selectorTargetField]?.includes(product.id)} 
+                        onCheckedChange={() => toggleProductSelection(product.id)}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">{product.name}</span>
+                        <span className="text-[10px] text-muted-foreground">ID: {product.id} • {product.category}</span>
+                      </div>
+                    </div>
+                    {formData.config?.[selectorTargetField]?.includes(product.id) && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
+                ))}
+                {filteredProductsForSelector.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground text-sm">Không tìm thấy sản phẩm nào.</div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsProductSelectorOpen(false)} className="w-full">Xác nhận chọn ({formData.config?.[selectorTargetField]?.length || 0})</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Promotions List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {promotions.map((promo) => {
           const details = getPromoDetails(promo.type);
-          const appliesToString = promo.config?.appliesTo === 'order' ? 'Toàn đơn' : promo.config?.appliesTo === 'category' ? `DM: ${promo.config?.targetIds?.join(', ')}` : `SP: ${promo.config?.targetIds?.join(', ')}`;
+          const appliesToString = promo.type === 'buy_x_get_y' 
+            ? `Mua ${promo.config?.buyQuantity} tặng ${promo.config?.getQuantity}`
+            : promo.config?.appliesTo === 'order' ? 'Toàn đơn' : promo.config?.appliesTo === 'category' ? `DM: ${promo.config?.targetIds?.join(', ')}` : `${promo.config?.targetIds?.length || 0} SP`;
           
           return (
             <Card key={promo.id} className="border-white/5 bg-card/50 overflow-hidden group hover:border-primary/50 transition-all shadow-lg">
@@ -322,9 +480,10 @@ export default function AdminPromotionsPage() {
       {promotions.length === 0 && (
         <div className="text-center py-24 bg-muted/20 rounded-3xl border border-dashed border-white/10">
           <ShoppingBag className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-          <p className="text-muted-foreground">Chưa có chương trình khuyến mãi nào được thiết lập.</p>
+          <p className="text-muted-foreground">Chưa có chương trình khuyến mãi nào.</p>
         </div>
       )}
     </div>
   );
 }
+
