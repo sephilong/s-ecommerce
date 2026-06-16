@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Coupon } from "@/lib/store-data";
@@ -88,12 +89,12 @@ export default function AdminCouponsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Mã Giảm Giá (Coupons)</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">Mã Giảm Giá (Coupons)</h1>
           <p className="text-muted-foreground">Tạo các mã voucher cho khách hàng nhập khi thanh toán.</p>
         </div>
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2 rounded-full">
+            <Button className="gap-2 rounded-full shadow-lg shadow-primary/20">
               <Plus className="w-4 h-4" />
               Tạo mã mới
             </Button>
@@ -106,12 +107,12 @@ export default function AdminCouponsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Mã Code</Label>
-                  <Input value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})} placeholder="SALE20" />
+                  <Input value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})} placeholder="SALE20" className="rounded-xl h-10" />
                 </div>
                 <div className="space-y-2">
                   <Label>Loại giảm giá</Label>
                   <Select value={formData.discountType} onValueChange={(val) => setFormData({...formData, discountType: val as any})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fixed">Số tiền cố định (đ)</SelectItem>
                       <SelectItem value="percent">Phần trăm (%)</SelectItem>
@@ -123,11 +124,11 @@ export default function AdminCouponsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Giá trị giảm</Label>
-                  <Input type="number" value={formData.discountValue} onChange={(e) => setFormData({...formData, discountValue: parseInt(e.target.value)})} />
+                  <Input type="number" value={formData.discountValue} onChange={(e) => setFormData({...formData, discountValue: parseInt(e.target.value)})} className="rounded-xl h-10" />
                 </div>
                 <div className="space-y-2">
                   <Label>Đơn tối thiểu</Label>
-                  <Input type="number" value={formData.minOrderAmount} onChange={(e) => setFormData({...formData, minOrderAmount: parseInt(e.target.value)})} />
+                  <Input type="number" value={formData.minOrderAmount} onChange={(e) => setFormData({...formData, minOrderAmount: parseInt(e.target.value)})} className="rounded-xl h-10" />
                 </div>
               </div>
               
@@ -138,6 +139,7 @@ export default function AdminCouponsPage() {
                     type="datetime-local" 
                     value={formData.startsAt ? formData.startsAt.slice(0, 16) : ''} 
                     onChange={(e) => setFormData({...formData, startsAt: e.target.value ? new Date(e.target.value).toISOString() : ''})} 
+                    className="rounded-xl h-11"
                   />
                 </div>
                 <div className="space-y-2">
@@ -146,13 +148,14 @@ export default function AdminCouponsPage() {
                     type="datetime-local" 
                     value={formData.expiresAt ? formData.expiresAt.slice(0, 16) : ''} 
                     onChange={(e) => setFormData({...formData, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : ''})} 
+                    className="rounded-xl h-11"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Mô tả hiển thị</Label>
-                <Input value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Giảm 50k cho đơn từ 500k..." />
+                <Input value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Giảm 50k cho đơn từ 500k..." className="rounded-xl h-10" />
               </div>
               <div className="flex items-center space-x-2 pt-2">
                 <Checkbox id="isActive" checked={formData.isActive} onCheckedChange={(val) => setFormData({...formData, isActive: !!val})} />
@@ -160,17 +163,17 @@ export default function AdminCouponsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleSave} className="w-full rounded-full h-12 font-bold">Lưu mã giảm giá</Button>
+              <Button onClick={handleSave} className="w-full rounded-full h-12 font-bold text-lg">Lưu mã giảm giá</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <Card className="border-white/5 bg-card/50">
+      <Card className="border-white/5 bg-card/50 rounded-3xl overflow-hidden shadow-xl">
         <CardHeader className="p-4 border-b border-white/5">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Tìm mã coupon..." className="pl-8 h-9" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Tìm mã coupon..." className="pl-10 h-10 rounded-full bg-background/50" />
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -191,28 +194,30 @@ export default function AdminCouponsPage() {
                   <tr key={cp.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <code className="bg-primary/10 text-primary px-2 py-1 rounded font-bold">{cp.code}</code>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyCode(cp.code)}><Copy className="w-3 h-3" /></Button>
+                        <code className="bg-primary/10 text-primary px-3 py-1 rounded-lg font-bold">{cp.code}</code>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => copyCode(cp.code)}><Copy className="w-3 h-3" /></Button>
                       </div>
                     </td>
-                    <td className="p-4 font-bold">
+                    <td className="p-4 font-bold text-base">
                       {cp.discountType === 'percent' ? `${cp.discountValue}%` : `${cp.discountValue.toLocaleString()}₫`}
                     </td>
                     <td className="p-4 text-xs text-muted-foreground">
                       {cp.minOrderAmount ? `Đơn từ ${cp.minOrderAmount.toLocaleString()}₫` : 'Mọi đơn hàng'}
                     </td>
-                    <td className="p-4 text-[10px] text-muted-foreground">
-                      {cp.expiresAt ? `Hết hạn: ${new Date(cp.expiresAt).toLocaleDateString('vi-VN')}` : 'Vĩnh viễn'}
+                    <td className="p-4 text-[10px] text-muted-foreground leading-relaxed">
+                      {cp.startsAt && <div>Từ: {new Date(cp.startsAt).toLocaleString('vi-VN')}</div>}
+                      {cp.expiresAt && <div>Đến: {new Date(cp.expiresAt).toLocaleString('vi-VN')}</div>}
+                      {!cp.expiresAt && <div>Vĩnh viễn</div>}
                     </td>
                     <td className="p-4">
-                      <Badge variant={cp.isActive ? 'default' : 'secondary'}>
+                      <Badge variant={cp.isActive ? 'default' : 'secondary'} className="rounded-full">
                         {cp.isActive ? 'Bật' : 'Tắt'}
                       </Badge>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(cp)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteCoupon(cp.id)}><Trash2 className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleEdit(cp)}><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => deleteCoupon(cp.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </td>
                   </tr>
