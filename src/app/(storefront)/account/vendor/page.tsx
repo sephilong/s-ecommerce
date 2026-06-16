@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUserStore } from "@/store/userStore";
 import { useVendorStore, Vendor } from "@/store/vendorStore";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,9 @@ import {
   Plus,
   Trash2,
   ExternalLink,
-  Loader2
+  Loader2,
+  FileSpreadsheet,
+  Upload
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -48,8 +50,9 @@ export default function VendorOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Tìm thông tin vendor dựa trên email người dùng hiện tại
   const vendor = profile ? getVendorByUserId(profile.email) : undefined;
   const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
 
@@ -113,7 +116,37 @@ export default function VendorOnboardingPage() {
     toast({ title: "Đã đăng sản phẩm!", description: "Sản phẩm đang chờ Admin phê duyệt." });
   };
 
-  // GIAO DIỆN QUẢN LÝ NHANH KHI ĐÃ LÀ VENDOR
+  const handleImportExcel = () => {
+    if (!vendor) return;
+    setLoading(true);
+    
+    // Giả lập xử lý file Excel
+    setTimeout(() => {
+      const mockImported = [
+        { id: `imp-1-${Date.now()}`, name: "Sản phẩm Excel 1", price: 150000, category: "Điện tử" },
+        { id: `imp-2-${Date.now()}`, name: "Sản phẩm Excel 2", price: 250000, category: "Thời trang" },
+        { id: `imp-3-${Date.now()}`, name: "Sản phẩm Excel 3", price: 350000, category: "Gia dụng" },
+      ];
+
+      mockImported.forEach(p => {
+        addVendorProduct({
+          ...p,
+          vendorId: vendor.id,
+          description: "Nhập tự động từ file Excel.",
+          image: `https://picsum.photos/seed/${p.id}/600/600`,
+          slug: p.name.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
+          inStock: true,
+          createdAt: new Date().toISOString(),
+          status: 'pending'
+        });
+      });
+
+      setLoading(false);
+      setIsImportOpen(false);
+      toast({ title: "Nhập dữ liệu thành công", description: `Đã thêm ${mockImported.length} sản phẩm vào danh sách chờ duyệt.` });
+    }, 2000);
+  };
+
   if (vendor) {
     return (
       <div className="max-w-5xl mx-auto py-8 space-y-12 animate-in fade-in duration-500">
@@ -128,7 +161,6 @@ export default function VendorOnboardingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Trạng thái shop */}
           <Card className="lg:col-span-1 bg-card/30 border-white/5 p-8 rounded-[2rem] h-fit">
             <div className="space-y-6">
               <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
@@ -158,56 +190,84 @@ export default function VendorOnboardingPage() {
             </div>
           </Card>
 
-          {/* Quản lý sản phẩm nhanh */}
           <Card className="lg:col-span-2 bg-card/30 border-white/5 rounded-[2rem] overflow-hidden">
-             <CardHeader className="flex flex-row items-center justify-between p-8 border-b border-white/5">
+             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between p-8 border-b border-white/5 gap-4">
                 <div>
                    <CardTitle className="text-xl italic">Sản phẩm của bạn</CardTitle>
                    <CardDescription>Đăng và quản lý kho hàng nhanh.</CardDescription>
                 </div>
                 {vendor.status === 'approved' && (
-                  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="rounded-full h-10 px-6 gap-2">
-                        <Plus className="w-4 h-4" /> Đăng SP mới
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-xl">
-                      <form onSubmit={handleAddProduct}>
-                        <DialogHeader><DialogTitle>THÊM SẢN PHẨM MỚI</DialogTitle></DialogHeader>
-                        <div className="space-y-4 py-4">
-                           <div className="space-y-2">
-                              <Label>Tên sản phẩm</Label>
-                              <Input name="name" required placeholder="Tên sản phẩm..." />
-                           </div>
-                           <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Danh mục</Label>
-                                <Select name="category" defaultValue="Điện tử">
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Điện tử">Điện tử</SelectItem>
-                                    <SelectItem value="Thời trang">Thời trang</SelectItem>
-                                    <SelectItem value="Gia dụng">Gia dụng</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Giá bán (VNĐ)</Label>
-                                <Input name="price" type="number" required placeholder="500000" />
-                              </div>
-                           </div>
-                           <div className="space-y-2">
-                              <Label>Mô tả ngắn</Label>
-                              <Textarea name="description" placeholder="Thông tin sản phẩm..." />
-                           </div>
-                        </div>
-                        <DialogFooter>
-                           <Button type="submit" className="w-full rounded-xl h-12 font-bold">Gửi duyệt ngay</Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+                  <div className="flex gap-2">
+                    <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="rounded-full h-10 px-6 gap-2 border-primary/30 text-primary hover:bg-primary/10">
+                          <FileSpreadsheet className="w-4 h-4" /> Nhập từ Excel
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                         <DialogHeader>
+                            <DialogTitle className="font-headline italic">NHẬP SẢN PHẨM HÀNG LOẠT</DialogTitle>
+                            <DialogDescription>Tải lên file Excel mẫu chứa danh sách sản phẩm của bạn.</DialogDescription>
+                         </DialogHeader>
+                         <div className="py-12 border-2 border-dashed border-white/10 rounded-3xl text-center bg-white/5 space-y-4">
+                            <Upload className="w-12 h-12 text-muted-foreground mx-auto opacity-20" />
+                            <div className="space-y-1">
+                               <p className="font-bold">Nhấn để chọn hoặc kéo thả file</p>
+                               <p className="text-xs text-muted-foreground">Hỗ trợ định dạng .xlsx, .csv (Max 5MB)</p>
+                            </div>
+                            <Button variant="link" className="text-xs text-primary underline">Tải file Excel mẫu tại đây</Button>
+                         </div>
+                         <DialogFooter>
+                            <Button className="w-full rounded-xl h-12 font-bold" onClick={handleImportExcel} disabled={loading}>
+                               {loading ? <Loader2 className="animate-spin mr-2" /> : "Bắt đầu tải lên"}
+                            </Button>
+                         </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="rounded-full h-10 px-6 gap-2 shadow-lg shadow-primary/20">
+                          <Plus className="w-4 h-4" /> Đăng SP mới
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-xl">
+                        <form onSubmit={handleAddProduct}>
+                          <DialogHeader><DialogTitle>THÊM SẢN PHẨM MỚI</DialogTitle></DialogHeader>
+                          <div className="space-y-4 py-4">
+                             <div className="space-y-2">
+                                <Label>Tên sản phẩm</Label>
+                                <Input name="name" required placeholder="Tên sản phẩm..." />
+                             </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Danh mục</Label>
+                                  <Select name="category" defaultValue="Điện tử">
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Điện tử">Điện tử</SelectItem>
+                                      <SelectItem value="Thời trang">Thời trang</SelectItem>
+                                      <SelectItem value="Gia dụng">Gia dụng</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Giá bán (VNĐ)</Label>
+                                  <Input name="price" type="number" required placeholder="500000" />
+                                </div>
+                             </div>
+                             <div className="space-y-2">
+                                <Label>Mô tả ngắn</Label>
+                                <Textarea name="description" placeholder="Thông tin sản phẩm..." />
+                             </div>
+                          </div>
+                          <DialogFooter>
+                             <Button type="submit" className="w-full rounded-xl h-12 font-bold">Gửi duyệt ngay</Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 )}
              </CardHeader>
              <CardContent className="p-0">
@@ -253,7 +313,6 @@ export default function VendorOnboardingPage() {
     );
   }
 
-  // GIAO DIỆN ĐĂNG KÝ (ONBOARDING) KHI CHƯA CÓ VENDOR
   return (
     <div className="max-w-4xl mx-auto py-12 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="text-center space-y-6">
@@ -413,7 +472,7 @@ export default function VendorOnboardingPage() {
                       disabled={loading}
                       className="flex-1 h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/30"
                     >
-                      {loading ? "Đang xử lý..." : "Hoàn tất đăng ký"}
+                      {loading ? <Loader2 className="animate-spin mr-2" /> : "Hoàn tất đăng ký"}
                     </Button>
                   </div>
                 </div>

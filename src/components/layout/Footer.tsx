@@ -4,12 +4,17 @@
 import Link from "next/link";
 import { Tenant } from "@/lib/store-data";
 import { useVendorStore } from "@/store/vendorStore";
+import { usePathname } from "next/navigation";
 
 export function Footer({ tenant }: { tenant: Tenant }) {
   const { currentVendor } = useVendorStore();
+  const pathname = usePathname();
 
-  const name = currentVendor ? currentVendor.storeName : tenant.name;
-  const description = currentVendor ? currentVendor.storeDescription : tenant.description;
+  const isShopPage = pathname.includes('/shop/');
+  const vendor = isShopPage ? currentVendor : null;
+
+  const name = vendor ? vendor.storeName : tenant.name;
+  const description = vendor ? (vendor.storeDescription || "Cửa hàng đối tác tin cậy tại S-Com Hub.") : tenant.description;
 
   return (
     <footer className="border-t border-white/5 pt-20 pb-10 bg-card/20">
@@ -39,16 +44,17 @@ export function Footer({ tenant }: { tenant: Tenant }) {
 
         <div className="space-y-6">
           <h4 className="font-bold uppercase text-xs tracking-widest text-primary">Liên hệ</h4>
-          {currentVendor ? (
-            <>
-              <p className="text-sm text-muted-foreground">Chủ sở hữu: {currentVendor.accountName}</p>
-              <p className="text-sm text-muted-foreground">Pháp lý: {currentVendor.businessType === 'company' ? 'Doanh nghiệp' : 'Cá nhân'}</p>
-            </>
+          {vendor ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground"><span className="font-bold text-white">Chủ sở hữu:</span> {vendor.accountName}</p>
+              <p className="text-sm text-muted-foreground"><span className="font-bold text-white">Loại hình:</span> {vendor.businessType === 'company' ? 'Doanh nghiệp' : 'Cá nhân'}</p>
+              <p className="text-sm text-muted-foreground"><span className="font-bold text-white">Mã số:</span> {vendor.idNumber}</p>
+            </div>
           ) : (
-            <>
+            <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Email: contact@scomhub.vn</p>
               <p className="text-sm text-muted-foreground">Hotline: 1900 1234</p>
-            </>
+            </div>
           )}
         </div>
       </div>
