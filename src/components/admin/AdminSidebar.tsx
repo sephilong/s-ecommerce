@@ -24,7 +24,8 @@ import {
   Activity,
   UserCog,
   TrendingUp,
-  FileText
+  FileText,
+  Briefcase
 } from "lucide-react";
 import { 
   Sidebar, 
