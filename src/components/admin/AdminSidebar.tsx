@@ -102,7 +102,7 @@ export function AdminSidebar() {
         <SidebarGroup className="mt-auto">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild isActive={pathname === '/vendor/builder'}>
                 <Link href="/vendor/builder">
                   <Palette />
                   <span>Storefront Builder</span>
