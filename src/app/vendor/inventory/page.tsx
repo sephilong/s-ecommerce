@@ -49,11 +49,17 @@ export default function InventoryDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const lowStockItems = getLowStockItems();
 
-  // Form states
+  // Form states Adjustment
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedWarehouse, setSelectedWarehouse] = useState('');
   const [adjustQty, setAdjustQty] = useState(0);
   const [adjustReason, setAdjustReason] = useState('inventory_count');
+
+  // Form states Transfer
+  const [transferFrom, setTransferFrom] = useState('');
+  const [transferTo, setTransferTo] = useState('');
+  const [transferProd, setTransferProduct] = useState('');
+  const [transferQty, setTransferQty] = useState(0);
 
   const handleAdjust = () => {
     if (!selectedProduct || !selectedWarehouse) return;
@@ -62,21 +68,83 @@ export default function InventoryDashboard() {
     setSelectedProduct('');
   };
 
+  const handleTransfer = () => {
+    if (!transferFrom || !transferTo || !transferProd || transferQty <= 0) {
+      toast({ variant: "destructive", title: "Thiếu thông tin", description: "Vui lòng nhập đầy đủ các trường điều chuyển." });
+      return;
+    }
+    if (transferFrom === transferTo) {
+      toast({ variant: "destructive", title: "Lỗi", description: "Kho nguồn và kho đích không được trùng nhau." });
+      return;
+    }
+    transferStock(transferFrom, transferTo, transferProd, transferQty);
+    toast({ title: "Thành công", description: "Lệnh điều chuyển kho đã được thực hiện." });
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-4xl font-black font-headline italic tracking-tighter uppercase">QUẢN LÝ KHO HÀNG</h1>
-          <p className="text-muted-foreground">Theo dõi tồn kho đa chi nhánh và điều chuyển hàng hóa.</p>
+          <p className="text-muted-foreground">Theo dõi tồn kho đa chi nhánh và điều chuyển hàng hóa chuyên nghiệp.</p>
         </div>
         <div className="flex gap-3">
+           <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="rounded-full h-11 px-6 font-bold gap-2 border-primary/20 text-primary">
+                  <ArrowRightLeft className="w-4 h-4" /> Chuyển kho
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                 <DialogHeader><DialogTitle className="font-headline italic">ĐIỀU CHUYỂN HÀNG HÓA</DialogTitle></DialogHeader>
+                 <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                       <Label>Sản phẩm điều chuyển</Label>
+                       <Select value={transferProd} onValueChange={setTransferProduct}>
+                          <SelectTrigger className="rounded-xl"><SelectValue placeholder="Chọn sản phẩm..." /></SelectTrigger>
+                          <SelectContent>
+                             {vendorProducts.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                          </SelectContent>
+                       </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <Label>Từ kho</Label>
+                          <Select value={transferFrom} onValueChange={setTransferFrom}>
+                             <SelectTrigger className="rounded-xl"><SelectValue placeholder="Từ..." /></SelectTrigger>
+                             <SelectContent>
+                                {warehouses.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                             </SelectContent>
+                          </Select>
+                       </div>
+                       <div className="space-y-2">
+                          <Label>Đến kho</Label>
+                          <Select value={transferTo} onValueChange={setTransferTo}>
+                             <SelectTrigger className="rounded-xl"><SelectValue placeholder="Đến..." /></SelectTrigger>
+                             <SelectContent>
+                                {warehouses.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                             </SelectContent>
+                          </Select>
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <Label>Số lượng chuyển</Label>
+                       <Input type="number" value={transferQty} onChange={e => setTransferQty(parseInt(e.target.value))} className="rounded-xl" />
+                    </div>
+                 </div>
+                 <DialogFooter>
+                    <Button className="w-full h-12 rounded-xl font-bold" onClick={handleTransfer}>Xác nhận điều chuyển</Button>
+                 </DialogFooter>
+              </DialogContent>
+           </Dialog>
+
            <Dialog>
               <DialogTrigger asChild>
                 <Button className="rounded-full h-11 px-8 font-bold gap-2 shadow-xl shadow-primary/20">
                   <Plus className="w-4 h-4" /> Điều chỉnh tồn kho
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md rounded-[2rem]">
+              <DialogContent className="max-w-md">
                  <DialogHeader><DialogTitle className="font-headline italic">ĐIỀU CHỈNH THỦ CÔNG</DialogTitle></DialogHeader>
                  <div className="space-y-6 py-6">
                     <div className="space-y-2">
@@ -135,7 +203,7 @@ export default function InventoryDashboard() {
                  <p className="text-sm text-red-500/80">Có {lowStockItems.length} sản phẩm đang ở mức báo động (Dưới ngưỡng an toàn).</p>
               </div>
            </div>
-           <Button size="sm" variant="outline" className="rounded-full border-red-500/30 text-red-500 hover:bg-red-500/10">Xem danh sách</Button>
+           <Button size="sm" variant="outline" className="rounded-full border-red-500/30 text-red-500 hover:bg-red-500/10" onClick={() => setActiveTab('overview')}>Xem danh sách</Button>
         </Card>
       )}
 
@@ -171,12 +239,12 @@ export default function InventoryDashboard() {
                  <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                        <thead className="bg-muted/20 border-b border-white/5">
-                          <tr className="text-left">
-                             <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Sản phẩm</th>
-                             <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground text-center">Kho hàng</th>
-                             <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground text-center">Sẵn sàng</th>
-                             <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground text-center">Tạm giữ</th>
-                             <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Trạng thái</th>
+                          <tr className="text-left font-black">
+                             <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground">Sản phẩm</th>
+                             <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground text-center">Kho hàng</th>
+                             <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground text-center">Sẵn sàng</th>
+                             <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground text-center">Tạm giữ</th>
+                             <th className="p-6 text-[10px] uppercase tracking-widest text-muted-foreground">Trạng thái</th>
                              <th className="p-6"></th>
                           </tr>
                        </thead>

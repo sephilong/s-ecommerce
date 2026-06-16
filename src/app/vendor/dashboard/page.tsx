@@ -2,6 +2,7 @@
 "use client";
 
 import { useVendorStore } from "@/store/vendorStore";
+import { useInventoryStore } from "@/store/inventoryStore";
 import { formatVND } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
@@ -16,7 +17,8 @@ import {
   ChevronRight,
   MousePointer2,
   Star,
-  Activity
+  Activity,
+  Warehouse
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -33,12 +35,16 @@ import Link from "next/link";
 
 export default function MerchantDashboard() {
   const { vendors, vendorOrders } = useVendorStore();
+  const { getLowStockItems, stockLevels } = useInventoryStore();
   const vendor = vendors[0];
+  
+  const lowStockCount = getLowStockItems().length;
+  const totalInventory = stockLevels.reduce((acc, curr) => acc + curr.quantity, 0);
 
   const stats = [
     { label: "Doanh thu (Tháng)", value: formatVND(125000000), icon: <DollarSign />, trend: "+15.2%", color: "text-green-500" },
     { label: "Đơn hàng mới", value: vendorOrders.length.toString(), icon: <ShoppingCart />, trend: "+8", color: "text-blue-500" },
-    { label: "Khách hàng mới", value: "24", icon: <Users />, trend: "+12%", color: "text-primary" },
+    { label: "Tổng tồn kho", value: totalInventory.toString(), icon: <Package />, trend: "Đang ổn định", color: "text-primary" },
     { label: "Lượt ghé thăm", value: "1,450", icon: <MousePointer2 />, trend: "+245", color: "text-orange-500" },
   ];
 
@@ -133,7 +139,9 @@ export default function MerchantDashboard() {
               <div className="space-y-4">
                 <TodoItem count={5} label="Chờ xác nhận đơn" icon={<Clock className="w-3.5 h-3.5" />} color="text-orange-500" />
                 <TodoItem count={12} label="Chờ lấy hàng" icon={<Package className="w-3.5 h-3.5" />} color="text-blue-500" />
-                <TodoItem count={3} label="Hết tồn kho" icon={<AlertTriangle className="w-3.5 h-3.5" />} color="text-red-500" />
+                <Link href="/vendor/inventory">
+                   <TodoItem count={lowStockCount} label="Sắp hết hàng (Kho)" icon={<Warehouse className="w-3.5 h-3.5" />} color="text-red-500" />
+                </Link>
                 <TodoItem count={2} label="Yêu cầu hoàn tiền" icon={<DollarSign className="w-3.5 h-3.5" />} color="text-yellow-500" />
               </div>
            </Card>
