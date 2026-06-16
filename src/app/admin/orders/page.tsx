@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useOrderStore, Order } from "@/store/orderStore";
@@ -51,7 +52,6 @@ export default function AdminOrdersPage() {
   const handleUpdateStatus = (orderId: string, status: Order['status']) => {
     updateOrderStatus(orderId, status);
     
-    // Auto-approve affiliate commission if completed
     if (status === 'completed') {
       const conversion = conversions.find(c => c.orderId === orderId);
       if (conversion && conversion.status === 'pending') {
@@ -59,7 +59,6 @@ export default function AdminOrdersPage() {
       }
     }
 
-    // Trigger Notification to Customer
     const order = orders.find(o => o.id === orderId);
     if (order && order.customerId) {
       addNotification({
@@ -162,7 +161,7 @@ export default function AdminOrdersPage() {
                             className="gap-3 rounded-xl p-3 cursor-pointer text-destructive focus:bg-destructive/10" 
                             onSelect={() => handleUpdateStatus(order.id, 'cancelled')}
                           >
-                            <XCircle className="w-4 h-4" /> Hủy bỏ đơn hàng
+                            <XCircle className="w-4 h-4" /> Hủy bỏ đơn hàng này
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

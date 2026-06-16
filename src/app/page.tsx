@@ -1,25 +1,12 @@
+/**
+ * TỆP NÀY ĐÃ ĐƯỢC VÔ HIỆU HÓA ĐỂ TRÁNH XUNG ĐỘT ĐỊNH TUYẾN
+ * Trang chủ chính thức nằm tại: src/app/(storefront)/page.tsx
+ */
 
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { ChatWidget } from "@/components/chatbot/ChatWidget";
-import HomePageContent from './(storefront)/page';
-import { getTenantConfig } from "@/lib/tenant";
-import { headers } from "next/headers";
+export const metadata = {
+  title: 'S-Com Hub',
+};
 
-export default async function RootPage() {
-  const headerList = await headers();
-  const host = headerList.get("host");
-  const subdomain = host?.split('.')[0] || "demo";
-  const tenant = await getTenantConfig(subdomain);
-
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Header tenant={tenant} />
-      <main className="flex-1">
-        <HomePageContent />
-      </main>
-      <Footer tenant={tenant} />
-      <ChatWidget tenant={tenant} />
-    </div>
-  );
+export default function Page() {
+  return null;
 }
