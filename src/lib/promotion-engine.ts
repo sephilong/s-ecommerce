@@ -29,63 +29,75 @@ export function calculateDiscount(
 
   for (const promo of activePromos) {
     let promoAmount = 0;
+    const { config } = promo;
+
+    // Helper to check if any cart items match the target criteria
+    const getEligibleItems = () => {
+      const { appliesTo, targetIds } = config;
+      if (appliesTo === 'order' || !targetIds || targetIds.length === 0) return items;
+      
+      if (appliesTo === 'category') {
+        return items.filter(i => targetIds.some((id: string) => i.product.category.toLowerCase().includes(id.toLowerCase())));
+      }
+      
+      if (appliesTo === 'product') {
+        return items.filter(i => targetIds.includes(i.product.id) || targetIds.includes(i.product.slug));
+      }
+      
+      return [];
+    };
 
     switch (promo.type) {
       case 'percentage': {
-        const { discountPercent, maxDiscountAmount, appliesTo, targetIds } = promo.config;
-        if (appliesTo === 'order') {
-          promoAmount = (subtotal * discountPercent) / 100;
-          if (maxDiscountAmount) promoAmount = Math.min(promoAmount, maxDiscountAmount);
-        } else if (appliesTo === 'category') {
-          const eligibleItems = items.filter(i => targetIds.some((id: string) => i.product.category.toLowerCase().includes(id.toLowerCase())));
+        const eligibleItems = getEligibleItems();
+        if (eligibleItems.length > 0) {
           const eligibleTotal = eligibleItems.reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
-          promoAmount = (eligibleTotal * discountPercent) / 100;
-          if (maxDiscountAmount) promoAmount = Math.min(promoAmount, maxDiscountAmount);
-        } else if (appliesTo === 'product') {
-          const eligibleItems = items.filter(i => targetIds.includes(i.product.id) || targetIds.includes(i.product.slug));
-          const eligibleTotal = eligibleItems.reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
-          promoAmount = (eligibleTotal * discountPercent) / 100;
-          if (maxDiscountAmount) promoAmount = Math.min(promoAmount, maxDiscountAmount);
+          promoAmount = (eligibleTotal * config.discountPercent) / 100;
+          if (config.maxDiscountAmount) promoAmount = Math.min(promoAmount, config.maxDiscountAmount);
         }
         break;
       }
 
       case 'fixed_amount': {
-        const { discountAmount, minimumOrderAmount, appliesTo, targetIds } = promo.config;
-        if (subtotal >= (minimumOrderAmount || 0)) {
-          if (appliesTo === 'order' || !targetIds || targetIds.length === 0) {
-            promoAmount = discountAmount;
-          } else {
-            // Check if cart contains any target products/categories
-            const hasTarget = items.some(i => 
-              appliesTo === 'category' ? targetIds.some((id: string) => i.product.category.includes(id)) : targetIds.includes(i.product.id)
-            );
-            if (hasTarget) promoAmount = discountAmount;
-          }
+        const eligibleItems = getEligibleItems();
+        if (eligibleItems.length > 0 && subtotal >= (config.minimumOrderAmount || 0)) {
+          promoAmount = config.discountAmount;
         }
         break;
       }
 
       case 'buy_x_get_y': {
-        const { buyQuantity, getQuantity, applicableProductIds, getDiscount } = promo.config;
+        const { buyQuantity, getQuantity, applicableProductIds, giftProductIds, getDiscount } = config;
         if (!applicableProductIds || applicableProductIds.length === 0) break;
 
-        const eligibleItems = items.filter(i => applicableProductIds.includes(i.product.id));
-        const totalQty = eligibleItems.reduce((acc, i) => acc + i.quantity, 0);
+        const buyItems = items.filter(i => applicableProductIds.includes(i.product.id));
+        const totalBuyQty = buyItems.reduce((acc, i) => acc + i.quantity, 0);
         
-        if (totalQty >= buyQuantity) {
-          const timesApplied = Math.floor(totalQty / buyQuantity);
+        if (totalBuyQty >= buyQuantity) {
+          const timesApplied = Math.floor(totalBuyQty / buyQuantity);
           const freeUnits = timesApplied * getQuantity;
-          const cheapestItem = [...eligibleItems].sort((a, b) => a.product.price - b.product.price)[0];
-          if (cheapestItem) {
-            promoAmount = (cheapestItem.product.price * freeUnits * (getDiscount || 100)) / 100;
+          
+          // If specific gift products are defined, we check if they are in cart
+          if (giftProductIds && giftProductIds.length > 0) {
+            const giftItemsInCart = items.filter(i => giftProductIds.includes(i.product.id));
+            if (giftItemsInCart.length > 0) {
+              // Apply discount to the gifts already in cart
+              const giftTotal = giftItemsInCart.reduce((acc, i) => acc + (i.product.price * Math.min(i.quantity, freeUnits)), 0);
+              promoAmount = (giftTotal * (getDiscount || 100)) / 100;
+            }
+          } else {
+            // Otherwise, free units from the buy list (cheapest ones)
+            const cheapestItem = [...buyItems].sort((a, b) => a.product.price - b.product.price)[0];
+            if (cheapestItem) {
+              promoAmount = (cheapestItem.product.price * freeUnits * (getDiscount || 100)) / 100;
+            }
           }
         }
         break;
       }
 
       case 'bundle': {
-        const { bundleProductIds, discountValue, discountType, requireAll } = promo.config;
+        const { bundleProductIds, discountValue, discountType, requireAll } = config;
         if (!bundleProductIds || bundleProductIds.length === 0) break;
 
         const cartProductIds = items.map(i => i.product.id);
@@ -102,7 +114,7 @@ export function calculateDiscount(
       }
 
       case 'flash_sale': {
-        const { products } = promo.config;
+        const { products } = config;
         if (!products) break;
         
         items.forEach(item => {
@@ -115,9 +127,9 @@ export function calculateDiscount(
       }
 
       case 'free_shipping': {
-        const { minimumOrderAmount, maxShippingFee } = promo.config;
-        if (subtotal >= (minimumOrderAmount || 0)) {
-          shippingDiscount = Math.min(shippingFee, maxShippingFee || Infinity);
+        const eligibleItems = getEligibleItems();
+        if (eligibleItems.length > 0 && subtotal >= (config.minimumOrderAmount || 0)) {
+          shippingDiscount = Math.min(shippingFee, config.maxShippingFee || Infinity);
         }
         break;
       }
