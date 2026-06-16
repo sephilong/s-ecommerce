@@ -43,7 +43,8 @@ import {
   Layers,
   ChevronRight,
   Save,
-  Plus
+  Plus,
+  Check
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -56,8 +57,10 @@ import {
   Cell
 } from 'recharts';
 import { toast } from "@/hooks/use-toast";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MOCK_TENANTS } from "@/lib/store-data";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function AdminAffiliatePage() {
   const { 
@@ -78,8 +81,26 @@ export default function AdminAffiliatePage() {
   
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [localConfig, setLocalConfig] = useState(config);
-  const [isProgramOpen, setIsProductOpen] = useState(false);
+  const [isProgramOpen, setIsProgramOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<AffiliateProgram | null>(null);
+
+  // Form State for Program
+  const [eligibleType, setEligibleProducts] = useState<'all' | 'categories' | 'specific'>('all');
+  const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const categories = ["Điện tử", "Phụ kiện", "Gia dụng", "Thời trang"];
+  const allProducts = MOCK_TENANTS[0].products;
+
+  useEffect(() => {
+    if (editingProgram) {
+      setEligibleProducts(editingProgram.eligibleProducts);
+      setSelectedTargetIds(editingProgram.targetIds || []);
+    } else {
+      setEligibleProducts('all');
+      setSelectedTargetIds([]);
+    }
+  }, [editingProgram]);
 
   const handleApproveAffiliate = (id: string) => {
     updateAffiliateRequest(id, 'approved');
@@ -97,13 +118,14 @@ export default function AdminAffiliatePage() {
   const handleSaveProgram = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget as HTMLFormElement);
+    
     const newProgram: AffiliateProgram = {
       id: editingProgram?.id || `prog-${Date.now()}`,
       name: formData.get('name') as string,
       description: formData.get('description') as string,
       conditions: formData.get('conditions') as string,
-      eligibleProducts: formData.get('eligibleProducts') as any,
-      targetIds: [],
+      eligibleProducts: eligibleType,
+      targetIds: selectedTargetIds,
       isActive: true
     };
 
@@ -112,24 +134,23 @@ export default function AdminAffiliatePage() {
       : [...programs, newProgram];
     
     updatePrograms(newPrograms);
-    setIsProductOpen(false);
+    setIsProgramOpen(false);
     setEditingProgram(null);
     toast({ title: "Đã lưu", description: "Chương trình hợp tác đã được cập nhật." });
   };
 
-  // Performance data calculation
-  const performanceData = useMemo(() => [
-    { name: 'Đơn hàng', value: conversions.length, color: 'hsl(var(--primary))' },
-    { name: 'Chờ duyệt', value: conversions.filter(c => c.status === 'pending').length, color: '#FBBF24' },
-    { name: 'Đã duyệt', value: conversions.filter(c => c.status === 'approved').length, color: '#10B981' },
-  ], [conversions]);
+  const toggleTargetId = (id: string) => {
+    setSelectedTargetIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
 
-  const adminStats = [
-    { label: "Tổng hoa hồng đã duyệt", value: formatVND(stats.totalEarnings), icon: <DollarSign />, color: "text-primary" },
-    { label: "Yêu cầu rút tiền", value: payoutRequests.filter(p => p.status === 'pending').length, icon: <Wallet />, color: "text-blue-500" },
-    { label: "Lượt Click Toàn sàn", value: stats.totalClicks, icon: <TrendingUp />, color: "text-green-500" },
-    { label: "Đối tác Hoạt động", value: affiliateRequests.filter(r => r.status === 'approved').length, icon: <Users />, color: "text-purple-500" },
-  ];
+  const filteredItems = useMemo(() => {
+    if (eligibleType === 'categories') {
+      return categories.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return allProducts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [eligibleType, searchTerm]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -174,13 +195,13 @@ export default function AdminAffiliatePage() {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isProgramOpen} onOpenChange={setIsProductOpen}>
+          <Dialog open={isProgramOpen} onOpenChange={setIsProgramOpen}>
             <DialogTrigger asChild>
-              <Button className="rounded-full gap-2 shadow-lg shadow-primary/20">
+              <Button className="rounded-full gap-2 shadow-lg shadow-primary/20" onClick={() => setEditingProgram(null)}>
                 <Plus className="w-4 h-4" /> Tạo Chương trình
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <form onSubmit={handleSaveProgram}>
                 <DialogHeader>
                   <DialogTitle>{editingProgram ? 'Sửa Chương trình' : 'Tạo Chương trình Hợp tác'}</DialogTitle>
@@ -199,9 +220,10 @@ export default function AdminAffiliatePage() {
                     <Label>Điều kiện tham gia (Ai được hợp tác?)</Label>
                     <Textarea name="conditions" defaultValue={editingProgram?.conditions} placeholder="VD: Có kênh TikTok trên 5k followers..." />
                   </div>
+                  
                   <div className="space-y-2">
                     <Label>Phạm vi sản phẩm áp dụng</Label>
-                    <Select name="eligibleProducts" defaultValue={editingProgram?.eligibleProducts || 'all'}>
+                    <Select value={eligibleType} onValueChange={(val: any) => setEligibleProducts(val)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Toàn bộ sản phẩm</SelectItem>
@@ -210,6 +232,43 @@ export default function AdminAffiliatePage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {eligibleType !== 'all' && (
+                    <div className="space-y-3 p-4 rounded-2xl bg-muted/30 border border-white/5">
+                      <Label className="flex justify-between items-center">
+                        <span>{eligibleType === 'categories' ? 'Chọn Danh mục' : 'Chọn Sản phẩm'}</span>
+                        <Badge variant="secondary">{selectedTargetIds.length} đã chọn</Badge>
+                      </Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                        <Input 
+                          placeholder="Tìm kiếm..." 
+                          className="pl-9 h-9 rounded-full bg-background/50" 
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      <ScrollArea className="h-48 border rounded-xl p-2 bg-background/50">
+                        <div className="space-y-1">
+                          {filteredItems.map((item: any) => {
+                            const id = typeof item === 'string' ? item : item.id;
+                            const name = typeof item === 'string' ? item : item.name;
+                            const isSelected = selectedTargetIds.includes(id);
+                            return (
+                              <div 
+                                key={id} 
+                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                                onClick={() => toggleTargetId(id)}
+                              >
+                                <span className="text-sm font-medium">{name}</span>
+                                {isSelected && <Check className="w-4 h-4" />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button type="submit" className="w-full rounded-full">Lưu Chương trình</Button>
@@ -258,7 +317,7 @@ export default function AdminAffiliatePage() {
                       <div>
                         <CardTitle className="text-base">{prog.name}</CardTitle>
                         <Badge variant="outline" className="text-[10px] uppercase bg-background mt-1">
-                          {prog.eligibleProducts === 'all' ? 'Toàn sàn' : 'Chọn lọc'}
+                          {prog.eligibleProducts === 'all' ? 'Toàn sàn' : prog.eligibleProducts === 'categories' ? 'Theo Danh mục' : 'Chọn lọc'}
                         </Badge>
                       </div>
                     </div>
@@ -275,8 +334,8 @@ export default function AdminAffiliatePage() {
                     <p className="text-xs text-foreground/80 line-clamp-2 italic">"{prog.conditions}"</p>
                   </div>
                   <div className="flex justify-between items-center pt-2">
-                    <span className="text-[10px] text-muted-foreground">Phạm vi: {prog.eligibleProducts}</span>
-                    <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs font-bold gap-1" onClick={() => { setEditingProgram(prog); setIsProductOpen(true); }}>
+                    <span className="text-[10px] text-muted-foreground">Đã chọn: {prog.targetIds?.length || 0} mục</span>
+                    <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs font-bold gap-1" onClick={() => { setEditingProgram(prog); setIsProgramOpen(true); }}>
                       Chỉnh sửa <ChevronRight className="w-3 h-3" />
                     </Button>
                   </div>
@@ -406,6 +465,13 @@ export default function AdminAffiliatePage() {
     </div>
   );
 }
+
+const adminStats = [
+  { label: "Tổng hoa hồng đã duyệt", value: "0₫", icon: <DollarSign />, color: "text-primary" },
+  { label: "Yêu cầu rút tiền", value: 0, icon: <Wallet />, color: "text-blue-500" },
+  { label: "Lượt Click Toàn sàn", value: 0, icon: <TrendingUp />, color: "text-green-500" },
+  { label: "Đối tác Hoạt động", value: 0, icon: <Users />, color: "text-purple-500" },
+];
 
 function HelpBox({ text }: { text: string }) {
   return (
