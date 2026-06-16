@@ -22,17 +22,34 @@ import {
   User as UserIcon,
   CreditCard,
   Rocket,
-  ArrowRight
+  ArrowRight,
+  Package,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { formatVND } from "@/lib/currency";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
 
 export default function VendorOnboardingPage() {
   const { profile } = useUserStore();
-  const { getVendorByUserId, registerVendor } = useVendorStore();
+  const { getVendorByUserId, registerVendor, vendorProducts, addVendorProduct, deleteVendorProduct } = useVendorStore();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
-  const vendor = profile ? getVendorByUserId(profile.email) : undefined; // Giả định dùng email làm userId
+  const vendor = profile ? getVendorByUserId(profile.email) : undefined;
+  const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
 
   const [formData, setFormData] = useState<Partial<Vendor>>({
     storeName: "",
@@ -57,6 +74,7 @@ export default function VendorOnboardingPage() {
       commissionRate: 10,
       totalRevenue: 0,
       balance: 0,
+      pendingBalance: 0,
       createdAt: new Date().toISOString()
     } as Vendor;
 
@@ -67,48 +85,166 @@ export default function VendorOnboardingPage() {
     }, 1500);
   };
 
+  const handleAddProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vendor) return;
+
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    const productName = fd.get('name') as string;
+    
+    const newProduct = {
+      id: `v-prod-${Date.now()}`,
+      vendorId: vendor.id,
+      name: productName,
+      price: parseInt(fd.get('price') as string),
+      category: fd.get('category'),
+      description: fd.get('description'),
+      image: `https://picsum.photos/seed/${Date.now()}/600/600`,
+      slug: productName.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
+      inStock: true,
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    addVendorProduct(newProduct);
+    setIsAddOpen(false);
+    toast({ title: "Đã đăng sản phẩm!", description: "Sản phẩm đang chờ Admin phê duyệt." });
+  };
+
   if (vendor) {
     return (
-      <div className="max-w-4xl mx-auto py-12 space-y-8 animate-in fade-in duration-500">
-        <div className="text-center space-y-4">
-          <div className="h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
-            {vendor.status === 'approved' ? <CheckCircle2 className="w-10 h-10" /> : <Clock className="w-10 h-10" />}
+      <div className="max-w-5xl mx-auto py-8 space-y-12 animate-in fade-in duration-500">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Quản lý gian hàng</h1>
+            <p className="text-muted-foreground">Chào mừng quay trở lại, {vendor.storeName}.</p>
           </div>
-          <h1 className="text-3xl font-black font-headline italic tracking-tighter">TRẠNG THÁI CỬA HÀNG</h1>
-          <p className="text-muted-foreground text-lg">
-            {vendor.status === 'approved' 
-              ? "Chúc mừng! Cửa hàng của bạn đã sẵn sàng hoạt động." 
-              : "Yêu cầu đăng ký nhà bán hàng của bạn đang được hội đồng Admin xét duyệt."}
-          </p>
+          <Button asChild className="rounded-full px-8 h-12 font-bold shadow-xl shadow-primary/20">
+            <Link href="/vendor/dashboard">Vào Kênh Người Bán Toàn Diện <ArrowRight className="ml-2 w-4 h-4" /></Link>
+          </Button>
         </div>
 
-        <Card className="bg-card/30 border-white/5 p-8 rounded-[2rem]">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
-                <Store className="w-7 h-7 text-primary" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Trạng thái shop */}
+          <Card className="lg:col-span-1 bg-card/30 border-white/5 p-8 rounded-[2rem] h-fit">
+            <div className="space-y-6">
+              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                {vendor.status === 'approved' ? <CheckCircle2 className="w-8 h-8" /> : <Clock className="w-8 h-8" />}
               </div>
-              <div>
-                <h3 className="text-xl font-bold">{vendor.storeName}</h3>
-                <p className="text-xs text-muted-foreground">Mã nhà bán: {vendor.id}</p>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold">Trạng thái: {vendor.status === 'approved' ? 'Đang hoạt động' : 'Đang chờ duyệt'}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {vendor.status === 'approved' 
+                    ? "Gian hàng của bạn đã sẵn sàng đón khách hàng." 
+                    : "Hồ sơ của bạn đang được Admin kiểm tra thông tin pháp lý."}
+                </p>
               </div>
+              <div className="pt-4 border-t border-white/5 space-y-4">
+                 <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Doanh thu:</span>
+                    <span className="font-bold">{formatVND(vendor.totalRevenue)}</span>
+                 </div>
+                 <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Chiết khấu sàn:</span>
+                    <span className="font-bold text-primary">{vendor.commissionRate}%</span>
+                 </div>
+              </div>
+              <Button asChild variant="outline" className="w-full rounded-xl gap-2">
+                <Link href={`/shop/${vendor.storeSlug}`} target="_blank"><ExternalLink className="w-4 h-4" /> Xem shop thực tế</Link>
+              </Button>
             </div>
-            <div className="flex gap-3">
-              {vendor.status === 'approved' ? (
-                <Button asChild className="rounded-full px-8 h-12 font-bold shadow-xl shadow-primary/20">
-                  <Link href="/vendor/dashboard">Truy cập Kênh Người Bán <ArrowRight className="ml-2 w-4 h-4" /></Link>
-                </Button>
-              ) : (
-                <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 px-6 py-2 rounded-full font-bold">Đang chờ duyệt</Badge>
-              )}
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <OnboardingStep icon={<ShieldCheck />} title="Xác minh" desc="Admin kiểm tra giấy tờ tùy thân và MST." status={vendor.status === 'approved' ? 'done' : 'current'} />
-          <OnboardingStep icon={<Store />} title="Thiết lập" desc="Cấu hình Logo, Banner và mô tả shop." status={vendor.status === 'approved' ? 'done' : 'next'} />
-          <OnboardingStep icon={<Rocket />} title="Bán hàng" desc="Đăng sản phẩm và tiếp cận khách hàng." status={vendor.status === 'approved' ? 'done' : 'next'} />
+          {/* Quản lý sản phẩm nhanh */}
+          <Card className="lg:col-span-2 bg-card/30 border-white/5 rounded-[2rem] overflow-hidden">
+             <CardHeader className="flex flex-row items-center justify-between p-8 border-b border-white/5">
+                <div>
+                   <CardTitle className="text-xl italic">Sản phẩm của bạn</CardTitle>
+                   <CardDescription>Đăng và quản lý kho hàng nhanh.</CardDescription>
+                </div>
+                {vendor.status === 'approved' && (
+                  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="rounded-full h-10 px-6 gap-2">
+                        <Plus className="w-4 h-4" /> Đăng SP mới
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-xl">
+                      <form onSubmit={handleAddProduct}>
+                        <DialogHeader><DialogTitle>THÊM SẢN PHẨM MỚI</DialogTitle></DialogHeader>
+                        <div className="space-y-4 py-4">
+                           <div className="space-y-2">
+                              <Label>Tên sản phẩm</Label>
+                              <Input name="name" required placeholder="Tên sản phẩm..." />
+                           </div>
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Danh mục</Label>
+                                <Select name="category" defaultValue="Điện tử">
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Điện tử">Điện tử</SelectItem>
+                                    <SelectItem value="Thời trang">Thời trang</SelectItem>
+                                    <SelectItem value="Gia dụng">Gia dụng</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Giá bán (VNĐ)</Label>
+                                <Input name="price" type="number" required placeholder="500000" />
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <Label>Mô tả ngắn</Label>
+                              <Textarea name="description" placeholder="Thông tin sản phẩm..." />
+                           </div>
+                        </div>
+                        <DialogFooter>
+                           <Button type="submit" className="w-full rounded-xl h-12 font-bold">Gửi duyệt ngay</Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                )}
+             </CardHeader>
+             <CardContent className="p-0">
+                {myProducts.length > 0 ? (
+                  <div className="divide-y divide-white/5">
+                     {myProducts.slice(0, 5).map((p) => (
+                       <div key={p.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                          <div className="flex items-center gap-4">
+                             <div className="h-12 w-12 rounded-lg relative overflow-hidden border border-white/10">
+                                <Image src={p.image} alt={p.name} fill className="object-cover" />
+                             </div>
+                             <div>
+                                <p className="text-sm font-bold truncate max-w-[150px] md:max-w-[250px]">{p.name}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase">{p.category} • {formatVND(p.price)}</p>
+                             </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                             <Badge variant={p.status === 'approved' ? 'default' : 'secondary'} className="rounded-full text-[8px] h-5">
+                                {p.status === 'approved' ? 'Đang bán' : 'Chờ duyệt'}
+                             </Badge>
+                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteVendorProduct(p.id)}>
+                                <Trash2 className="w-4 h-4" />
+                             </Button>
+                          </div>
+                       </div>
+                     ))}
+                     {myProducts.length > 5 && (
+                       <div className="p-4 text-center">
+                          <Link href="/vendor/products" className="text-xs text-primary font-bold hover:underline">Xem tất cả {myProducts.length} sản phẩm &rarr;</Link>
+                       </div>
+                     )}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center space-y-4">
+                     <Package className="w-12 h-12 text-muted-foreground/20 mx-auto" />
+                     <p className="text-sm text-muted-foreground italic">Bạn chưa có sản phẩm nào được đăng bán.</p>
+                  </div>
+                )}
+             </CardContent>
+          </Card>
         </div>
       </div>
     );
