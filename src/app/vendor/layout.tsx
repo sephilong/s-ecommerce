@@ -14,12 +14,12 @@ import {
   Store,
   ChevronLeft,
   Bell,
-  Plus
+  Plus,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useVendorStore } from "@/store/vendorStore";
-import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
@@ -29,18 +29,14 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
   const vendor = profile ? getVendorByUserId(profile.email) : null;
 
-  // Bảo vệ route vendor
-  if (!vendor || vendor.status !== 'approved') {
-    // redirect("/account/vendor"); // Giả lập redirect
-  }
-
   const menuItems = [
     { name: "Tổng quan", icon: <LayoutDashboard />, href: "/vendor/dashboard" },
     { name: "Sản phẩm", icon: <Package />, href: "/vendor/products" },
     { name: "Đơn hàng", icon: <ShoppingCart />, href: "/vendor/orders" },
     { name: "Tài chính", icon: <Wallet />, href: "/vendor/finance" },
-    { name: "Đánh giá", icon: <MessageSquare />, href: "/vendor/reviews" },
+    { name: "Đánh giá", icon: <Star />, href: "/vendor/reviews" },
     { name: "Phân tích", icon: <BarChart3 />, href: "/vendor/analytics" },
+    { name: "Cài đặt Shop", icon: <Settings />, href: "/vendor/settings" },
   ];
 
   return (
@@ -59,7 +55,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           </Link>
         </div>
 
-        <nav className="flex-1 p-4 py-8 space-y-1">
+        <nav className="flex-1 p-4 py-8 space-y-1 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <Link
               key={item.name}
@@ -91,13 +87,13 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           <div className="flex items-center gap-4">
              <div className="lg:hidden h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center">S</div>
              <h2 className="text-xl font-bold font-headline hidden md:block">
-                Chào buổi sáng, {vendor?.storeName || 'Nhà bán hàng'} 👋
+                {vendor?.storeName || 'Nhà bán hàng'} 👋
              </h2>
           </div>
           
           <div className="flex items-center gap-4">
-             <Button variant="outline" size="sm" className="rounded-full bg-white/5 border-white/10 gap-2 h-10 px-6">
-                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Thêm sản phẩm</span>
+             <Button variant="outline" size="sm" className="rounded-full bg-white/5 border-white/10 gap-2 h-10 px-6" asChild>
+                <Link href="/vendor/products?add=true"><Plus className="w-4 h-4" /> <span className="hidden sm:inline">Thêm sản phẩm</span></Link>
              </Button>
              <Button variant="ghost" size="icon" className="rounded-full bg-white/5 h-10 w-10 relative">
                 <Bell className="w-5 h-5" />

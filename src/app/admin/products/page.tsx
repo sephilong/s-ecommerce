@@ -16,7 +16,8 @@ import {
   User,
   Store,
   Filter,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,15 +35,27 @@ import Image from "next/image";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function AdminProductsPage() {
   const { vendorProducts, approveProduct, rejectProduct } = useVendorStore();
   const [products, setProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
-    // Kết hợp sản phẩm hệ thống và sản phẩm vendor
     const systemProducts = MOCK_TENANTS[0].products.map(p => ({ ...p, vendorId: 'system', status: 'approved' }));
     setProducts([...systemProducts, ...vendorProducts]);
   }, [vendorProducts]);
@@ -60,9 +73,13 @@ export default function AdminProductsPage() {
     toast({ title: "Đã phê duyệt sản phẩm", description: "Sản phẩm hiện đã có thể hiển thị trên Storefront." });
   };
 
-  const handleReject = (id: string) => {
-    rejectProduct(id);
-    toast({ title: "Đã từ chối sản phẩm", description: "Sản phẩm này sẽ không được hiển thị.", variant: "destructive" });
+  const handleReject = () => {
+    if (rejectingId && rejectReason.trim()) {
+      rejectProduct(rejectingId, rejectReason);
+      toast({ title: "Đã từ chối", description: "Lý do đã được gửi tới Vendor.", variant: "destructive" });
+      setRejectingId(null);
+      setRejectReason("");
+    }
   };
 
   return (
@@ -70,7 +87,7 @@ export default function AdminProductsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Hệ thống Sản phẩm</h1>
-          <p className="text-muted-foreground">Quản lý kho hàng hệ thống và kiểm duyệt sản phẩm từ đối tác.</p>
+          <p className="text-muted-foreground">Kiểm soát chất lượng hàng hóa trên toàn bộ nền tảng.</p>
         </div>
         <Button className="rounded-full h-11 px-8 font-bold gap-2">
           <Plus className="w-4 h-4" /> Thêm SP Hệ thống
@@ -88,7 +105,7 @@ export default function AdminProductsPage() {
                 </span>
               )}
            </TabsTrigger>
-           <TabsTrigger value="vendor" className="rounded-xl px-8 h-full">Sản phẩm đối tác (Vendor)</TabsTrigger>
+           <TabsTrigger value="vendor" className="rounded-xl px-8 h-full">Sản phẩm đối tác</TabsTrigger>
         </TabsList>
 
         <Card className="border-white/5 bg-card/50 mt-6 rounded-[2rem] overflow-hidden shadow-2xl">
@@ -102,7 +119,7 @@ export default function AdminProductsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc nâng cao</Button>
+            <Button variant="outline" className="rounded-xl h-11 border-white/10 gap-2"><Filter className="w-4 h-4" /> Lọc</Button>
           </CardHeader>
           <CardContent className="p-0">
             <div className="relative w-full overflow-auto">
@@ -111,10 +128,9 @@ export default function AdminProductsPage() {
                   <tr className="text-left font-medium">
                     <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Sản phẩm</th>
                     <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Người bán</th>
-                    <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Phân loại</th>
                     <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Giá bán</th>
                     <th className="p-6 text-[10px] uppercase tracking-widest font-black text-muted-foreground">Trạng thái</th>
-                    <th className="p-6 text-right"></th>
+                    <th className="p-6"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -125,24 +141,27 @@ export default function AdminProductsPage() {
                           <div className="h-12 w-12 relative rounded-xl overflow-hidden border border-white/10">
                             <Image src={product.image} alt={product.name} fill className="object-cover" />
                           </div>
-                          <div className="font-bold text-base">{product.name}</div>
+                          <div>
+                            <div className="font-bold text-base">{product.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{product.category}</div>
+                          </div>
                         </div>
                       </td>
                       <td className="p-6">
-                        <div className="flex items-center gap-2">
-                          {product.vendorId === 'system' ? (
-                            <Badge className="bg-primary/10 text-primary border-primary/20 gap-1 rounded-full"><User className="w-3 h-3" /> Hệ thống</Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-white/10 gap-1 rounded-full"><Store className="w-3 h-3" /> Vendor #{product.vendorId}</Badge>
-                          )}
-                        </div>
+                        {product.vendorId === 'system' ? (
+                          <Badge className="bg-primary/10 text-primary border-primary/20 gap-1 rounded-full"><User className="w-3 h-3" /> Hệ thống</Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-white/10 gap-1 rounded-full"><Store className="w-3 h-3" /> Vendor #{product.vendorId}</Badge>
+                        )}
                       </td>
-                      <td className="p-6 text-muted-foreground">{product.category}</td>
                       <td className="p-6 font-black">{formatVND(product.price)}</td>
                       <td className="p-6">
                         <Badge variant={product.status === 'approved' ? 'default' : product.status === 'rejected' ? 'destructive' : 'secondary'} className="rounded-full">
                           {product.status}
                         </Badge>
+                        {product.status === 'rejected' && product.rejectReason && (
+                          <p className="text-[8px] text-red-400 mt-1 italic">Lý do: {product.rejectReason}</p>
+                        )}
                       </td>
                       <td className="p-6 text-right">
                         <DropdownMenu>
@@ -152,47 +171,51 @@ export default function AdminProductsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
-                            <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Xử lý sản phẩm</DropdownMenuLabel>
-                            
                             {product.status === 'pending' && (
                               <>
                                 <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white" onClick={() => handleApprove(product.id)}>
                                   <CheckCircle2 className="w-4 h-4" /> Phê duyệt đăng
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleReject(product.id)}>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setRejectingId(product.id)}>
                                   <XCircle className="w-4 h-4" /> Từ chối đăng
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-white/5 my-2" />
                               </>
                             )}
-
                             <DropdownMenuItem className="gap-3 rounded-xl p-3" onClick={() => window.open(`/products/${product.slug}`, '_blank')}>
                               <ExternalLink className="w-4 h-4" /> Xem Storefront
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3">
-                              <Edit className="w-4 h-4" /> Chỉnh sửa chi tiết
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3">
-                              <Copy className="w-4 h-4" /> Nhân bản sản phẩm
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-white/5 my-2" />
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive">
-                              <Trash className="w-4 h-4" /> Xóa vĩnh viễn
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
                     </tr>
                   ))}
-                  {filteredProducts.length === 0 && (
-                    <tr><td colSpan={6} className="p-20 text-center text-muted-foreground italic font-medium">Không tìm thấy sản phẩm nào khớp với yêu cầu.</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
       </Tabs>
+
+      <Dialog open={!!rejectingId} onOpenChange={() => setRejectingId(null)}>
+        <DialogContent>
+           <DialogHeader>
+              <DialogTitle>Lý do từ chối sản phẩm</DialogTitle>
+              <DialogDescription>Vui lòng cung cấp lý do để Vendor có thể chỉnh sửa lại sản phẩm.</DialogDescription>
+           </DialogHeader>
+           <div className="py-4">
+              <Textarea 
+                placeholder="VD: Hình ảnh không rõ nét, mô tả thiếu thông số kỹ thuật..." 
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+           </div>
+           <DialogFooter>
+              <Button variant="outline" onClick={() => setRejectingId(null)}>Hủy</Button>
+              <Button variant="destructive" onClick={handleReject}>Gửi phản hồi</Button>
+           </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

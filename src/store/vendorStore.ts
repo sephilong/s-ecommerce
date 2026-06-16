@@ -22,6 +22,7 @@ export interface Vendor {
   commissionRate: number;
   totalRevenue: number;
   balance: number;
+  pendingBalance: number; // Tiền đang đối soát T+7
   createdAt: string;
 }
 
@@ -29,18 +30,33 @@ export interface VendorOrder {
   id: string;
   orderId: string;
   vendorId: string;
+  customerName: string;
   items: any[];
   subtotal: number;
   commission: number;
   vendorEarnings: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  trackingNumber?: string;
+  createdAt: string;
+}
+
+export interface VendorReview {
+  id: string;
+  vendorId: string;
+  productId: string;
+  productName: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  reply?: string;
   createdAt: string;
 }
 
 interface VendorState {
   vendors: Vendor[];
   vendorOrders: VendorOrder[];
-  vendorProducts: (Product & { vendorId: string, status: 'pending' | 'approved' | 'rejected' })[];
+  vendorProducts: (Product & { vendorId: string, status: 'pending' | 'approved' | 'rejected', rejectReason?: string })[];
+  vendorReviews: VendorReview[];
   currentVendor: Vendor | null;
   
   // Actions for Admin
@@ -48,13 +64,15 @@ interface VendorState {
   updateVendorStatus: (id: string, status: Vendor['status']) => void;
   updateVendorCommission: (id: string, rate: number) => void;
   approveProduct: (productId: string) => void;
-  rejectProduct: (productId: string) => void;
+  rejectProduct: (productId: string, reason: string) => void;
   
   // Actions for Vendor
   addVendorProduct: (product: any) => void;
   updateVendorProduct: (product: any) => void;
   deleteVendorProduct: (productId: string) => void;
-  updateVendorOrder: (id: string, status: VendorOrder['status']) => void;
+  updateVendorOrder: (id: string, status: VendorOrder['status'], tracking?: string) => void;
+  updateStoreBranding: (id: string, updates: { logo?: string, banner?: string, description?: string }) => void;
+  replyToReview: (reviewId: string, reply: string) => void;
   setCurrentVendor: (vendor: Vendor | null) => void;
   
   // Getters
@@ -82,11 +100,37 @@ export const useVendorStore = create<VendorState>()(
           commissionRate: 10,
           totalRevenue: 50000000,
           balance: 4500000,
+          pendingBalance: 1200000,
           createdAt: new Date().toISOString()
         }
       ],
-      vendorOrders: [],
+      vendorOrders: [
+        {
+          id: 'vo-1',
+          orderId: 'SCHUB-8821',
+          vendorId: 'v-1',
+          customerName: 'Trần Minh Quân',
+          items: [{ name: 'Chuột Gaming G-Pro', qty: 1, price: 1200000 }],
+          subtotal: 1200000,
+          commission: 120000,
+          vendorEarnings: 1080000,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        }
+      ],
       vendorProducts: [],
+      vendorReviews: [
+        {
+          id: 'rv-1',
+          vendorId: 'v-1',
+          productId: 'p1',
+          productName: 'iPhone 15 Pro Max',
+          customerName: 'Hoàng Anh',
+          rating: 5,
+          comment: 'Hàng giao nhanh, đóng gói cẩn thận. Shop phục vụ tốt!',
+          createdAt: new Date().toISOString()
+        }
+      ],
       currentVendor: null,
 
       registerVendor: (vendor) => set((state) => ({
@@ -117,12 +161,25 @@ export const useVendorStore = create<VendorState>()(
         vendorProducts: state.vendorProducts.map(p => p.id === productId ? { ...p, status: 'approved' } : p)
       })),
 
-      rejectProduct: (productId) => set((state) => ({
-        vendorProducts: state.vendorProducts.map(p => p.id === productId ? { ...p, status: 'rejected' } : p)
+      rejectProduct: (productId, reason) => set((state) => ({
+        vendorProducts: state.vendorProducts.map(p => p.id === productId ? { ...p, status: 'rejected', rejectReason: reason } : p)
       })),
 
-      updateVendorOrder: (id, status) => set((state) => ({
-        vendorOrders: state.vendorOrders.map(o => o.id === id ? { ...o, status } : o)
+      updateVendorOrder: (id, status, tracking) => set((state) => ({
+        vendorOrders: state.vendorOrders.map(o => o.id === id ? { ...o, status, trackingNumber: tracking || o.trackingNumber } : o)
+      })),
+
+      updateStoreBranding: (id, updates) => set((state) => ({
+        vendors: state.vendors.map(v => v.id === id ? { 
+          ...v, 
+          storeLogo: updates.logo || v.storeLogo,
+          storeBanner: updates.banner || v.storeBanner,
+          storeDescription: updates.description || v.storeDescription
+        } : v)
+      })),
+
+      replyToReview: (reviewId, reply) => set((state) => ({
+        vendorReviews: state.vendorReviews.map(r => r.id === reviewId ? { ...r, reply } : r)
       })),
 
       setCurrentVendor: (currentVendor) => set({ currentVendor }),
@@ -132,7 +189,7 @@ export const useVendorStore = create<VendorState>()(
       getVendorOrders: (vendorId) => get().vendorOrders.filter(o => o.vendorId === vendorId),
     }),
     {
-      name: 'scomhub-vendor-storage-v3',
+      name: 'scomhub-vendor-storage-v5',
     }
   )
 );
