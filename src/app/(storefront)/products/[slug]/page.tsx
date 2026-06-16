@@ -26,6 +26,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductCard } from "@/components/product/ProductCard";
+import { ReviewDialog } from "@/components/product/ReviewDialog";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -224,7 +225,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                        ))}
                     </div>
                     <div className="md:pl-8">
-                       <Button className="rounded-full px-8 h-12 font-bold shadow-lg shadow-primary/20 italic">Đánh giá sản phẩm</Button>
+                       <ReviewDialog product={product} />
                     </div>
                  </div>
 

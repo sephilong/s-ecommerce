@@ -80,6 +80,7 @@ interface VendorState {
   updateStorefrontConfig: (vendorId: string, config: { sections: any[], theme: any }) => void;
   replyToReview: (reviewId: string, reply: string) => void;
   setCurrentVendor: (vendor: Vendor | null) => void;
+  addReview: (review: VendorReview) => void;
   
   // Getters
   getVendorByUserId: (userId: string) => Vendor | undefined;
@@ -198,6 +199,10 @@ export const useVendorStore = create<VendorState>()(
       })),
 
       setCurrentVendor: (currentVendor) => set({ currentVendor }),
+
+      addReview: (review) => set((state) => ({
+        vendorReviews: [review, ...state.vendorReviews]
+      })),
 
       getVendorByUserId: (userId) => get().vendors.find(v => v.userId === userId),
       getVendorProducts: (vendorId) => get().vendorProducts.filter(p => p.vendorId === vendorId),
