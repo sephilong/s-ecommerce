@@ -7,8 +7,18 @@ interface PromotionState {
   promotions: Promotion[];
   coupons: Coupon[];
   loyaltyConfig: LoyaltyConfig;
-  updatePromotions: (promotions: Promotion[]) => void;
-  updateCoupons: (coupons: Coupon[]) => void;
+  
+  // Promotion Actions
+  addPromotion: (promo: Promotion) => void;
+  updatePromotion: (promo: Promotion) => void;
+  deletePromotion: (id: string) => void;
+  
+  // Coupon Actions
+  addCoupon: (coupon: Coupon) => void;
+  updateCoupon: (coupon: Coupon) => void;
+  deleteCoupon: (id: string) => void;
+  
+  // Loyalty Actions
   updateLoyalty: (config: LoyaltyConfig) => void;
 }
 
@@ -18,8 +28,27 @@ export const usePromotionStore = create<PromotionState>()(
       promotions: MOCK_TENANTS[0].promotions,
       coupons: MOCK_TENANTS[0].coupons,
       loyaltyConfig: MOCK_TENANTS[0].loyaltyConfig,
-      updatePromotions: (promotions) => set({ promotions }),
-      updateCoupons: (coupons) => set({ coupons }),
+
+      addPromotion: (promo) => set((state) => ({ 
+        promotions: [promo, ...state.promotions] 
+      })),
+      updatePromotion: (updatedPromo) => set((state) => ({
+        promotions: state.promotions.map(p => p.id === updatedPromo.id ? updatedPromo : p)
+      })),
+      deletePromotion: (id) => set((state) => ({
+        promotions: state.promotions.filter(p => p.id !== id)
+      })),
+
+      addCoupon: (coupon) => set((state) => ({ 
+        coupons: [coupon, ...state.coupons] 
+      })),
+      updateCoupon: (updatedCoupon) => set((state) => ({
+        coupons: state.coupons.map(c => c.id === updatedCoupon.id ? updatedCoupon : c)
+      })),
+      deleteCoupon: (id) => set((state) => ({
+        coupons: state.coupons.filter(c => c.id !== id)
+      })),
+
       updateLoyalty: (loyaltyConfig) => set({ loyaltyConfig }),
     }),
     {

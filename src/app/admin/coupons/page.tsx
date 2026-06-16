@@ -3,25 +3,139 @@
 
 import { usePromotionStore } from "@/store/promotionStore";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MoreHorizontal, Copy, Scissors } from "lucide-react";
+import { Plus, Search, Copy, Trash2, Edit } from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import { Coupon } from "@/lib/store-data";
 
 export default function AdminCouponsPage() {
-  const { coupons } = usePromotionStore();
+  const { coupons, addCoupon, deleteCoupon, updateCoupon } = usePromotionStore();
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+
+  const [formData, setFormData] = useState<Partial<Coupon>>({
+    code: "",
+    description: "",
+    discountType: "fixed",
+    discountValue: 0,
+    minOrderAmount: 0,
+    isActive: true
+  });
+
+  const handleSave = () => {
+    if (!formData.code || !formData.discountValue) {
+      toast({ title: "Thiếu thông tin", description: "Vui lòng nhập mã và giá trị giảm giá", variant: "destructive" });
+      return;
+    }
+
+    if (editingCoupon) {
+      updateCoupon({ ...editingCoupon, ...formData } as Coupon);
+      toast({ title: "Đã cập nhật", description: `Mã ${formData.code} đã được cập nhật.` });
+    } else {
+      const newCoupon: Coupon = {
+        ...formData,
+        id: `cp-${Date.now()}`,
+        usageCount: 0,
+      } as Coupon;
+      addCoupon(newCoupon);
+      toast({ title: "Đã tạo mã", description: `Mã ${formData.code} đã sẵn sàng.` });
+    }
+    setIsOpen(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFormData({
+      code: "",
+      description: "",
+      discountType: "fixed",
+      discountValue: 0,
+      minOrderAmount: 0,
+      isActive: true
+    });
+    setEditingCoupon(null);
+  };
+
+  const handleEdit = (coupon: Coupon) => {
+    setEditingCoupon(coupon);
+    setFormData(coupon);
+    setIsOpen(true);
+  };
+
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Đã sao chép", description: `Mã ${code} đã được lưu vào bộ nhớ tạm.` });
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Mã Giảm Giá (Coupons)</h1>
-          <p className="text-muted-foreground">Tạo các mã voucher cho khách hàng nhập tại giỏ hàng.</p>
+          <p className="text-muted-foreground">Tạo các mã voucher cho khách hàng nhập khi thanh toán.</p>
         </div>
-        <Button className="gap-2 rounded-full">
-          <Plus className="w-4 h-4" />
-          Tạo mã mới
-        </Button>
+        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
+          <DialogTrigger asChild>
+            <Button className="gap-2 rounded-full">
+              <Plus className="w-4 h-4" />
+              Tạo mã mới
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingCoupon ? 'Chỉnh sửa mã' : 'Tạo mã giảm giá mới'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Mã Code</Label>
+                  <Input value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})} placeholder="SALE20" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Loại giảm giá</Label>
+                  <Select value={formData.discountType} onValueChange={(val) => setFormData({...formData, discountType: val as any})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fixed">Số tiền cố định (đ)</SelectItem>
+                      <SelectItem value="percent">Phần trăm (%)</SelectItem>
+                      <SelectItem value="free_shipping">Miễn phí vận chuyển</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Giá trị giảm</Label>
+                  <Input type="number" value={formData.discountValue} onChange={(e) => setFormData({...formData, discountValue: parseInt(e.target.value)})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Đơn tối thiểu</Label>
+                  <Input type="number" value={formData.minOrderAmount} onChange={(e) => setFormData({...formData, minOrderAmount: parseInt(e.target.value)})} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Mô tả hiển thị</Label>
+                <Input value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Giảm 50k cho đơn từ 500k..." />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleSave} className="w-full rounded-full">Lưu mã giảm giá</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="border-white/5 bg-card/50">
@@ -50,7 +164,7 @@ export default function AdminCouponsPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <code className="bg-primary/10 text-primary px-2 py-1 rounded font-bold">{cp.code}</code>
-                        <Button variant="ghost" size="icon" className="h-6 w-6"><Copy className="w-3 h-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyCode(cp.code)}><Copy className="w-3 h-3" /></Button>
                       </div>
                     </td>
                     <td className="p-4 font-bold">
@@ -66,7 +180,10 @@ export default function AdminCouponsPage() {
                       </Badge>
                     </td>
                     <td className="p-4 text-right">
-                      <Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(cp)}><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteCoupon(cp.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
