@@ -5,6 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { formatVND } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { 
   Truck, 
   ShieldCheck, 
@@ -244,7 +245,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                                {[...Array(5)].map((_, j) => <Star key={j} className="w-3 h-3 fill-yellow-500 text-yellow-500" />)}
                             </div>
                          </div>
-                         <p className="text-sm leading-relaxed text-foreground/90 italic italic">"Sản phẩm quá tuyệt vời, đóng gói cẩn thận và giao hàng siêu tốc. Mình rất hài lòng với chất lượng phục vụ của shop!"</p>
+                         <p className="text-sm leading-relaxed text-foreground/90 italic">"Sản phẩm quá tuyệt vời, đóng gói cẩn thận và giao hàng siêu tốc. Mình rất hài lòng với chất lượng phục vụ của shop!"</p>
                          <div className="flex gap-2">
                             {[1, 2].map(j => (
                               <div key={j} className="h-16 w-16 rounded-xl overflow-hidden border border-white/5">
