@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Product } from '@/lib/store-data';
+import { Product, MOCK_TENANTS } from '@/lib/store-data';
 
 export interface Vendor {
   id: string;
@@ -101,7 +101,7 @@ export const useVendorStore = create<VendorState>()(
           totalRevenue: 50000000,
           balance: 4500000,
           pendingBalance: 1200000,
-          createdAt: new Date().toISOString()
+          createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
         }
       ],
       vendorOrders: [
@@ -118,13 +118,18 @@ export const useVendorStore = create<VendorState>()(
           createdAt: new Date().toISOString()
         }
       ],
-      vendorProducts: [],
+      // Khởi tạo sản phẩm mẫu cho Official Store
+      vendorProducts: MOCK_TENANTS[0].products.slice(0, 6).map(p => ({
+        ...p,
+        vendorId: 'v-1',
+        status: 'approved'
+      })),
       vendorReviews: [
         {
           id: 'rv-1',
           vendorId: 'v-1',
           productId: 'p1',
-          productName: 'iPhone 15 Pro Max',
+          productName: 'Điện tử Premium Model 1',
           customerName: 'Hoàng Anh',
           rating: 5,
           comment: 'Hàng giao nhanh, đóng gói cẩn thận. Shop phục vụ tốt!',
@@ -189,7 +194,7 @@ export const useVendorStore = create<VendorState>()(
       getVendorOrders: (vendorId) => get().vendorOrders.filter(o => o.vendorId === vendorId),
     }),
     {
-      name: 'scomhub-vendor-storage-v5',
+      name: 'scomhub-vendor-storage-v6',
     }
   )
 );
