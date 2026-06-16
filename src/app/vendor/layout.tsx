@@ -19,7 +19,8 @@ import {
   Palette,
   Users,
   Box,
-  FileText
+  FileText,
+  Warehouse
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
@@ -38,7 +39,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     { group: "Quản trị", items: [
       { name: "Tổng quan", icon: <LayoutDashboard />, href: "/vendor/dashboard" },
       { name: "Sản phẩm", icon: <Package />, href: "/vendor/products" },
-      { name: "Kho hàng", icon: <Box />, href: "/vendor/inventory" },
+      { name: "Kho hàng", icon: <Warehouse />, href: "/vendor/inventory" },
       { name: "Đơn hàng", icon: <ShoppingCart />, href: "/vendor/orders" },
       { name: "Khách hàng (CRM)", icon: <Users />, href: "/vendor/customers" },
     ]},
