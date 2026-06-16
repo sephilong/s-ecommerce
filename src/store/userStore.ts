@@ -5,6 +5,7 @@ import { persist } from 'zustand/middleware';
 export type UserProfile = {
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
   address: string;
   role: 'user' | 'affiliate' | 'reseller';
@@ -26,10 +27,11 @@ export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       profile: {
-        firstName: "Khách",
-        lastName: "Hàng",
-        phone: "",
-        address: "",
+        firstName: "Nguyễn",
+        lastName: "Văn A",
+        email: "vana@gmail.com",
+        phone: "090 123 4567",
+        address: "123 Lê Lợi, Quận 1, TP. HCM",
         role: "user",
         affiliateStatus: "none"
       },
@@ -59,7 +61,7 @@ export const useUserStore = create<UserState>()(
       }))
     }),
     {
-      name: 'scomhub-user-storage',
+      name: 'scomhub-user-storage-v2',
     }
   )
 );

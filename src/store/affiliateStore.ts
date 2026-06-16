@@ -134,7 +134,16 @@ export const useAffiliateStore = create<AffiliateState>()(
       conversions: [],
       links: [],
       payoutRequests: [],
-      affiliateRequests: [],
+      affiliateRequests: [
+        {
+          id: 'req-initial-1',
+          userId: 'user-vana',
+          userName: 'Nguyễn Văn A',
+          email: 'vana@gmail.com',
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        }
+      ],
       transactions: [],
       clickLogs: [],
       programs: [
@@ -251,7 +260,7 @@ export const useAffiliateStore = create<AffiliateState>()(
       })
     }),
     {
-      name: 'scomhub-affiliate-storage-v4',
+      name: 'scomhub-affiliate-storage-v5',
     }
   )
 );

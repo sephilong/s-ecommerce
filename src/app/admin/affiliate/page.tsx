@@ -49,7 +49,8 @@ import {
   BarChart3,
   Lightbulb,
   MousePointer2,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -86,10 +87,13 @@ export default function AdminAffiliatePage() {
   } = useAffiliateStore();
   const { setAffiliateActive } = useUserStore();
   
+  const [activeTab, setActiveTab] = useState("requests");
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [localConfig, setLocalConfig] = useState(config);
   const [isProgramOpen, setIsProgramOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<AffiliateProgram | null>(null);
+
+  const pendingRequests = useMemo(() => affiliateRequests.filter(r => r.status === 'pending'), [affiliateRequests]);
 
   // Form State for Program
   const [eligibleType, setEligibleProducts] = useState<'all' | 'categories' | 'specific'>('all');
@@ -190,9 +194,26 @@ export default function AdminAffiliatePage() {
         </div>
       </div>
 
+      {/* Action Required Alert */}
+      {pendingRequests.length > 0 && (
+        <Card className="bg-orange-500/10 border-orange-500/30 rounded-2xl p-4 flex items-center justify-between border-dashed">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-orange-500">Yêu cầu đăng ký mới!</p>
+              <p className="text-xs text-orange-500/80">Có {pendingRequests.length} đối tác đang chờ bạn phê duyệt tham gia hệ thống.</p>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" className="rounded-full border-orange-500/30 text-orange-500 hover:bg-orange-500/10" onClick={() => setActiveTab("requests")}>
+            Xử lý ngay
+          </Button>
+        </Card>
+      )}
+
       {/* Main Analytics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Summary Chart */}
         <Card className="lg:col-span-2 bg-card/40 border-white/5 backdrop-blur-sm overflow-hidden rounded-[2rem]">
           <CardHeader className="flex flex-row items-center justify-between pb-8">
             <div>
@@ -225,7 +246,6 @@ export default function AdminAffiliatePage() {
           </CardContent>
         </Card>
 
-        {/* Right: Operational Tips */}
         <div className="space-y-6">
           <Card className="bg-primary/5 border border-primary/20 rounded-[2rem] h-full overflow-hidden relative group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -248,10 +268,6 @@ export default function AdminAffiliatePage() {
                 title="Duyệt đơn thần tốc" 
                 desc="Xử lý yêu cầu rút tiền trong vòng 24h giúp xây dựng uy tín và lòng tin với mạng lưới đối tác." 
               />
-              <TipItem 
-                title="Flash Sale cho Affiliate" 
-                desc="Tạo mã coupon độc quyền cho từng đối tác lớn để họ làm nội dung review thu hút hơn." 
-              />
             </CardContent>
           </Card>
         </div>
@@ -262,14 +278,20 @@ export default function AdminAffiliatePage() {
         <StatSummaryCard label="Tổng Clicks" value="1,240" icon={<MousePointer2 />} trend="+15% so với tuần trước" />
         <StatSummaryCard label="Chuyển đổi" value="84" icon={<TrendingUp />} trend="+8% so với tuần trước" />
         <StatSummaryCard label="Hoa hồng chờ" value={formatVND(stats.pendingCommission)} icon={<Clock />} color="text-orange-500" />
-        <StatSummaryCard label="Đối tác mới" value={affiliateRequests.filter(r => r.status === 'pending').length} icon={<UserPlus />} color="text-blue-500" />
+        <StatSummaryCard label="Đối tác mới" value={pendingRequests.length} icon={<UserPlus />} color="text-blue-500" />
       </div>
 
       {/* Operational Tabs */}
-      <Tabs defaultValue="requests" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="rounded-2xl h-14 p-1.5 bg-muted/30 border border-white/5 w-full md:w-auto overflow-x-auto justify-start">
-          <TabsTrigger value="requests" className="rounded-xl gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white h-full">
+          <TabsTrigger value="requests" className="rounded-xl gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white h-full relative">
             <UserPlus className="w-4 h-4" /> Duyệt Đối tác
+            {pendingRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-orange-500 text-[10px] items-center justify-center font-bold">{pendingRequests.length}</span>
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="conversions" className="rounded-xl gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white h-full">
             <Tag className="w-4 h-4" /> Đơn hàng
@@ -316,7 +338,6 @@ export default function AdminAffiliatePage() {
           </Card>
         </TabsContent>
 
-        {/* Other Tab Contents (Simplified for brevity, following the same pattern) */}
         <TabsContent value="conversions" className="pt-6">
           <Card className="border-white/5 bg-card/50 rounded-[2rem] overflow-hidden shadow-2xl">
             <CardHeader className="border-b border-white/5 flex flex-row items-center justify-between p-6">

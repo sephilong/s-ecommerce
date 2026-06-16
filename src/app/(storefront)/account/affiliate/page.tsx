@@ -86,7 +86,7 @@ export default function AffiliateDashboard() {
       id: `req-${Date.now()}`,
       userId: "current-user",
       userName: `${profile.firstName} ${profile.lastName}`,
-      email: "user@example.com",
+      email: profile.email || "user@example.com",
       status: 'pending',
       createdAt: new Date().toISOString()
     };
