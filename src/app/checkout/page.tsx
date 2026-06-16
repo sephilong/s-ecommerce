@@ -1,14 +1,12 @@
 /**
  * TỆP NÀY ĐÃ ĐƯỢC VÔ HIỆU HÓA ĐỂ TRÁNH XUNG ĐỘT ĐỊNH TUYẾN
  * Trang thanh toán chính thức nằm tại: src/app/(storefront)/checkout/page.tsx
+ * 
+ * LƯU Ý: Không được có 'export default' trong tệp này nếu không Next.js sẽ báo lỗi trùng lặp trang.
  */
 
-// Xóa bỏ default export để Next.js không coi đây là một trang (Page)
 export const metadata = {
-  title: 'Redirecting...',
+  title: 'S-Com Hub Checkout',
 };
 
-const disabled = true;
-export default function Page() {
-  return null;
-}
+// Chức năng thanh toán đã được chuyển vào Route Group (storefront) để kế thừa Layout chung.

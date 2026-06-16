@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useVendorStore } from "@/store/vendorStore";
@@ -121,7 +120,7 @@ export default function VendorOrdersPage() {
 
         <Card className="bg-[#151515] border-white/5 rounded-[2.5rem] mt-6 overflow-hidden shadow-2xl">
           <CardHeader className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between gap-4">
-             <div className="relative w-full max-w-sm">
+             <div className="relative w-full max-sm:max-w-none max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder="Mã đơn hàng, tên khách..." 
@@ -216,7 +215,7 @@ export default function VendorOrdersPage() {
                                     <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 bg-[#0f0f0f] border-white/10 z-50">
                                        <DropdownMenuLabel className="text-[10px] uppercase font-black text-muted-foreground px-4 py-3 tracking-widest">Quản lý Fulfillment</DropdownMenuLabel>
                                        <DropdownMenuItem 
-                                          className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" 
+                                          className="gap-3 rounded-xl p-3 cursor-pointer focus:bg-primary focus:text-white" 
                                           onSelect={() => setSelectedOrder(o)}
                                        >
                                           <Eye className="w-4 h-4" /> Chi tiết & Hành trình
