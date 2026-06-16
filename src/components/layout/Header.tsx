@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, User, Menu, Zap, Store } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, Zap, Store, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tenant } from "@/lib/store-data";
 import { useCartStore } from "@/store/cartStore";
@@ -88,6 +88,9 @@ export function Header({ tenant }: { tenant: Tenant }) {
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
               <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
               <Link href="/products" className="hover:text-primary transition-colors">Sản phẩm</Link>
+              <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                 <Newspaper className="w-4 h-4 text-primary" /> Blog
+              </Link>
               {(!isShopPage) && <Link href="/flash-sale" className="hover:text-primary transition-colors text-accent">Flash Sale</Link>}
             </nav>
           </div>

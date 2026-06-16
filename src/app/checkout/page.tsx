@@ -1,10 +1,23 @@
 
-import { redirect } from 'next/navigation';
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 /**
- * TRANG NÀY ĐÃ ĐƯỢC DI CHUYỂN VÀ ĐỔI TÊN THÀNH /checkout-vendor 
- * ĐỂ TRÁNH XUNG ĐỘT ROUTE.
+ * FILE NÀY ĐÃ ĐƯỢC CHUYỂN HƯỚNG SANG /checkout-vendor 
+ * ĐỂ LOẠI BỎ LỖI "TWO PARALLEL PAGES" CỦA NEXT.JS
  */
-export default function CheckoutRedirectPage() {
-  redirect('/checkout-vendor');
+export default function CheckoutRootRedirect() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.replace("/checkout-vendor");
+  }, [router]);
+
+  return (
+    <div className="h-screen flex items-center justify-center italic text-muted-foreground animate-pulse">
+      Đang chuyển hướng tới trang thanh toán an toàn...
+    </div>
+  );
 }
