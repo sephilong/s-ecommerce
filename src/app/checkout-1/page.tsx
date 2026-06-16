@@ -1,10 +1,7 @@
 
-import { redirect } from 'next/navigation';
-
 /**
- * TRANG NÀY ĐÃ ĐƯỢC DI CHUYỂN VÀ ĐỔI TÊN THÀNH /checkout-vendor 
- * ĐỂ TRÁNH XUNG ĐỘT ROUTE.
+ * FILE NÀY ĐÃ BỊ VÔ HIỆU HÓA.
+ * TRANG THANH TOÁN CHÍNH HIỆN TẠI LÀ /checkout-vendor 
  */
-export default function CheckoutRedirectPage() {
-  redirect('/checkout-vendor');
-}
+export const dynamic = 'force-static';
+// export default function Page() { return null; }

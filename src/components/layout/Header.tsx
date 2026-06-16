@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, User, Menu, Zap, Store, Newspaper } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, Zap, Store, Newspaper, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tenant } from "@/lib/store-data";
 import { useCartStore } from "@/store/cartStore";
@@ -14,6 +14,7 @@ import { useUserStore } from "@/store/userStore";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { NotificationBell } from "@/components/notification/NotificationBell";
+import React from "react";
 
 export function Header({ tenant }: { tenant: Tenant }) {
   const cartCount = useCartStore((state) => state.totalItems());
@@ -81,44 +82,52 @@ export function Header({ tenant }: { tenant: Tenant }) {
                   <Store className="w-4 h-4" />
                 </div>
               )}
-              <span className="text-xl font-bold font-headline gradient-text italic tracking-tighter">
+              <span className="text-xl font-bold font-headline gradient-text italic tracking-tighter uppercase">
                 {displayName}
               </span>
             </Link>
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-              <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
-              <Link href="/products" className="hover:text-primary transition-colors">Sản phẩm</Link>
-              <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-1.5">
-                 <Newspaper className="w-4 h-4 text-primary" /> Blog
+            <nav className="hidden md:flex items-center gap-8 text-[10px] font-black uppercase tracking-widest">
+              <Link href="/" className="hover:text-primary transition-colors italic">Trang chủ</Link>
+              <Link href="/products" className="hover:text-primary transition-colors italic">Sản phẩm</Link>
+              <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-2 italic">
+                 <Newspaper className="w-3.5 h-3.5 text-primary" /> Tin tức
               </Link>
-              {(!isShopPage) && <Link href="/flash-sale" className="hover:text-primary transition-colors text-accent">Flash Sale</Link>}
+              {(!isShopPage) && (
+                <Link href="/flash-sale" className="hover:text-primary transition-colors text-accent flex items-center gap-2 italic">
+                  <Zap className="w-3.5 h-3.5" /> Flash Sale
+                </Link>
+              )}
             </nav>
           </div>
 
           <div className="flex items-center gap-2">
             <Link href="/search">
-              <Button variant="ghost" size="icon" className="hidden sm:flex h-10 w-10">
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-10 w-10 hover:bg-white/5">
                 <Search className="w-5 h-5" />
               </Button>
             </Link>
             
+            <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block" />
+            
             {profile && <NotificationBell userId={profile.email} />}
 
             <Link href="/account">
-              <Button variant="ghost" size="icon" className="h-10 w-10">
+              <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-white/5">
                 <User className="w-5 h-5" />
               </Button>
             </Link>
+            
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative h-10 w-10">
+              <Button variant="ghost" size="icon" className="relative h-10 w-10 hover:bg-white/5">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-[10px] flex items-center justify-center rounded-full text-white font-bold animate-in zoom-in">
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-[9px] flex items-center justify-center rounded-full text-white font-black animate-in zoom-in border-2 border-background">
                     {cartCount}
                   </span>
                 )}
               </Button>
             </Link>
+            
             <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={toggleMobileMenu}>
               <Menu className="w-5 h-5" />
             </Button>

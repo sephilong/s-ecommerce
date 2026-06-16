@@ -7,10 +7,11 @@ import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { CompareBar } from "@/components/product/CompareBar";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import { getTenantConfig } from "@/lib/tenant";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useThemeStore } from "@/store/themeStore";
 import { Tenant } from "@/lib/store-data";
 import HomePageContent from "./(storefront)/page-content";
+import React from "react";
 
 export default function RootHomePage() {
   const [tenant, setTenant] = useState<Tenant | null>(null);
@@ -24,7 +25,7 @@ export default function RootHomePage() {
     fetchData();
   }, []);
 
-  if (!tenant) return <div className="h-screen flex items-center justify-center font-bold italic animate-pulse">BOOTING S-COM HUB...</div>;
+  if (!tenant) return <div className="h-screen flex items-center justify-center font-black italic animate-pulse text-primary tracking-tighter text-2xl">BOOTING S-COM HUB...</div>;
   const currentTheme = themes.find((t: any) => t.id === platformThemeId);
 
   return (

@@ -1,23 +1,11 @@
 
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
 /**
- * FILE NÀY ĐÃ ĐƯỢC CHUYỂN HƯỚNG SANG /checkout-vendor 
- * ĐỂ LOẠI BỎ LỖI "TWO PARALLEL PAGES" CỦA NEXT.JS
+ * FILE NÀY ĐÃ BỊ VÔ HIỆU HÓA ĐỂ TRÁNH LỖI "TWO PARALLEL PAGES".
+ * TRANG THANH TOÁN CHÍNH HIỆN TẠI LÀ /checkout-vendor 
  */
-export default function CheckoutRootRedirect() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    router.replace("/checkout-vendor");
-  }, [router]);
+import { redirect } from "next/navigation";
 
-  return (
-    <div className="h-screen flex items-center justify-center italic text-muted-foreground animate-pulse">
-      Đang chuyển hướng tới trang thanh toán an toàn...
-    </div>
-  );
+export default function RedirectPage() {
+  redirect("/checkout-vendor");
+  return null;
 }

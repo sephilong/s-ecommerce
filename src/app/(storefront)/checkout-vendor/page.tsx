@@ -110,7 +110,7 @@ export default function CheckoutVendorPage() {
       addNotification({ userId: 'admin', title: 'Đơn hàng mới!', message: `Đơn hàng ${orderCode} giá trị ${formatVND(finalTotal)}.`, type: 'order', link: '/admin/orders' });
       setLoading(false);
       clearCart();
-      router.push("/checkout/success");
+      router.push("/checkout-vendor/success");
     }, 1500);
   };
 
