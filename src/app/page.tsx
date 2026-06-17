@@ -1,9 +1,69 @@
 
+import { Metadata } from "next";
+import HomePageContent from "./(storefront)/page-content";
+import { getTenantConfig } from "@/lib/tenant";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
+import { CompareBar } from "@/components/product/CompareBar";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
+import { ThemeStyle } from "@/components/layout/ThemeStyle";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const tenant = await getTenantConfig("demo");
+  const url = 'https://scomhub.vn';
+
+  return {
+    title: `${tenant.name} | Hệ sinh thái Thương mại Điện tử hiện đại`,
+    description: tenant.description,
+    openGraph: {
+      title: tenant.name,
+      description: tenant.description,
+      url: url,
+      siteName: 'S-Com Hub',
+      images: [
+        {
+          url: 'https://picsum.photos/seed/scom/1200/630',
+          width: 1200,
+          height: 630,
+          alt: 'S-Com Hub Platform',
+        },
+      ],
+      locale: 'vi_VN',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: tenant.name,
+      description: tenant.description,
+      images: ['https://picsum.photos/seed/scom/1200/630'],
+    },
+    other: {
+      'zalo:og:url': url
+    }
+  };
+}
+
 /**
- * FILE NÀY ĐÃ ĐƯỢC VÔ HIỆU HÓA ĐỂ TRÁNH XUNG ĐỘT ĐỊNH TUYẾN.
- * Trang chủ chính thức hiện được xử lý tại: src/app/(storefront)/page.tsx
- * 
- * Vui lòng xóa file này nếu lỗi "You cannot have two parallel pages" vẫn xuất hiện.
+ * TRANG CHỦ CHÍNH THỨC (Server Component)
+ * Hỗ trợ SEO tốt nhất và tích hợp Social Commerce.
  */
-export const dynamic = 'force-static';
-export default function Page() { return null; }
+export default async function LandingPage() {
+  const tenant = await getTenantConfig("demo");
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <AnalyticsTracker />
+      {/* Sử dụng Client Component để nạp CSS Variables */}
+      <ThemeStyle primaryColor={tenant.primaryColor} />
+      
+      <Header tenant={tenant} />
+      <main className="flex-1">
+        <HomePageContent />
+      </main>
+      <Footer tenant={tenant} />
+      <ChatWidget tenant={tenant} />
+      <CompareBar />
+    </div>
+  );
+}

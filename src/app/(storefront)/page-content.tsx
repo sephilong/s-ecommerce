@@ -3,22 +3,18 @@
 
 import { getTenantConfig } from "@/lib/tenant";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Star, ShieldCheck, Truck, ArrowRight, Zap, Ticket, Layers } from "lucide-react";
+import { Star, ShieldCheck, Truck, ArrowRight, Zap, Facebook, MessageCircle } from "lucide-react";
 import { HeroCarousel } from "@/components/layout/HeroCarousel";
 import Link from "next/link";
 import { usePromotionStore } from "@/store/promotionStore";
 import { useUserStore } from "@/store/userStore";
 import { useEffect, useState } from "react";
-import { Tenant, Coupon } from "@/lib/store-data";
-import { formatVND } from "@/lib/currency";
+import { Tenant } from "@/lib/store-data";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import Image from "next/image";
 import React from "react";
 
 export default function HomePageContent() {
-  const { promotions, coupons } = usePromotionStore();
-  const { collectCoupon, hasCollected } = useUserStore();
+  const { promotions } = usePromotionStore();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [flashSale, setFlashSale] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState({ h: "00", m: "00", s: "00" });
@@ -47,19 +43,8 @@ export default function HomePageContent() {
     }
   }, [promotions]);
 
-  const handleCollectVoucher = (coupon: Coupon) => {
-    if (hasCollected(coupon.id)) {
-      toast({ title: "Thông báo", description: "Bạn đã thu thập mã giảm giá này rồi." });
-      return;
-    }
-    collectCoupon(coupon.id);
-    toast({ title: "Thành công!", description: `Đã thêm mã ${coupon.code} vào ví của bạn.` });
-  };
-
-  if (!tenant) return null;
+  if (!tenant) return <div className="h-screen bg-background flex items-center justify-center animate-pulse">Khởi tạo hệ thống...</div>;
   
-  const bundlePromotions = promotions.filter(p => p.type === 'bundle' && p.isActive);
-
   return (
     <div className="space-y-20 animate-in fade-in duration-700">
       <section className="relative">
@@ -107,9 +92,18 @@ export default function HomePageContent() {
         </section>
       )}
 
-      {/* Featured Collections */}
       <section className="container mx-auto px-4 pb-20">
-         <h2 className="text-3xl font-black italic tracking-tighter uppercase mb-10">Sản phẩm mới nhất</h2>
+         <div className="flex justify-between items-end mb-10">
+            <h2 className="text-3xl font-black italic tracking-tighter uppercase">Sản phẩm mới nhất</h2>
+            <div className="flex gap-2">
+               <Button variant="ghost" size="icon" className="rounded-full bg-[#1877F2] text-white hover:bg-[#1877F2]/90 h-9 w-9">
+                  <Facebook className="w-4 h-4 fill-current" />
+               </Button>
+               <Button variant="ghost" size="icon" className="rounded-full bg-[#0190F3] text-white hover:bg-[#0190F3]/90 h-9 w-9">
+                  <MessageCircle className="w-4 h-4 fill-current" />
+               </Button>
+            </div>
+         </div>
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {tenant.products.slice(0, 8).map(product => (
               <ProductCard key={product.id} product={product} />
