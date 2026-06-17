@@ -3,10 +3,11 @@
 
 import { getTenantConfig } from "@/lib/tenant";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Star, ShieldCheck, Truck, ArrowRight, Zap } from "lucide-react";
+import { Star, ShieldCheck, Truck, ArrowRight, Zap, Facebook, MessageCircle } from "lucide-react";
 import { HeroCarousel } from "@/components/layout/HeroCarousel";
 import Link from "next/link";
 import { usePromotionStore } from "@/store/promotionStore";
+import { useUserStore } from "@/store/userStore";
 import { useEffect, useState } from "react";
 import { Tenant } from "@/lib/store-data";
 import { Button } from "@/components/ui/button";
@@ -91,7 +92,17 @@ export default function StorefrontHomePage() {
       )}
 
       <section className="container mx-auto px-4 pb-20">
-         <h2 className="text-3xl font-black italic tracking-tighter uppercase mb-10">Sản phẩm mới nhất</h2>
+         <div className="flex justify-between items-end mb-10">
+            <h2 className="text-3xl font-black italic tracking-tighter uppercase">Sản phẩm mới nhất</h2>
+            <div className="flex gap-2">
+               <Button variant="ghost" size="icon" className="rounded-full bg-[#1877F2] text-white hover:bg-[#1877F2]/90 h-9 w-9">
+                  <Facebook className="w-4 h-4 fill-current" />
+               </Button>
+               <Button variant="ghost" size="icon" className="rounded-full bg-[#0190F3] text-white hover:bg-[#0190F3]/90 h-9 w-9">
+                  <MessageCircle className="w-4 h-4 fill-current" />
+               </Button>
+            </div>
+         </div>
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {tenant.products.slice(0, 8).map(product => (
               <ProductCard key={product.id} product={product} />
