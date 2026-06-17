@@ -23,7 +23,8 @@ import {
   Newspaper,
   Bot,
   Zap,
-  Share2
+  Share2,
+  SearchCode
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -55,6 +56,7 @@ export function AdminSidebar() {
       label: "Công nghệ & Marketing",
       items: [
         { name: "AI Chatbot Engine", icon: <Bot />, href: "/admin/chatbot" },
+        { name: "Google & SEO", icon: <SearchCode />, href: "/admin/settings?tab=google" },
         { name: "Social Commerce", icon: <Share2 />, href: "/admin/settings?tab=social" },
         { name: "Chiến dịch sàn", icon: <Tag />, href: "/admin/promotions" },
         { name: "Hệ thống Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },

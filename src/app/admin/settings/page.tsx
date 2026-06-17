@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,18 +22,32 @@ import {
   ExternalLink,
   Code,
   Tag,
-  ShieldCheck
+  ShieldCheck,
+  SearchCode
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
 export default function AdminSettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center animate-pulse">Đang tải cấu hình...</div>}>
+      <SettingsContent />
+    </Suspense>
+  );
+}
+
+function SettingsContent() {
   const config = useConfigStore();
   const searchParams = useSearchParams();
   const [localStoreName, setLocalStoreName] = useState("");
   const [localStoreDesc, setLocalStoreDesc] = useState("");
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "general");
+  const [activeTab, setActiveTab] = useState("general");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   useEffect(() => {
     setLocalStoreName(config.storeName);
@@ -171,7 +185,7 @@ export default function AdminSettingsPage() {
               <Card className="bg-[#111] border-white/5 rounded-[2rem] p-8 shadow-2xl">
                  <CardHeader className="px-0 pt-0">
                     <CardTitle className="flex items-center gap-2 italic">
-                       <Search className="w-5 h-5 text-primary" /> Sitemap & Indexing
+                       <SearchCode className="w-5 h-5 text-primary" /> Sitemap & Indexing
                     </CardTitle>
                  </CardHeader>
                  <CardContent className="px-0 space-y-6">
