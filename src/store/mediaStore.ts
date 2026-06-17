@@ -10,6 +10,7 @@ export interface MediaFile {
   type: string;
   category: 'product' | 'banner' | 'avatar' | 'review';
   uploadedAt: string;
+  dimensions?: { width: number; height: number };
 }
 
 interface MediaState {
@@ -23,7 +24,7 @@ interface MediaState {
   setUploading: (status: boolean) => void;
   setProgress: (progress: number) => void;
   
-  // Simulated Pipeline
+  // Simulated Pipeline logic (Sharp + S3/R2 simulation)
   uploadPipeline: (file: File, category: MediaFile['category']) => Promise<string>;
 }
 
@@ -60,14 +61,19 @@ export const useMediaStore = create<MediaState>()(
         }
 
         setUploading(true);
-        setProgress(10);
+        setProgress(0);
 
-        // 2. Simulate Processing/Resizing (Sharp simulation)
+        // 2. Simulate "Sharp" Processing (Resizing, WebP conversion)
+        // Step 2.1: Initial reading
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setProgress(30);
+
+        // Step 2.2: Resizing (Creating 200px, 600px, 1200px variants)
         await new Promise(resolve => setTimeout(resolve, 500));
-        setProgress(40);
+        setProgress(60);
 
-        // 3. Simulate Upload to R2/S3
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Step 2.3: Converting to WebP and Uploading to Cloud Storage (R2/S3)
+        await new Promise(resolve => setTimeout(resolve, 400));
         setProgress(90);
 
         const reader = new FileReader();
@@ -77,13 +83,14 @@ export const useMediaStore = create<MediaState>()(
         });
 
         const newMedia: MediaFile = {
-          id: `media-${Date.now()}`,
-          name: file.name,
+          id: `media-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          name: file.name.split('.')[0] + '.webp', // Simulated WebP conversion
           url: dataUrl,
-          size: file.size,
-          type: file.type,
+          size: Math.round(file.size * 0.7), // Simulated WebP compression
+          type: 'image/webp',
           category,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date().toISOString(),
+          dimensions: { width: 1200, height: 1200 } // Simulated
         };
 
         addFile(newMedia);
@@ -93,6 +100,6 @@ export const useMediaStore = create<MediaState>()(
         return dataUrl;
       }
     }),
-    { name: 'scomhub-media-storage-v1' }
+    { name: 'scomhub-media-storage-v2' }
   )
 );

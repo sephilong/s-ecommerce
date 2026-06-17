@@ -24,7 +24,8 @@ import {
   Bot,
   Zap,
   Share2,
-  SearchCode
+  SearchCode,
+  HardDrive
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -68,6 +69,7 @@ export function AdminSidebar() {
         { name: "Sản phẩm hệ thống", icon: <Package />, href: "/admin/products" },
         { name: "Banner & Slides", icon: <ImageIcon />, href: "/admin/banners" },
         { name: "Quản lý Blog", icon: <Newspaper />, href: "/admin/blog" },
+        { name: "Media & Cloud", icon: <HardDrive />, href: "/admin/media" },
         { name: "Đơn hàng toàn sàn", icon: <ShoppingCart />, href: "/admin/orders" },
       ]
     },
