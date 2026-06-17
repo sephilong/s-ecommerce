@@ -1,16 +1,16 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { formatVND } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { 
   Truck, 
   ShieldCheck, 
   RefreshCcw, 
   Heart, 
-  Share2, 
   Check, 
   ChevronRight,
   Info
@@ -23,6 +23,9 @@ import { useUserStore } from "@/store/userStore";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Product, Tenant, ProductVariant } from "@/lib/store-data";
+import { SocialShareButtons } from "@/components/social/SocialShareButtons";
+import { FacebookComments } from "@/components/social/FacebookComments";
+import { FbPixelEvents } from "@/lib/analytics/facebook-pixel";
 
 interface Props {
   slug: string;
@@ -33,6 +36,11 @@ interface Props {
 export function ProductDetailClient({ slug, initialProduct, initialTenant }: Props) {
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const { toggleWishlist, isInWishlist } = useUserStore();
+
+  useEffect(() => {
+    // Track Page View on FB Pixel
+    FbPixelEvents.viewContent(initialProduct);
+  }, [initialProduct]);
 
   const isFavorite = isInWishlist(initialProduct.id);
 
@@ -68,6 +76,8 @@ export function ProductDetailClient({ slug, initialProduct, initialTenant }: Pro
     .filter(p => p.category === initialProduct.category && p.id !== initialProduct.id)
     .slice(0, 4);
 
+  const productUrl = typeof window !== 'undefined' ? window.location.href : '';
+
   return (
     <div className="container mx-auto px-4 py-12 space-y-16 animate-in fade-in duration-700">
       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -89,14 +99,6 @@ export function ProductDetailClient({ slug, initialProduct, initialTenant }: Pro
               className="object-cover group-hover:scale-105 transition-transform duration-1000"
               priority
             />
-            <div className="absolute top-4 right-4">
-               <Button size="icon" variant="secondary" className="rounded-full shadow-xl" onClick={() => {
-                 navigator.clipboard.writeText(window.location.href);
-                 toast({ title: "Đã sao chép liên kết" });
-               }}>
-                 <Share2 className="w-4 h-4" />
-               </Button>
-            </div>
           </div>
           <div className="grid grid-cols-4 gap-4">
             {images.map((img, i) => (
@@ -147,6 +149,9 @@ export function ProductDetailClient({ slug, initialProduct, initialTenant }: Pro
               </div>
             </div>
           </div>
+
+          {/* Social Share Buttons */}
+          <SocialShareButtons url={productUrl} title={initialProduct.name} />
 
           {/* VARIANT SELECTOR */}
           {initialProduct.hasVariants && initialProduct.attributes && (
@@ -223,6 +228,9 @@ export function ProductDetailClient({ slug, initialProduct, initialTenant }: Pro
           </div>
         </div>
       </div>
+
+      {/* Facebook Comments */}
+      <FacebookComments url={productUrl} />
 
       <section className="space-y-8">
          <h2 className="text-3xl font-black italic tracking-tighter uppercase">Sản phẩm liên quan</h2>

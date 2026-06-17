@@ -30,6 +30,7 @@ export type Product = {
   attributes?: VariantAttribute[];
   variants?: ProductVariant[];
   hasVariants?: boolean;
+  brand?: { name: string };
 };
 
 export type Banner = {
@@ -104,6 +105,27 @@ export interface LoyaltyConfig {
   maxRedeemPercent: number;
 }
 
+export interface SocialCommerceConfig {
+  facebookAppId?: string;
+  facebookPageId?: string;
+  facebookPixelId?: string;
+  facebookOauthToken?: string;
+  showFacebookLikeButton: boolean;
+  showFacebookShareButton: boolean;
+  showFacebookComments: boolean;
+  enableLiveCommerce: boolean;
+  zaloOaId?: string;
+  showZaloChatWidget: boolean;
+  showZaloShareButton: boolean;
+  socialLinks: {
+    facebook?: string;
+    zalo?: string;
+    tiktok?: string;
+    youtube?: string;
+    instagram?: string;
+  };
+}
+
 export type Tenant = {
   id: string;
   ownerId?: string;
@@ -119,6 +141,7 @@ export type Tenant = {
   promotions: Promotion[];
   coupons: Coupon[];
   loyaltyConfig: LoyaltyConfig;
+  socialCommerce: SocialCommerceConfig;
   type: 'platform' | 'reseller';
 };
 
@@ -177,6 +200,7 @@ const generateMockProducts = (count: number): Product[] => {
       image: PlaceHolderImages[imageIndex].imageUrl,
       description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng.`,
       category: category,
+      brand: { name: "S-Com Elite" },
       inStock: true,
       createdAt: new Date(2025, 0, 1 + i).toISOString(),
       hasVariants,
@@ -246,6 +270,23 @@ const commonConfig = {
     redeemRate: 100,
     minRedeemPoints: 100,
     maxRedeemPercent: 30
+  },
+  socialCommerce: {
+    facebookAppId: "placeholder_app_id",
+    facebookPageId: "placeholder_page_id",
+    facebookPixelId: "placeholder_pixel_id",
+    showFacebookLikeButton: true,
+    showFacebookShareButton: true,
+    showFacebookComments: true,
+    enableLiveCommerce: true,
+    zaloOaId: "placeholder_zalo_id",
+    showZaloChatWidget: true,
+    showZaloShareButton: true,
+    socialLinks: {
+      facebook: "https://facebook.com/scomhub",
+      zalo: "https://zalo.me/scomhub",
+      tiktok: "https://tiktok.com/@scomhub"
+    }
   }
 };
 

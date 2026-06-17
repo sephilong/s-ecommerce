@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { FbPixelEvents } from '@/lib/analytics/facebook-pixel';
 
 export interface AnalyticsEvent {
   id: string;
@@ -34,12 +35,19 @@ export const useAnalyticsStore = create<AnalyticsState>()(
       events: [],
       sessionId: `sess-${Math.random().toString(36).substring(7)}`,
       logEvent: (event) => set((state) => {
-        // Lấy source từ localStorage nếu có (do logic affiliate đã lưu)
+        // Source logic
         let eventSource = event.source;
         if (!eventSource && typeof window !== 'undefined') {
           const aff = localStorage.getItem('scomhub_affiliate_ref');
           if (aff) eventSource = 'affiliate';
           else eventSource = 'organic';
+        }
+
+        // Facebook Pixel Mapping
+        if (event.type === 'add_to_cart' && event.productId) {
+          FbPixelEvents.addToCart({ id: event.productId, name: event.productName, price: event.value }, 1);
+        } else if (event.type === 'begin_checkout') {
+          FbPixelEvents.initiateCheckout(event.value || 0, []);
         }
 
         return {
@@ -52,7 +60,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
               sessionId: state.sessionId
             },
             ...state.events
-          ].slice(0, 2000) // Giữ tối đa 2000 sự kiện gần nhất
+          ].slice(0, 2000)
         };
       }),
       getFunnelStats: () => {
@@ -66,7 +74,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
       }
     }),
     {
-      name: 'scomhub-analytics-v1',
+      name: 'scomhub-analytics-v2',
     }
   )
 );

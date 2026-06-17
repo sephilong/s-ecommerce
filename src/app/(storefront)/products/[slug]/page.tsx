@@ -19,13 +19,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!product) return { title: 'Sản phẩm không tồn tại' };
 
+  const url = `https://scomhub.vn/products/${product.slug}`;
+
   return {
     title: product.name,
     description: product.description.substring(0, 160),
     openGraph: {
+      type: 'website',
+      url: url,
       title: `${product.name} | S-Com Hub`,
       description: product.description.substring(0, 160),
-      images: [{ url: product.image }],
+      images: [{ url: product.image, width: 1200, height: 630 }],
+      locale: 'vi_VN',
+    },
+    other: {
+      'product:price:amount': String(product.price),
+      'product:price:currency': 'VND',
+      'product:availability': product.inStock ? 'in stock' : 'out of stock',
+      'product:condition': 'new',
+      'product:brand': product.brand?.name || 'S-Com Hub',
+      'zalo:og:url': url
     }
   };
 }
@@ -47,7 +60,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     "sku": product.id,
     "brand": {
       "@type": "Brand",
-      "name": "S-Com Hub"
+      "name": product.brand?.name || "S-Com Hub"
     },
     "offers": {
       "@type": "Offer",

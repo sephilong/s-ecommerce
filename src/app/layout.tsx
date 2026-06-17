@@ -2,12 +2,18 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { FacebookSDK } from '@/components/social/FacebookSDK';
+import { MetaPixel } from '@/components/social/MetaPixel';
+import { ZaloChatWidget } from '@/components/social/ZaloChatWidget';
+import { MOCK_TENANTS } from '@/lib/store-data';
 
 export const viewport: Viewport = {
   themeColor: '#9757EA',
   width: 'device-width',
   initialScale: 1,
 };
+
+const tenant = MOCK_TENANTS[0];
 
 export const metadata: Metadata = {
   title: {
@@ -58,6 +64,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const social = tenant.socialCommerce;
+
   return (
     <html lang="vi" className="dark">
       <head>
@@ -68,6 +76,9 @@ export default function RootLayout({
       <body className="font-body antialiased selection:bg-primary/30 selection:text-primary">
         {children}
         <Toaster />
+        <FacebookSDK appId={social.facebookAppId || ''} />
+        <MetaPixel pixelId={social.facebookPixelId || ''} />
+        <ZaloChatWidget oaId={social.zaloOaId} />
       </body>
     </html>
   );
