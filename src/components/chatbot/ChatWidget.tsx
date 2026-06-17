@@ -4,10 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, X, Send, Bot, User, Loader2, Sparkles, ShoppingBag, HelpCircle, Package } from "lucide-react";
+import { MessageSquare, X, Send, Bot, User, Loader2, Sparkles, ShoppingBag, HelpCircle, Package, ArrowRight } from "lucide-react";
 import { chatbotCustomerSupport } from "@/ai/flows/ai-chatbot-customer-support";
 import { Tenant } from "@/lib/store-data";
+import { useChatbotStore } from "@/store/chatbotStore";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type Message = {
   role: "user" | "assistant";
@@ -17,20 +19,24 @@ type Message = {
 const QUICK_REPLIES = [
   { label: "Sản phẩm mới nhất", icon: <Sparkles className="w-3 h-3" /> },
   { label: "Chính sách đổi trả", icon: <HelpCircle className="w-3 h-3" /> },
-  { label: "Kiểm tra đơn hàng", icon: <Package className="w-3 h-3" /> },
   { label: "Tư vấn quà tặng", icon: <ShoppingBag className="w-3 h-3" /> },
 ];
 
 export function ChatWidget({ tenant }: { tenant: Tenant }) {
+  const { config } = useChatbotStore();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: `Chào bạn! 👋 Tôi là S-Com AI. Bạn cần hỗ trợ gì về các sản phẩm của ${tenant.name} không ạ?` }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const [showPing, setShowPing] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([{ role: "assistant", content: config.greetingMessage }]);
+    }
+  }, [config.greetingMessage, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -50,7 +56,12 @@ export function ChatWidget({ tenant }: { tenant: Tenant }) {
       const result = await chatbotCustomerSupport({
         message: textToSend,
         tenantId: tenant.id,
-        conversationId: conversationId
+        conversationId: conversationId,
+        config: {
+          chatbotName: config.chatbotName,
+          returnPolicy: config.returnPolicy,
+          shippingPolicy: config.shippingPolicy
+        }
       });
 
       setConversationId(result.conversationId);
@@ -61,6 +72,8 @@ export function ChatWidget({ tenant }: { tenant: Tenant }) {
       setIsLoading(false);
     }
   };
+
+  if (!config.isEnabled) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-[100] font-body">
@@ -78,14 +91,14 @@ export function ChatWidget({ tenant }: { tenant: Tenant }) {
           )}
         </button>
       ) : (
-        <Card className="w-[350px] md:w-[400px] h-[550px] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-white/10 bg-[#0f0f0f] animate-in slide-in-from-bottom-10 fade-in duration-500 rounded-[2rem] overflow-hidden">
+        <Card className="w-[350px] md:w-[400px] h-[600px] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-white/10 bg-[#0f0f0f] animate-in slide-in-from-bottom-10 fade-in duration-500 rounded-[2.5rem] overflow-hidden">
           <CardHeader className="bg-primary p-5 flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-sm font-bold text-white uppercase tracking-widest italic">S-Com AI Assistant</CardTitle>
+                <CardTitle className="text-sm font-bold text-white uppercase tracking-widest italic">{config.chatbotName}</CardTitle>
                 <div className="flex items-center gap-1.5 mt-0.5">
                    <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
                    <span className="text-[10px] text-white/70 font-bold uppercase">Sẵn sàng tư vấn</span>
@@ -105,7 +118,7 @@ export function ChatWidget({ tenant }: { tenant: Tenant }) {
                     {msg.role === 'user' ? <User className="w-4 h-4 text-primary" /> : <Bot className="w-4 h-4 text-primary" />}
                   </div>
                   <div className={cn(
-                    "p-3.5 rounded-2xl text-sm leading-relaxed",
+                    "p-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap",
                     msg.role === 'user' ? 'bg-primary text-white font-medium rounded-tr-none shadow-lg shadow-primary/20' : 'bg-white/5 text-foreground/90 rounded-tl-none border border-white/5'
                   )}>
                     {msg.content}
@@ -117,15 +130,15 @@ export function ChatWidget({ tenant }: { tenant: Tenant }) {
               <div className="flex justify-start animate-in fade-in">
                 <div className="flex gap-3 items-center bg-white/5 p-3.5 rounded-2xl rounded-tl-none border border-white/5">
                   <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span className="text-xs text-muted-foreground italic font-medium">S-Com AI đang phản hồi...</span>
+                  <span className="text-xs text-muted-foreground italic font-medium">Đang xử lý dữ liệu kho...</span>
                 </div>
               </div>
             )}
           </CardContent>
 
           {/* Quick Replies */}
-          {!isLoading && messages.length < 5 && (
-            <div className="px-4 py-2 flex flex-wrap gap-2">
+          {!isLoading && (
+            <div className="px-4 py-3 flex flex-wrap gap-2 border-t border-white/5 bg-black/20">
               {QUICK_REPLIES.map((q, idx) => (
                 <button
                   key={idx}
@@ -146,7 +159,7 @@ export function ChatWidget({ tenant }: { tenant: Tenant }) {
               <Input 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Hỏi về sản phẩm, giá cả..."
+                placeholder="Bạn muốn mua gì ạ?..."
                 className="flex-1 h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/30"
                 disabled={isLoading}
               />

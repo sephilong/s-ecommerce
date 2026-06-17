@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -21,7 +20,8 @@ import {
   Box,
   FileText,
   Warehouse,
-  Zap
+  Zap,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
@@ -49,6 +49,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       { name: "Builder (Website)", icon: <Palette />, href: "/vendor/builder" },
       { name: "Khuyến mãi", icon: <Star />, href: "/admin/promotions" }, 
       { name: "Tài chính", icon: <Wallet />, href: "/vendor/finance" },
+      { name: "AI Chatbot", icon: <Bot />, href: "/admin/chatbot" },
       { name: "Đánh giá", icon: <Star />, href: "/vendor/reviews" },
     ]},
     { group: "Hệ thống", items: [
