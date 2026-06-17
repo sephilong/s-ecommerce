@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="group relative flex flex-col bg-card rounded-xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/10">
-      <Link href={`/products/${product.slug}`} className="relative aspect-square overflow-hidden">
+      <Link href={`/products/${product.slug}`} className="relative aspect-square overflow-hidden block">
         <Image
           src={product.image}
           alt={product.name}
@@ -70,7 +70,7 @@ export function ProductCard({ product }: { product: Product }) {
         />
         
         {/* Overlays */}
-        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 z-10">
           <Button 
             size="icon" 
             variant="secondary" 
@@ -103,7 +103,7 @@ export function ProductCard({ product }: { product: Product }) {
       
       <div className="p-4 flex flex-col flex-1">
         <div className="text-xs text-primary font-medium mb-1 uppercase tracking-wider">{product.category}</div>
-        <Link href={`/products/${product.slug}`}>
+        <Link href={`/products/${product.slug}`} className="block">
           <h3 className="font-semibold text-lg line-clamp-2 hover:text-primary transition-colors min-h-[3.5rem]">
             {product.name}
           </h3>

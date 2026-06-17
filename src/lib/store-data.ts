@@ -27,7 +27,6 @@ export type Product = {
   category: string;
   inStock: boolean;
   createdAt: string;
-  // New Variant fields
   attributes?: VariantAttribute[];
   variants?: ProductVariant[];
   hasVariants?: boolean;
@@ -143,7 +142,6 @@ const generateMockProducts = (count: number): Product[] => {
     const imageIndex = (i % 4) + 1; 
     const productName = `${category} Premium Model ${i + 1}`;
     
-    // Add variants to some products for testing
     const hasVariants = i < 5;
     let attributes: VariantAttribute[] | undefined = undefined;
     let variants: ProductVariant[] | undefined = undefined;
@@ -155,15 +153,15 @@ const generateMockProducts = (count: number): Product[] => {
       ];
       
       variants = [];
-      attributes[0].values.forEach(color => {
-        attributes![1].values.forEach(size => {
+      attributes[0].values.forEach((color, cIdx) => {
+        attributes![1].values.forEach((size, sIdx) => {
           variants!.push({
             id: `v-${i}-${color}-${size}`,
-            sku: `SKU-${i}-${color.substring(0,1)}-${size}`,
+            sku: `SKU-${i}-${color.substring(0,1).toUpperCase()}-${size}`,
             combination: { "Màu sắc": color, "Dung lượng": size },
-            price: 15000000 + (Math.random() * 5000000),
+            price: 15000000 + (cIdx * 500000) + (sIdx * 1000000),
             compareAtPrice: 22000000,
-            stock: Math.floor(Math.random() * 20),
+            stock: 10 + (cIdx * 2),
             image: PlaceHolderImages[imageIndex].imageUrl
           });
         });
@@ -173,14 +171,14 @@ const generateMockProducts = (count: number): Product[] => {
     return {
       id: `p${i + 1}`,
       name: productName,
-      slug: `${slugify(productName)}`,
-      price: 500000 + (Math.random() * 10000000),
-      compareAtPrice: Math.random() > 0.5 ? 12000000 + (Math.random() * 5000000) : undefined,
+      slug: slugify(productName),
+      price: 500000 + (i * 200000),
+      compareAtPrice: i % 2 === 0 ? 12000000 : undefined,
       image: PlaceHolderImages[imageIndex].imageUrl,
       description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng.`,
       category: category,
-      inStock: Math.random() > 0.1,
-      createdAt: new Date(Date.now() - (i * 86400000)).toISOString(),
+      inStock: true,
+      createdAt: new Date(2025, 0, 1 + i).toISOString(),
       hasVariants,
       attributes,
       variants
@@ -223,8 +221,8 @@ const mockPromotions: Promotion[] = [
     isActive: true,
     priority: 100,
     config: {
-      startTime: new Date().toISOString(),
-      endTime: new Date(Date.now() + 86400000).toISOString(),
+      startTime: "2025-01-01T00:00:00Z",
+      endTime: "2025-12-31T23:59:59Z",
       products: [
         { productId: 'p1', salePrice: 2000000, saleQuantity: 10 }
       ]
