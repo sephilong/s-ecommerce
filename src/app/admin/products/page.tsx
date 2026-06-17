@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminProductsPage() {
   const { vendorProducts, approveProduct, rejectProduct, addVendorProduct, updateVendorProduct, deleteVendorProduct } = useVendorStore();
