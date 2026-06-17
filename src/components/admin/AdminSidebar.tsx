@@ -20,7 +20,10 @@ import {
   Palette,
   Globe,
   TrendingUp,
-  Newspaper
+  Newspaper,
+  Bot,
+  Zap,
+  Share2
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -49,21 +52,21 @@ export function AdminSidebar() {
       ]
     },
     {
+      label: "Công nghệ & Marketing",
+      items: [
+        { name: "AI Chatbot Engine", icon: <Bot />, href: "/admin/chatbot" },
+        { name: "Social Commerce", icon: <Share2 />, href: "/admin/settings?tab=social" },
+        { name: "Chiến dịch sàn", icon: <Tag />, href: "/admin/promotions" },
+        { name: "Hệ thống Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
+      ]
+    },
+    {
       label: "Catalog & Content",
       items: [
         { name: "Sản phẩm hệ thống", icon: <Package />, href: "/admin/products" },
         { name: "Banner & Slides", icon: <ImageIcon />, href: "/admin/banners" },
         { name: "Quản lý Blog", icon: <Newspaper />, href: "/admin/blog" },
         { name: "Đơn hàng toàn sàn", icon: <ShoppingCart />, href: "/admin/orders" },
-      ]
-    },
-    {
-      label: "Marketing & Growth",
-      items: [
-        { name: "Chiến dịch sàn", icon: <Tag />, href: "/admin/promotions" },
-        { name: "Kho Voucher", icon: <Ticket />, href: "/admin/coupons" },
-        { name: "Hệ thống Affiliate", icon: <UserCheck />, href: "/admin/affiliate" },
-        { name: "Loyalty (Thành viên)", icon: <Star />, href: "/admin/loyalty" },
       ]
     },
     {
