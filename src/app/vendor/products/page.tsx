@@ -20,12 +20,9 @@ import {
   CheckCircle2, 
   XCircle,
   Package,
-  AlertCircle,
-  Store,
   FileSpreadsheet,
-  Loader2,
   ExternalLink,
-  Settings2
+  Sparkles
 } from "lucide-react";
 import {
   Dialog,
@@ -41,12 +38,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MediaUploader } from "@/components/media/MediaUploader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+const COMMON_ATTRIBUTES = [
+  { name: "Màu sắc", values: ["Đen", "Trắng", "Đỏ", "Xanh dương", "Xanh lá", "Vàng", "Xám", "Bạc", "Titan"] },
+  { name: "Kích thước", values: ["S", "M", "L", "XL", "XXL", "38", "39", "40", "41", "42", "43"] },
+  { name: "Dung lượng", values: ["64GB", "128GB", "256GB", "512GB", "1TB"] },
+  { name: "Chất liệu", values: ["Cotton", "Polyester", "Da thật", "Nhôm", "Kính"] },
+];
 
 export default function VendorProductsPage() {
   return (
@@ -61,7 +64,6 @@ function ProductsContent() {
   const { getVendorByUserId, vendorProducts, addVendorProduct, deleteVendorProduct, updateVendorProduct } = useVendorStore();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [uploadedUrl, setUploadedUrl] = useState("");
   const searchParams = useSearchParams();
@@ -119,13 +121,19 @@ function ProductsContent() {
   };
 
   // Variant Management Helpers
-  const addAttribute = () => {
+  const addAttribute = (name: string = "") => {
     const currentAttrs = editingProduct.attributes || [];
     setEditingProduct({
       ...editingProduct,
       hasVariants: true,
-      attributes: [...currentAttrs, { name: "", values: [""] }]
+      attributes: [...currentAttrs, { name, values: [""] }]
     });
+  };
+
+  const updateAttribute = (idx: number, name: string) => {
+    const newAttrs = [...editingProduct.attributes];
+    newAttrs[idx].name = name;
+    setEditingProduct({ ...editingProduct, attributes: newAttrs });
   };
 
   const removeAttribute = (idx: number) => {
@@ -137,9 +145,14 @@ function ProductsContent() {
     });
   };
 
-  const addAttrValue = (attrIdx: number) => {
+  const addAttrValue = (attrIdx: number, val: string = "") => {
     const newAttrs = [...editingProduct.attributes];
-    newAttrs[attrIdx].values.push("");
+    if (newAttrs[attrIdx].values.includes(val)) return;
+    if (newAttrs[attrIdx].values.length === 1 && newAttrs[attrIdx].values[0] === "") {
+        newAttrs[attrIdx].values = [val];
+    } else {
+        newAttrs[attrIdx].values.push(val);
+    }
     setEditingProduct({ ...editingProduct, attributes: newAttrs });
   };
 
@@ -414,54 +427,83 @@ function ProductsContent() {
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <h4 className="text-sm font-black italic uppercase tracking-widest text-primary">1. Cấu hình Nhóm thuộc tính</h4>
-                            <Button type="button" variant="outline" size="sm" onClick={addAttribute} className="rounded-full gap-2 border-primary/20 text-primary">
-                              <Plus className="w-3.5 h-3.5" /> Thêm nhóm
-                            </Button>
+                            <div className="flex gap-2">
+                               {COMMON_ATTRIBUTES.map(attr => (
+                                 <Button key={attr.name} type="button" variant="outline" size="sm" onClick={() => addAttribute(attr.name)} className="rounded-full h-8 text-[10px] uppercase font-bold border-white/10 bg-white/5 hover:bg-primary/20">
+                                   + {attr.name}
+                                 </Button>
+                               ))}
+                               <Button type="button" variant="ghost" size="sm" onClick={() => addAttribute()} className="rounded-full h-8 text-[10px] uppercase font-bold text-muted-foreground">
+                                 Tùy chỉnh
+                               </Button>
+                            </div>
                           </div>
                           
                           <div className="grid grid-cols-1 gap-4">
-                            {editingProduct.attributes?.map((attr: any, aIdx: number) => (
-                              <Card key={aIdx} className="bg-white/5 border-white/10 p-6 rounded-2xl relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                                <div className="flex gap-6 mb-4">
-                                  <div className="flex-1 space-y-2">
-                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tên nhóm thuộc tính</Label>
-                                    <Input value={attr.name} onChange={(e) => {
-                                      const newAttrs = [...editingProduct.attributes];
-                                      newAttrs[aIdx].name = e.target.value;
-                                      setEditingProduct({...editingProduct, attributes: newAttrs});
-                                    }} placeholder="Ví dụ: Kích thước, Màu sắc..." className="h-10 rounded-xl" />
+                            {editingProduct.attributes?.map((attr: any, aIdx: number) => {
+                              const suggestions = COMMON_ATTRIBUTES.find(ca => ca.name === attr.name)?.values || [];
+                              return (
+                                <Card key={aIdx} className="bg-white/5 border-white/10 p-6 rounded-2xl relative overflow-hidden">
+                                  <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                                  <div className="flex gap-6 mb-4">
+                                    <div className="flex-1 space-y-2">
+                                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tên nhóm thuộc tính</Label>
+                                      <Input value={attr.name} onChange={(e) => {
+                                        const newAttrs = [...editingProduct.attributes];
+                                        newAttrs[aIdx].name = e.target.value;
+                                        setEditingProduct({...editingProduct, attributes: newAttrs});
+                                      }} placeholder="Ví dụ: Kích thước, Màu sắc..." className="h-10 rounded-xl" />
+                                    </div>
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeAttribute(aIdx)} className="mt-6 text-destructive hover:bg-destructive/10 h-10 w-10"><Trash2 className="w-5 h-5" /></Button>
                                   </div>
-                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeAttribute(aIdx)} className="mt-6 text-destructive hover:bg-destructive/10 h-10 w-10"><Trash2 className="w-5 h-5" /></Button>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Các giá trị lựa chọn</Label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {attr.values.map((v: string, vIdx: number) => (
-                                      <div key={vIdx} className="relative group/val">
-                                        <Input 
-                                          value={v} 
-                                          onChange={(e) => updateAttrValue(aIdx, vIdx, e.target.value)}
-                                          className="w-28 h-9 rounded-lg text-xs pr-8"
-                                        />
-                                        <button 
-                                          type="button" 
-                                          onClick={() => {
-                                            const newAttrs = [...editingProduct.attributes];
-                                            newAttrs[aIdx].values = newAttrs[aIdx].values.filter((_: any, i: number) => i !== vIdx);
-                                            setEditingProduct({...editingProduct, attributes: newAttrs});
-                                          }}
-                                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive opacity-0 group-hover/val:opacity-100 transition-opacity"
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </button>
+                                  <div className="space-y-3">
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Các giá trị lựa chọn</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                      {attr.values.map((v: string, vIdx: number) => (
+                                        <div key={vIdx} className="relative group/val">
+                                          <Input 
+                                            value={v} 
+                                            onChange={(e) => updateAttrValue(aIdx, vIdx, e.target.value)}
+                                            className="w-28 h-9 rounded-lg text-xs pr-8"
+                                          />
+                                          <button 
+                                            type="button" 
+                                            onClick={() => {
+                                              const newAttrs = [...editingProduct.attributes];
+                                              newAttrs[aIdx].values = newAttrs[aIdx].values.filter((_: any, i: number) => i !== vIdx);
+                                              setEditingProduct({...editingProduct, attributes: newAttrs});
+                                            }}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive opacity-0 group-hover/val:opacity-100 transition-opacity"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                      <Button type="button" variant="outline" size="sm" onClick={() => addAttrValue(aIdx)} className="h-9 rounded-lg px-4 gap-2 border-dashed border-white/20"><Plus className="w-3 h-3" /> Thêm giá trị</Button>
+                                    </div>
+
+                                    {suggestions.length > 0 && (
+                                      <div className="pt-2">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Gợi ý cho {attr.name}:</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {suggestions.map(s => (
+                                            <button 
+                                              key={s} 
+                                              type="button"
+                                              onClick={() => addAttrValue(aIdx, s)}
+                                              disabled={attr.values.includes(s)}
+                                              className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-medium hover:bg-primary/20 hover:border-primary/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                            >
+                                              {s}
+                                            </button>
+                                          ))}
+                                        </div>
                                       </div>
-                                    ))}
-                                    <Button type="button" variant="outline" size="sm" onClick={() => addAttrValue(aIdx)} className="h-9 rounded-lg px-4 gap-2 border-dashed border-white/20"><Plus className="w-3 h-3" /> Thêm giá trị</Button>
+                                    )}
                                   </div>
-                                </div>
-                              </Card>
-                            ))}
+                                </Card>
+                              );
+                            })}
                           </div>
                         </div>
 
@@ -529,7 +571,7 @@ function ProductsContent() {
               )}
 
               <DialogFooter className="mt-12 border-t border-white/10 pt-8">
-                 <Button type="submit" className="w-full h-16 rounded-2xl font-black italic uppercase tracking-tighter shadow-2xl shadow-primary/30 text-lg">
+                 <Button type="submit" className="w-full h-16 rounded-2xl font-black italic uppercase tracking-tighter shadow-xl shadow-primary/30 text-lg">
                     Lưu thông tin sản phẩm
                  </Button>
               </DialogFooter>

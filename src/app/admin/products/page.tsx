@@ -9,7 +9,6 @@ import {
   Search, 
   MoreHorizontal, 
   Edit, 
-  Trash, 
   CheckCircle2, 
   XCircle,
   User,
@@ -22,7 +21,8 @@ import {
   Loader2,
   Package,
   Trash2,
-  Settings2
+  Settings2,
+  Sparkles
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -53,6 +53,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+
+const COMMON_ATTRIBUTES = [
+  { name: "Màu sắc", values: ["Đen", "Trắng", "Đỏ", "Xanh dương", "Xanh lá", "Vàng", "Xám", "Bạc", "Titan"] },
+  { name: "Kích thước", values: ["S", "M", "L", "XL", "XXL", "38", "39", "40", "41", "42", "43"] },
+  { name: "Dung lượng", values: ["64GB", "128GB", "256GB", "512GB", "1TB"] },
+  { name: "Chất liệu", values: ["Cotton", "Polyester", "Da thật", "Nhôm", "Kính"] },
+];
 
 export default function AdminProductsPage() {
   const { vendorProducts, approveProduct, rejectProduct, addVendorProduct, updateVendorProduct, deleteVendorProduct } = useVendorStore();
@@ -139,8 +146,8 @@ export default function AdminProductsPage() {
   };
 
   // Variant Helpers
-  const addAttribute = () => {
-    const newAttrs = [...(editingProduct.attributes || []), { name: "", values: [""] }];
+  const addAttribute = (name: string = "") => {
+    const newAttrs = [...(editingProduct.attributes || []), { name, values: [""] }];
     setEditingProduct({ ...editingProduct, attributes: newAttrs, hasVariants: true });
   };
 
@@ -150,9 +157,14 @@ export default function AdminProductsPage() {
     setEditingProduct({ ...editingProduct, attributes: newAttrs });
   };
 
-  const addAttrValue = (idx: number) => {
+  const addAttrValue = (idx: number, value: string = "") => {
     const newAttrs = [...editingProduct.attributes];
-    newAttrs[idx].values.push("");
+    if (newAttrs[idx].values.includes(value)) return;
+    if (newAttrs[idx].values.length === 1 && newAttrs[idx].values[0] === "") {
+        newAttrs[idx].values = [value];
+    } else {
+        newAttrs[idx].values.push(value);
+    }
     setEditingProduct({ ...editingProduct, attributes: newAttrs });
   };
 
@@ -445,7 +457,7 @@ export default function AdminProductsPage() {
                 <TabsContent value="variants" className="space-y-8 animate-in fade-in duration-300">
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Sử dụng biến thể</Label>
+                      <Label className="text-base italic">Sử dụng biến thể</Label>
                       <p className="text-xs text-muted-foreground italic">Dành cho sản phẩm có nhiều Size, Màu sắc...</p>
                     </div>
                     <Switch 
@@ -460,38 +472,75 @@ export default function AdminProductsPage() {
                       <section className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-black uppercase tracking-widest text-primary italic">1. Nhóm thuộc tính</h4>
-                          <Button type="button" variant="outline" size="sm" onClick={addAttribute} className="rounded-full gap-2">
-                            <Plus className="w-3 h-3" /> Thêm nhóm
-                          </Button>
+                          <div className="flex gap-2">
+                             {COMMON_ATTRIBUTES.map(attr => (
+                               <Button key={attr.name} type="button" variant="outline" size="sm" onClick={() => addAttribute(attr.name)} className="rounded-full h-8 text-[10px] uppercase font-bold border-white/10 bg-white/5 hover:bg-primary/20">
+                                 + {attr.name}
+                               </Button>
+                             ))}
+                             <Button type="button" variant="ghost" size="sm" onClick={() => addAttribute()} className="rounded-full h-8 text-[10px] uppercase font-bold text-muted-foreground">
+                               Tùy chỉnh
+                             </Button>
+                          </div>
                         </div>
                         <div className="space-y-4">
-                          {editingProduct.attributes?.map((attr: any, aIdx: number) => (
-                            <Card key={aIdx} className="bg-white/5 border-white/10 p-4 rounded-2xl">
-                              <div className="flex gap-4 mb-4">
-                                <div className="flex-1 space-y-2">
-                                  <Label className="text-[10px] uppercase font-bold">Tên nhóm (VD: Màu sắc)</Label>
-                                  <Input value={attr.name} onChange={(e) => updateAttribute(aIdx, e.target.value)} placeholder="Nhập tên..." className="h-9 rounded-lg" />
+                          {editingProduct.attributes?.map((attr: any, aIdx: number) => {
+                            const suggestions = COMMON_ATTRIBUTES.find(ca => ca.name === attr.name)?.values || [];
+                            return (
+                              <Card key={aIdx} className="bg-white/5 border-white/10 p-6 rounded-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-primary/40" />
+                                <div className="flex gap-4 mb-4">
+                                  <div className="flex-1 space-y-2">
+                                    <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Tên nhóm (VD: Màu sắc)</Label>
+                                    <Input value={attr.name} onChange={(e) => updateAttribute(aIdx, e.target.value)} placeholder="Nhập tên..." className="h-10 rounded-xl bg-background/50" />
+                                  </div>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeAttribute(aIdx)} className="mt-6 text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
                                 </div>
-                                <Button type="button" variant="ghost" size="icon" onClick={() => removeAttribute(aIdx)} className="mt-6 text-destructive hover:bg-destructive/10">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-[10px] uppercase font-bold">Giá trị (VD: Đỏ, Xanh)</Label>
-                                <div className="flex flex-wrap gap-2">
-                                  {attr.values.map((val: string, vIdx: number) => (
-                                    <Input 
-                                      key={vIdx} 
-                                      value={val} 
-                                      onChange={(e) => updateAttrValue(aIdx, vIdx, e.target.value)}
-                                      className="w-24 h-8 text-xs rounded-lg"
-                                    />
-                                  ))}
-                                  <Button type="button" variant="outline" size="icon" onClick={() => addAttrValue(aIdx)} className="h-8 w-8 rounded-lg"><Plus className="w-3 h-3" /></Button>
+                                <div className="space-y-3">
+                                  <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Giá trị lựa chọn</Label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {attr.values.map((val: string, vIdx: number) => (
+                                      <div key={vIdx} className="relative group/val">
+                                         <Input 
+                                          value={val} 
+                                          onChange={(e) => updateAttrValue(aIdx, vIdx, e.target.value)}
+                                          className="w-28 h-9 text-xs rounded-lg bg-background/50 pr-8"
+                                        />
+                                        <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/val:opacity-100 text-destructive" onClick={() => {
+                                           const next = attr.values.filter((_:any, i:number) => i !== vIdx);
+                                           const newAttrs = [...editingProduct.attributes];
+                                           newAttrs[aIdx].values = next.length ? next : [""];
+                                           setEditingProduct({...editingProduct, attributes: newAttrs});
+                                        }}><Trash2 className="w-3 h-3" /></button>
+                                      </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" onClick={() => addAttrValue(aIdx)} className="h-9 w-9 rounded-lg border-dashed border-white/20"><Plus className="w-4 h-4" /></Button>
+                                  </div>
+                                  
+                                  {suggestions.length > 0 && (
+                                    <div className="pt-2">
+                                      <p className="text-[9px] font-bold text-muted-foreground uppercase mb-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Gợi ý cho {attr.name}:</p>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {suggestions.map(s => (
+                                          <button 
+                                            key={s} 
+                                            type="button"
+                                            onClick={() => addAttrValue(aIdx, s)}
+                                            disabled={attr.values.includes(s)}
+                                            className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-medium hover:bg-primary/20 hover:border-primary/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                          >
+                                            {s}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </Card>
-                          ))}
+                              </Card>
+                            );
+                          })}
                         </div>
                       </section>
 
@@ -503,7 +552,7 @@ export default function AdminProductsPage() {
                             <Plus className="w-3 h-3" /> Thêm thủ công
                           </Button>
                         </div>
-                        <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+                        <div className="bg-white/5 rounded-3xl border border-white/10 overflow-hidden shadow-xl">
                           <table className="w-full text-xs">
                             <thead className="bg-white/5 border-b border-white/10">
                               <tr className="text-left font-bold uppercase text-[9px] tracking-widest text-muted-foreground">
@@ -520,7 +569,7 @@ export default function AdminProductsPage() {
                                     <Input 
                                       value={variant.sku} 
                                       onChange={(e) => updateVariant(vIdx, 'sku', e.target.value)}
-                                      className="h-8 rounded-lg font-mono text-[10px]"
+                                      className="h-8 rounded-lg font-mono text-[10px] bg-transparent border-white/5 focus:bg-background"
                                     />
                                   </td>
                                   <td className="p-4">
@@ -528,7 +577,7 @@ export default function AdminProductsPage() {
                                       type="number"
                                       value={variant.price} 
                                       onChange={(e) => updateVariant(vIdx, 'price', parseInt(e.target.value))}
-                                      className="h-8 rounded-lg font-bold"
+                                      className="h-8 rounded-lg font-bold text-primary bg-transparent border-white/5 focus:bg-background"
                                     />
                                   </td>
                                   <td className="p-4">
@@ -536,7 +585,7 @@ export default function AdminProductsPage() {
                                       type="number"
                                       value={variant.stock} 
                                       onChange={(e) => updateVariant(vIdx, 'stock', parseInt(e.target.value))}
-                                      className="h-8 rounded-lg"
+                                      className="h-8 rounded-lg bg-transparent border-white/5 focus:bg-background"
                                     />
                                   </td>
                                   <td className="p-4 text-right">
@@ -560,7 +609,7 @@ export default function AdminProductsPage() {
             )}
 
             <DialogFooter className="mt-12 border-t border-white/10 pt-6">
-               <Button type="submit" className="w-full h-14 rounded-2xl font-black italic uppercase tracking-tighter shadow-xl shadow-primary/20 text-lg">
+               <Button type="submit" className="w-full h-16 rounded-2xl font-black italic uppercase tracking-tighter shadow-xl shadow-primary/20 text-lg">
                  Lưu cấu hình sản phẩm
                </Button>
             </DialogFooter>
@@ -579,4 +628,18 @@ function StatusBadge({ status }: { status: any }) {
   };
   const config = configs[status] || configs.pending;
   return <Badge className={`rounded-full px-3 py-0.5 text-[10px] uppercase font-black italic ${config.class}`}>{config.label}</Badge>;
+}
+
+function StatCard({ label, value, icon, color }: any) {
+  return (
+    <Card className="bg-[#151515] border-white/5 rounded-3xl p-6 space-y-4 hover:border-primary/30 transition-all group">
+      <div className={`h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{label}</p>
+        <h3 className="text-2xl font-black italic tracking-tighter mt-1">{value}</h3>
+      </div>
+    </Card>
+  );
 }
