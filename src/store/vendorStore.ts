@@ -28,6 +28,21 @@ export interface Vendor {
     sections: any[];
     theme: any;
   };
+  // Social Commerce Config
+  socialConfig?: {
+    facebookAppId?: string;
+    facebookPixelId?: string;
+    zaloOaId?: string;
+    enableLiveCommerce: boolean;
+    fbPageId?: string;
+  };
+  // AI Chatbot Config per Vendor
+  chatbotConfig?: {
+    isEnabled: boolean;
+    botName: string;
+    greeting: string;
+    knowledgeBase: string;
+  };
 }
 
 export interface VendorOrder {
@@ -73,7 +88,7 @@ interface VendorState {
   updateVendorProduct: (product: any) => void;
   deleteVendorProduct: (productId: string) => void;
   updateVendorOrder: (id: string, status: VendorOrder['status'], tracking?: string) => void;
-  updateStoreBranding: (id: string, updates: { logo?: string, banner?: string, description?: string }) => void;
+  updateStoreBranding: (id: string, updates: any) => void;
   updateStorefrontConfig: (vendorId: string, config: { sections: any[], theme: any }) => void;
   replyToReview: (reviewId: string, reply: string) => void;
   setCurrentVendor: (vendor: Vendor | null) => void;
@@ -84,14 +99,12 @@ interface VendorState {
   getVendorOrders: (vendorId: string) => VendorOrder[];
 }
 
-// Khởi tạo vendorProducts với toàn bộ sản phẩm mẫu để có thể chỉnh sửa và lưu lại
 const INITIAL_PRODUCTS = [
   ...MOCK_TENANTS[0].products.map(p => ({
     ...p,
     vendorId: 'system',
     status: 'approved' as const
   })),
-  // Thêm một số sản phẩm từ vendor v-1 mặc định
   ...MOCK_TENANTS[0].products.slice(0, 3).map(p => ({
     ...p,
     id: `v1-${p.id}`,
@@ -121,36 +134,23 @@ export const useVendorStore = create<VendorState>()(
           balance: 4500000,
           pendingBalance: 1200000,
           createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-          storefrontConfig: undefined
+          socialConfig: {
+            enableLiveCommerce: true,
+            facebookAppId: "123456789",
+            facebookPixelId: "987654321",
+            zaloOaId: "33214567"
+          },
+          chatbotConfig: {
+            isEnabled: true,
+            botName: "S-Com Assistant",
+            greeting: "Chào mừng bạn đến với Official Store!",
+            knowledgeBase: "Chuyên đồ Apple, bảo hành 12 tháng, đổi trả 7 ngày."
+          }
         }
       ],
-      vendorOrders: [
-        {
-          id: 'vo-1',
-          orderId: 'SCHUB-8821',
-          vendorId: 'v-1',
-          customerName: 'Trần Minh Quân',
-          items: [{ name: 'Chuột Gaming G-Pro', qty: 1, price: 1200000 }],
-          subtotal: 1200000,
-          commission: 120000,
-          vendorEarnings: 1080000,
-          status: 'pending',
-          createdAt: new Date().toISOString()
-        }
-      ],
+      vendorOrders: [],
       vendorProducts: INITIAL_PRODUCTS,
-      vendorReviews: [
-        {
-          id: 'rv-1',
-          vendorId: 'v-1',
-          productId: 'p1',
-          productName: 'Điện tử Premium Model 1',
-          customerName: 'Hoàng Anh',
-          rating: 5,
-          comment: 'Hàng giao nhanh, đóng gói cẩn thận. Shop phục vụ tốt!',
-          createdAt: new Date().toISOString()
-        }
-      ],
+      vendorReviews: [],
       currentVendor: null,
 
       registerVendor: (vendor) => set((state) => ({
@@ -190,12 +190,7 @@ export const useVendorStore = create<VendorState>()(
       })),
 
       updateStoreBranding: (id, updates) => set((state) => ({
-        vendors: state.vendors.map(v => v.id === id ? { 
-          ...v, 
-          storeLogo: updates.logo || v.storeLogo,
-          storeBanner: updates.banner || v.storeBanner,
-          storeDescription: updates.description || v.storeDescription
-        } : v)
+        vendors: state.vendors.map(v => v.id === id ? { ...v, ...updates } : v)
       })),
 
       updateStorefrontConfig: (vendorId, config) => set((state) => ({
@@ -217,7 +212,7 @@ export const useVendorStore = create<VendorState>()(
       getVendorOrders: (vendorId) => get().vendorOrders.filter(o => o.vendorId === vendorId),
     }),
     {
-      name: 'scomhub-vendor-storage-v8',
+      name: 'scomhub-vendor-storage-v10',
     }
   )
 );

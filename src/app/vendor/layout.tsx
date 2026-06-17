@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -43,18 +44,15 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       { name: "Sản phẩm", icon: <Package />, href: "/vendor/products" },
       { name: "Kho hàng", icon: <Warehouse />, href: "/vendor/inventory" },
       { name: "Đơn hàng", icon: <ShoppingCart />, href: "/vendor/orders" },
-      { name: "Khách hàng (CRM)", icon: <Users />, href: "/vendor/customers" },
     ]},
-    { group: "Marketing & Phát triển", items: [
+    { group: "Phát triển Store", items: [
       { name: "Builder (Website)", icon: <Palette />, href: "/vendor/builder" },
+      { name: "AI Chatbot", icon: <Bot />, href: "/vendor/chatbot" },
+      { name: "Tài chính & Ví", icon: <Wallet />, href: "/vendor/finance" },
       { name: "Khuyến mãi", icon: <Star />, href: "/admin/promotions" }, 
-      { name: "Tài chính", icon: <Wallet />, href: "/vendor/finance" },
-      { name: "AI Chatbot", icon: <Bot />, href: "/admin/chatbot" },
-      { name: "Đánh giá", icon: <Star />, href: "/vendor/reviews" },
     ]},
     { group: "Hệ thống", items: [
-      { name: "Báo cáo", icon: <BarChart3 />, href: "/vendor/reports" },
-      { name: "Thông báo", icon: <Zap />, href: "/admin/notifications" },
+      { name: "CRM (Khách hàng)", icon: <Users />, href: "/vendor/customers" },
       { name: "Cấu hình Shop", icon: <Settings />, href: "/vendor/settings" },
     ]}
   ];
