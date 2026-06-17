@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, User, Menu, Zap, Store, Newspaper, LayoutGrid } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, Zap, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tenant } from "@/lib/store-data";
 import { useCartStore } from "@/store/cartStore";
@@ -28,6 +28,7 @@ export function Header({ tenant }: { tenant: Tenant }) {
 
   const [flashSale, setFlashSale] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     const activeFlashSale = promotions.find(p => p.type === 'flash_sale' && p.isActive);
@@ -89,7 +90,7 @@ export function Header({ tenant }: { tenant: Tenant }) {
             </Link>
           </div>
 
-          {/* New Search Autocomplete Integrated Here */}
+          {/* Search Autocomplete - Always available on Desktop */}
           <div className="hidden lg:flex flex-1 justify-center max-w-2xl">
              <SearchAutocomplete tenantId={tenant.id} />
           </div>
@@ -97,17 +98,19 @@ export function Header({ tenant }: { tenant: Tenant }) {
           <div className="flex items-center gap-4 shrink-0">
             <nav className="hidden xl:flex items-center gap-8 text-[10px] font-black uppercase tracking-widest mr-4">
               <Link href="/products" className="hover:text-primary transition-colors italic">Sản phẩm</Link>
-              <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-2 italic">
-                 Tin tức
-              </Link>
+              <Link href="/blog" className="hover:text-primary transition-colors italic">Tin tức</Link>
             </nav>
 
             <div className="flex items-center gap-2">
-              <Link href="/search" className="lg:hidden">
-                <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-white/5">
-                  <Search className="w-5 h-5" />
-                </Button>
-              </Link>
+              {/* Mobile Search Toggle */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="lg:hidden h-10 w-10 hover:bg-white/5"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+              >
+                <Search className="w-5 h-5" />
+              </Button>
               
               <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block" />
               
@@ -136,6 +139,13 @@ export function Header({ tenant }: { tenant: Tenant }) {
             </div>
           </div>
         </div>
+
+        {/* Mobile Search Bar Expansion */}
+        {isSearchOpen && (
+          <div className="lg:hidden p-4 border-t border-white/5 bg-[#0a0a0a] animate-in slide-in-from-top duration-300">
+            <SearchAutocomplete tenantId={tenant.id} />
+          </div>
+        )}
       </header>
     </div>
   );
