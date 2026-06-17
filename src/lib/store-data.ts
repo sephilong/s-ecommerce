@@ -60,6 +60,7 @@ export type PaymentMethod = {
   type: 'vnpay' | 'momo' | 'cod' | 'banking';
   isActive: boolean;
   description?: string;
+  config: any; // Credentials/Settings per provider
 };
 
 export type ShippingMethod = {
@@ -222,10 +223,38 @@ const generateMockProducts = (count: number): Product[] => {
 
 const commonConfig = {
   paymentMethods: [
-    { id: "pm1", name: "Thanh toán VNPAY", type: "vnpay", isActive: true, description: "Cổng thanh toán điện tử VNPAY" },
-    { id: "pm2", name: "Ví MoMo", type: "momo", isActive: true, description: "Thanh toán qua ví MoMo" },
-    { id: "pm3", name: "Chuyển khoản ngân hàng", type: "banking", isActive: true, description: "Quét mã QR chuyển khoản" },
-    { id: "pm4", name: "Thanh toán khi nhận hàng (COD)", type: "cod", isActive: true, description: "Thanh toán tiền mặt" },
+    { 
+      id: "pm1", 
+      name: "Thanh toán VNPAY", 
+      type: "vnpay", 
+      isActive: true, 
+      description: "Cổng thanh toán điện tử VNPAY (Sandbox/Production)",
+      config: { tmnCode: "SCOMHUB", hashKey: "SECRET_KEY_HERE", baseUrl: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html" }
+    },
+    { 
+      id: "pm2", 
+      name: "Ví MoMo", 
+      type: "momo", 
+      isActive: true, 
+      description: "Thanh toán qua ví MoMo bằng Partner API",
+      config: { partnerCode: "MOMO_SCOM", accessKey: "ACCESS_KEY", secretKey: "SECRET_KEY", endpoint: "https://test-payment.momo.vn/v2/gateway/api/create" }
+    },
+    { 
+      id: "pm3", 
+      name: "Chuyển khoản ngân hàng", 
+      type: "banking", 
+      isActive: true, 
+      description: "Tự động tạo mã QR VietQR (Napas 247)",
+      config: { bankName: "Vietcombank", accountNo: "9999888777", accountName: "CONG TY S-COM HUB", bin: "970436" }
+    },
+    { 
+      id: "pm4", 
+      name: "Thanh toán khi nhận hàng (COD)", 
+      type: "cod", 
+      isActive: true, 
+      description: "Thanh toán tiền mặt khi shipper giao hàng",
+      config: { instructions: "Vui lòng chuẩn bị sẵn tiền mặt và kiểm tra hàng trước khi thanh toán." }
+    },
   ],
   shippingMethods: [
     { id: "sm1", name: "Giao Hàng Nhanh (GHN)", type: "ghn", isActive: true, price: 35000 },
