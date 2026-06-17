@@ -1,6 +1,21 @@
 
 import { PlaceHolderImages } from "./placeholder-images";
 
+export type VariantAttribute = {
+  name: string;
+  values: string[];
+};
+
+export type ProductVariant = {
+  id: string;
+  sku: string;
+  combination: Record<string, string>; // e.g., { "Màu sắc": "Titan", "Dung lượng": "256GB" }
+  price: number;
+  compareAtPrice?: number;
+  stock: number;
+  image?: string;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -12,6 +27,10 @@ export type Product = {
   category: string;
   inStock: boolean;
   createdAt: string;
+  // New Variant fields
+  attributes?: VariantAttribute[];
+  variants?: ProductVariant[];
+  hasVariants?: boolean;
 };
 
 export type Banner = {
@@ -88,12 +107,12 @@ export interface LoyaltyConfig {
 
 export type Tenant = {
   id: string;
-  ownerId?: string; // UID của Reseller nếu là shop riêng
+  ownerId?: string;
   name: string;
   subdomain: string;
   description: string;
   logo?: string;
-  primaryColor: string; // HSL value or Hex
+  primaryColor: string;
   products: Product[];
   banners: Banner[];
   paymentMethods: PaymentMethod[];
@@ -123,6 +142,34 @@ const generateMockProducts = (count: number): Product[] => {
     const category = categories[i % categories.length];
     const imageIndex = (i % 4) + 1; 
     const productName = `${category} Premium Model ${i + 1}`;
+    
+    // Add variants to some products for testing
+    const hasVariants = i < 5;
+    let attributes: VariantAttribute[] | undefined = undefined;
+    let variants: ProductVariant[] | undefined = undefined;
+
+    if (hasVariants) {
+      attributes = [
+        { name: "Màu sắc", values: ["Titan", "Xanh", "Đen"] },
+        { name: "Dung lượng", values: ["128GB", "256GB", "512GB"] }
+      ];
+      
+      variants = [];
+      attributes[0].values.forEach(color => {
+        attributes![1].values.forEach(size => {
+          variants!.push({
+            id: `v-${i}-${color}-${size}`,
+            sku: `SKU-${i}-${color.substring(0,1)}-${size}`,
+            combination: { "Màu sắc": color, "Dung lượng": size },
+            price: 15000000 + (Math.random() * 5000000),
+            compareAtPrice: 22000000,
+            stock: Math.floor(Math.random() * 20),
+            image: PlaceHolderImages[imageIndex].imageUrl
+          });
+        });
+      });
+    }
+
     return {
       id: `p${i + 1}`,
       name: productName,
@@ -133,7 +180,10 @@ const generateMockProducts = (count: number): Product[] => {
       description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng.`,
       category: category,
       inStock: Math.random() > 0.1,
-      createdAt: new Date(Date.now() - (i * 86400000)).toISOString()
+      createdAt: new Date(Date.now() - (i * 86400000)).toISOString(),
+      hasVariants,
+      attributes,
+      variants
     };
   });
 };
@@ -207,40 +257,12 @@ export const MOCK_TENANTS: Tenant[] = [
     name: "S-Com Hub Platform",
     subdomain: "demo",
     description: "Nền tảng thương mại điện tử đa năng, hỗ trợ Việt Nam.",
-    primaryColor: "266 79% 63%", // Violet HSL
+    primaryColor: "266 79% 63%",
     products: generateMockProducts(20),
     banners: mockBanners,
     promotions: mockPromotions,
     coupons: [],
     type: 'platform',
-    ...commonConfig
-  },
-  {
-    id: "reseller-1",
-    ownerId: "uid-reseller-1",
-    name: "Phạm Long Store",
-    subdomain: "phamlong",
-    description: "Cửa hàng ủy quyền của Phạm Long - Công nghệ dẫn đầu.",
-    primaryColor: "200 95% 45%", // Blue HSL
-    products: generateMockProducts(15),
-    banners: mockBanners,
-    promotions: [],
-    coupons: [],
-    type: 'reseller',
-    ...commonConfig
-  },
-  {
-    id: "reseller-2",
-    ownerId: "uid-reseller-2",
-    name: "Shop ABC",
-    subdomain: "shopabc",
-    description: "Gia dụng thông minh ABC - Tiện ích cho mọi nhà.",
-    primaryColor: "142 76% 36%", // Green HSL
-    products: generateMockProducts(10),
-    banners: mockBanners,
-    promotions: [],
-    coupons: [],
-    type: 'reseller',
     ...commonConfig
   }
 ];
