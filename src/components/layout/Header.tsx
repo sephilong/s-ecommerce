@@ -14,6 +14,7 @@ import { useUserStore } from "@/store/userStore";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { NotificationBell } from "@/components/notification/NotificationBell";
+import { SearchAutocomplete } from "@/components/search/SearchAutocomplete";
 import React from "react";
 
 export function Header({ tenant }: { tenant: Tenant }) {
@@ -74,63 +75,65 @@ export function Header({ tenant }: { tenant: Tenant }) {
       )}
 
       <header className="w-full glass-panel border-b border-white/5">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
+        <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-8">
+          <div className="flex items-center gap-8 shrink-0">
             <Link href="/" className="flex items-center gap-2 group">
               {(isShopPage && currentVendor) && (
                 <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                   <Store className="w-4 h-4" />
                 </div>
               )}
-              <span className="text-xl font-bold font-headline gradient-text italic tracking-tighter uppercase">
+              <span className="text-2xl font-black font-headline gradient-text italic tracking-tighter uppercase">
                 {displayName}
               </span>
             </Link>
-            <nav className="hidden md:flex items-center gap-8 text-[10px] font-black uppercase tracking-widest">
-              <Link href="/" className="hover:text-primary transition-colors italic">Trang chủ</Link>
-              <Link href="/products" className="hover:text-primary transition-colors italic">Sản phẩm</Link>
-              <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-2 italic">
-                 <Newspaper className="w-3.5 h-3.5 text-primary" /> Tin tức
-              </Link>
-              {(!isShopPage) && (
-                <Link href="/flash-sale" className="hover:text-primary transition-colors text-accent flex items-center gap-2 italic">
-                  <Zap className="w-3.5 h-3.5" /> Flash Sale
-                </Link>
-              )}
-            </nav>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Link href="/search">
-              <Button variant="ghost" size="icon" className="hidden sm:flex h-10 w-10 hover:bg-white/5">
-                <Search className="w-5 h-5" />
-              </Button>
-            </Link>
-            
-            <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block" />
-            
-            {profile && <NotificationBell userId={profile.email} />}
+          {/* New Search Autocomplete Integrated Here */}
+          <div className="hidden lg:flex flex-1 justify-center max-w-2xl">
+             <SearchAutocomplete tenantId={tenant.id} />
+          </div>
 
-            <Link href="/account">
-              <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-white/5">
-                <User className="w-5 h-5" />
+          <div className="flex items-center gap-4 shrink-0">
+            <nav className="hidden xl:flex items-center gap-8 text-[10px] font-black uppercase tracking-widest mr-4">
+              <Link href="/products" className="hover:text-primary transition-colors italic">Sản phẩm</Link>
+              <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-2 italic">
+                 Tin tức
+              </Link>
+            </nav>
+
+            <div className="flex items-center gap-2">
+              <Link href="/search" className="lg:hidden">
+                <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-white/5">
+                  <Search className="w-5 h-5" />
+                </Button>
+              </Link>
+              
+              <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block" />
+              
+              {profile && <NotificationBell userId={profile.email} />}
+
+              <Link href="/account">
+                <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-white/5">
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
+              
+              <Link href="/cart">
+                <Button variant="ghost" size="icon" className="relative h-10 w-10 hover:bg-white/5">
+                  <ShoppingCart className="w-5 h-5" />
+                  {cartCount > 0 && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-[9px] flex items-center justify-center rounded-full text-white font-black animate-in zoom-in border-2 border-background">
+                      {cartCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+              
+              <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={toggleMobileMenu}>
+                <Menu className="w-5 h-5" />
               </Button>
-            </Link>
-            
-            <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative h-10 w-10 hover:bg-white/5">
-                <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-[9px] flex items-center justify-center rounded-full text-white font-black animate-in zoom-in border-2 border-background">
-                    {cartCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
-            
-            <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={toggleMobileMenu}>
-              <Menu className="w-5 h-5" />
-            </Button>
+            </div>
           </div>
         </div>
       </header>
