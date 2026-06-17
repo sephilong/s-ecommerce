@@ -8,6 +8,8 @@ import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { CompareBar } from "@/components/product/CompareBar";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import { ThemeStyle } from "@/components/layout/ThemeStyle";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { websiteJsonLd, organizationJsonLd } from "@/lib/jsonld";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await getTenantConfig("demo");
@@ -16,6 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${tenant.name} | Hệ sinh thái Thương mại Điện tử hiện đại`,
     description: tenant.description,
+    verification: {
+      google: tenant.googleEcosystem.searchConsoleVerificationCode,
+    },
     openGraph: {
       title: tenant.name,
       description: tenant.description,
@@ -53,8 +58,10 @@ export default async function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <JsonLd data={websiteJsonLd(tenant)} />
+      <JsonLd data={organizationJsonLd(tenant)} />
+      
       <AnalyticsTracker />
-      {/* Sử dụng Client Component để nạp CSS Variables */}
       <ThemeStyle primaryColor={tenant.primaryColor} />
       
       <Header tenant={tenant} />

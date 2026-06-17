@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConfigStore } from "@/store/configStore";
 import { 
@@ -16,14 +15,14 @@ import {
   Settings2, 
   Facebook, 
   MessageCircle, 
-  Video, 
-  ShieldCheck, 
   Save, 
   Globe,
   Search,
   BarChart3,
   ExternalLink,
-  Code
+  Code,
+  Tag,
+  ShieldCheck
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
@@ -48,6 +47,8 @@ export default function AdminSettingsPage() {
       description: "Thay đổi đã được áp dụng cho toàn bộ nền tảng.",
     });
   };
+
+  const merchantFeedUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/feeds/google-merchant` : '/api/feeds/google-merchant';
 
   return (
     <div className="max-w-5xl space-y-8 pb-20 animate-in fade-in duration-500">
@@ -188,9 +189,10 @@ export default function AdminSettingsPage() {
                           <p className="text-sm font-bold">Google Merchant Feed</p>
                           <p className="text-xs text-muted-foreground">Chuẩn RSS cho Google Shopping</p>
                        </div>
-                       <Button variant="link" asChild className="text-primary font-bold">
-                          <a href="/api/feeds/google-merchant" target="_blank" className="flex items-center gap-2">Xem Feed <ExternalLink className="w-3 h-3" /></a>
-                       </Button>
+                       <div className="flex items-center gap-2">
+                          <Input value={merchantFeedUrl} readOnly className="h-8 text-[10px] w-64 bg-black/40 border-white/10" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { navigator.clipboard.writeText(merchantFeedUrl); toast({ title: "Đã copy link feed" }); }}><Code className="w-3 h-3" /></Button>
+                       </div>
                     </div>
                  </CardContent>
               </Card>
@@ -199,7 +201,7 @@ export default function AdminSettingsPage() {
             <div className="space-y-8">
                <Card className="bg-primary/5 border border-primary/20 rounded-[2.5rem] p-8">
                   <h3 className="font-bold text-sm italic uppercase flex items-center gap-2 mb-4">
-                     <Code className="w-4 h-4 text-primary" /> SEO Performance
+                     <ShieldCheck className="w-4 h-4 text-primary" /> SEO Health
                   </h3>
                   <div className="space-y-4">
                      <div className="flex justify-between items-center text-xs">
@@ -207,11 +209,11 @@ export default function AdminSettingsPage() {
                         <Badge className="bg-green-500/10 text-green-500 border-none">ACTIVE</Badge>
                      </div>
                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground font-bold uppercase">Meta Tags:</span>
-                        <Badge className="bg-green-500/10 text-green-500 border-none">OPTIMIZED</Badge>
+                        <span className="text-muted-foreground font-bold uppercase">Sitemap Status:</span>
+                        <Badge className="bg-green-500/10 text-green-500 border-none">GENERATED</Badge>
                      </div>
                      <div className="pt-4 border-t border-white/5">
-                        <p className="text-[10px] text-muted-foreground italic leading-relaxed">Hệ thống tự động tạo Structured Data cho Sản phẩm, Bài viết và Cửa hàng theo chuẩn Schema.org.</p>
+                        <p className="text-[10px] text-muted-foreground italic leading-relaxed">Hệ thống tự động nạp dữ liệu cấu trúc (Structured Data) cho Sản phẩm, Bài viết và Cửa hàng theo chuẩn Schema.org của Google.</p>
                      </div>
                   </div>
                </Card>
@@ -227,7 +229,6 @@ export default function AdminSettingsPage() {
                       <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                         <CreditCard className="w-6 h-6" />
                       </div>
-                      <Switch checked={pm.isActive} />
                    </div>
                    <h3 className="text-lg font-bold italic">{pm.name}</h3>
                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{pm.description}</p>
@@ -244,10 +245,9 @@ export default function AdminSettingsPage() {
                       <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                         <Truck className="w-6 h-6" />
                       </div>
-                      <Switch checked={sm.isActive} />
                    </div>
                    <h3 className="text-lg font-bold italic">{sm.name}</h3>
-                   <p className="text-xs text-muted-foreground mt-1">Phí vận chuyển mặc định: <span className="text-primary font-bold">{sm.price.toLocaleString('vi-VN')}₫</span></p>
+                   <p className="text-xs text-muted-foreground mt-1">Phí vận chuyển: <span className="text-primary font-bold">{sm.price.toLocaleString('vi-VN')}₫</span></p>
                 </Card>
               ))}
            </div>

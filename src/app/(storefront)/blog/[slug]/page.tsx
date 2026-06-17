@@ -1,14 +1,13 @@
 
-import { useBlogStore } from "@/store/blogStore";
 import { BlogDetailClient } from "./BlogDetailClient";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTenantBySubdomain } from "@/lib/store-data";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/jsonld";
+import { getTenantConfig } from "@/lib/tenant";
 
 // Helper to get posts outside of hook for Server Component
 async function getPost(slug: string) {
-  // Since we use Zustand with persist, we'd normally fetch from API or DB here.
-  // For this mock, we use a static finder.
   const posts = [
     {
       id: 'post-1',
@@ -78,10 +77,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BlogDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const post = await getPost(slug);
+  const tenant = await getTenantConfig("demo");
 
   if (!post) return notFound();
 
-  const url = `https://scomhub.vn/blog/${post.slug}`;
+  const baseUrl = `https://${tenant.customDomain ?? tenant.subdomain + '.scomhub.vn'}`;
+  const url = `${baseUrl}/blog/${post.slug}`;
 
-  return <BlogDetailClient post={post} url={url} />;
+  return (
+    <>
+      <JsonLd data={breadcrumbJsonLd([
+        { name: 'Trang chủ', url: `${baseUrl}/` },
+        { name: 'Blog', url: `${baseUrl}/blog` },
+        { name: post.title, url },
+      ])} />
+      <BlogDetailClient post={post} url={url} />
+    </>
+  );
 }

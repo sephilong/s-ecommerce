@@ -52,6 +52,28 @@ export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
   };
 }
 
+/** Trang danh mục / listing */
+export function categoryJsonLd(categoryName: string, products: Product[], url: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: categoryName,
+    url,
+    numberOfItems: products.length,
+    itemListElement: products.slice(0, 10).map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Product',
+        name: p.name,
+        url: `${url.split('/categories')[0]}/products/${p.slug}`,
+        image: p.image,
+        offers: { '@type': 'Offer', price: p.price, priceCurrency: 'VND' },
+      },
+    })),
+  };
+}
+
 /** Organization — trang chủ & footer */
 export function organizationJsonLd(tenant: Tenant) {
   return {
@@ -87,5 +109,18 @@ export function websiteJsonLd(tenant: Tenant) {
       target: { '@type': 'EntryPoint', urlTemplate: `${baseUrl}/search?q={search_term_string}` },
       'query-input': 'required name=search_term_string',
     },
+  };
+}
+
+/** FAQ — cho trang hỗ trợ hoặc sản phẩm */
+export function faqJsonLd(faqs: { question: string; answer: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
   };
 }
