@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
@@ -33,7 +33,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MOCK_TENANTS } from "@/lib/store-data";
 import { useVendorStore } from "@/store/vendorStore";
 import { formatVND } from "@/lib/currency";
 import Image from "next/image";
@@ -47,7 +46,6 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-  DialogTrigger
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,7 +61,6 @@ const COMMON_ATTRIBUTES = [
 
 export default function AdminProductsPage() {
   const { vendorProducts, approveProduct, rejectProduct, addVendorProduct, updateVendorProduct, deleteVendorProduct } = useVendorStore();
-  const [products, setProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -73,18 +70,15 @@ export default function AdminProductsPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-  useEffect(() => {
-    const systemProducts = MOCK_TENANTS[0].products.map(p => ({ ...p, vendorId: 'system', status: 'approved' }));
-    setProducts([...systemProducts, ...vendorProducts]);
-  }, [vendorProducts]);
-
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === "all" || 
-                      (activeTab === "pending" && p.status === "pending") ||
-                      (activeTab === "vendor" && p.vendorId !== "system");
-    return matchesSearch && matchesTab;
-  });
+  const filteredProducts = useMemo(() => {
+    return vendorProducts.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTab = activeTab === "all" || 
+                        (activeTab === "pending" && p.status === "pending") ||
+                        (activeTab === "vendor" && p.vendorId !== "system");
+      return matchesSearch && matchesTab;
+    });
+  }, [vendorProducts, searchTerm, activeTab]);
 
   const handleApprove = (id: string) => {
     approveProduct(id);
@@ -159,7 +153,9 @@ export default function AdminProductsPage() {
 
   const addAttrValue = (idx: number, value: string = "") => {
     const newAttrs = [...editingProduct.attributes];
+    if (!newAttrs[idx].values) newAttrs[idx].values = [];
     if (newAttrs[idx].values.includes(value)) return;
+    
     if (newAttrs[idx].values.length === 1 && newAttrs[idx].values[0] === "") {
         newAttrs[idx].values = [value];
     } else {
@@ -201,6 +197,15 @@ export default function AdminProductsPage() {
     setEditingProduct({ ...editingProduct, variants: newVariants });
   };
 
+  const openEdit = (product: any) => {
+    // Đảm bảo các mảng tồn tại để hiển thị UI không bị lỗi
+    setEditingProduct({
+      ...product,
+      attributes: product.attributes || [],
+      variants: product.variants || []
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -210,11 +215,9 @@ export default function AdminProductsPage() {
         </div>
         <div className="flex gap-3">
           <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-full h-11 px-6 font-bold gap-2 border-primary/30 text-primary hover:bg-primary/10 transition-all">
-                <FileSpreadsheet className="w-4 h-4" /> Nhập hàng loạt
-              </Button>
-            </DialogTrigger>
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} className="rounded-full h-11 px-6 font-bold gap-2 border-primary/30 text-primary hover:bg-primary/10 transition-all">
+              <FileSpreadsheet className="w-4 h-4" /> Nhập hàng loạt
+            </Button>
             <DialogContent className="max-w-md bg-[#0f0f0f] border-white/10 rounded-[2rem]">
               <DialogHeader>
                 <DialogTitle className="font-headline italic uppercase">NHẬP SẢN PHẨM HỆ THỐNG</DialogTitle>
@@ -295,7 +298,7 @@ export default function AdminProductsPage() {
                       <td className="p-6">
                         <div 
                           className="flex items-center gap-4 cursor-pointer group/link"
-                          onClick={() => setEditingProduct(product)}
+                          onClick={() => openEdit(product)}
                         >
                           <div className="h-12 w-12 relative rounded-xl overflow-hidden border border-white/10 bg-background shrink-0 shadow-inner group-hover/link:border-primary/50 transition-colors">
                             <Image src={product.image} alt={product.name} fill className="object-cover" />
@@ -342,8 +345,8 @@ export default function AdminProductsPage() {
                             <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => window.open(`/products/${product.slug}`, '_blank')}>
                               <ExternalLink className="w-4 h-4" /> Xem trên Storefront
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => setEditingProduct(product)}>
-                              <Edit className="w-4 h-4" /> Chỉnh sửa nhanh
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => openEdit(product)}>
+                              <Edit className="w-4 h-4" /> Chỉnh sửa chi tiết
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-white/5" />
                             <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onSelect={() => deleteVendorProduct(product.id)}>
@@ -468,7 +471,6 @@ export default function AdminProductsPage() {
 
                   {editingProduct.hasVariants && (
                     <div className="space-y-8">
-                      {/* Attributes Management */}
                       <section className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-black uppercase tracking-widest text-primary italic">1. Nhóm thuộc tính</h4>
@@ -528,7 +530,7 @@ export default function AdminProductsPage() {
                                             key={s} 
                                             type="button"
                                             onClick={() => addAttrValue(aIdx, s)}
-                                            disabled={attr.values.includes(s)}
+                                            disabled={attr.values?.includes(s)}
                                             className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-medium hover:bg-primary/20 hover:border-primary/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                                           >
                                             {s}
@@ -544,7 +546,6 @@ export default function AdminProductsPage() {
                         </div>
                       </section>
 
-                      {/* Variants List */}
                       <section className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-black uppercase tracking-widest text-primary italic">2. Danh sách Biến thể (SKU)</h4>
@@ -617,29 +618,5 @@ export default function AdminProductsPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: any }) {
-  const configs: any = {
-    approved: { label: "Hoạt động", class: "bg-green-500/10 text-green-500 border-none" },
-    pending: { label: "Chờ duyệt", class: "bg-orange-500/10 text-orange-500 border-none" },
-    rejected: { label: "Từ chối", class: "bg-red-500/10 text-red-500 border-none" },
-  };
-  const config = configs[status] || configs.pending;
-  return <Badge className={`rounded-full px-3 py-0.5 text-[10px] uppercase font-black italic ${config.class}`}>{config.label}</Badge>;
-}
-
-function StatCard({ label, value, icon, color }: any) {
-  return (
-    <Card className="bg-[#151515] border-white/5 rounded-3xl p-6 space-y-4 hover:border-primary/30 transition-all group">
-      <div className={`h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{label}</p>
-        <h3 className="text-2xl font-black italic tracking-tighter mt-1">{value}</h3>
-      </div>
-    </Card>
   );
 }

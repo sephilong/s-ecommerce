@@ -24,7 +24,6 @@ export interface Vendor {
   balance: number;
   pendingBalance: number;
   createdAt: string;
-  // Cấu hình giao diện từ Builder
   storefrontConfig?: {
     sections: any[];
     theme: any;
@@ -64,14 +63,12 @@ interface VendorState {
   vendorReviews: VendorReview[];
   currentVendor: Vendor | null;
   
-  // Actions for Admin
   registerVendor: (vendor: Vendor) => void;
   updateVendorStatus: (id: string, status: Vendor['status']) => void;
   updateVendorCommission: (id: string, rate: number) => void;
   approveProduct: (productId: string) => void;
   rejectProduct: (productId: string, reason: string) => void;
   
-  // Actions for Vendor
   addVendorProduct: (product: any) => void;
   updateVendorProduct: (product: any) => void;
   deleteVendorProduct: (productId: string) => void;
@@ -82,11 +79,26 @@ interface VendorState {
   setCurrentVendor: (vendor: Vendor | null) => void;
   addReview: (review: VendorReview) => void;
   
-  // Getters
   getVendorByUserId: (userId: string) => Vendor | undefined;
   getVendorProducts: (vendorId: string) => any[];
   getVendorOrders: (vendorId: string) => VendorOrder[];
 }
+
+// Khởi tạo vendorProducts với toàn bộ sản phẩm mẫu để có thể chỉnh sửa và lưu lại
+const INITIAL_PRODUCTS = [
+  ...MOCK_TENANTS[0].products.map(p => ({
+    ...p,
+    vendorId: 'system',
+    status: 'approved' as const
+  })),
+  // Thêm một số sản phẩm từ vendor v-1 mặc định
+  ...MOCK_TENANTS[0].products.slice(0, 3).map(p => ({
+    ...p,
+    id: `v1-${p.id}`,
+    vendorId: 'v-1',
+    status: 'approved' as const
+  }))
+];
 
 export const useVendorStore = create<VendorState>()(
   persist(
@@ -126,11 +138,7 @@ export const useVendorStore = create<VendorState>()(
           createdAt: new Date().toISOString()
         }
       ],
-      vendorProducts: MOCK_TENANTS[0].products.slice(0, 6).map(p => ({
-        ...p,
-        vendorId: 'v-1',
-        status: 'approved'
-      })),
+      vendorProducts: INITIAL_PRODUCTS,
       vendorReviews: [
         {
           id: 'rv-1',
@@ -158,7 +166,7 @@ export const useVendorStore = create<VendorState>()(
       })),
 
       addVendorProduct: (product) => set((state) => ({
-        vendorProducts: [{ ...product, status: 'pending' }, ...state.vendorProducts]
+        vendorProducts: [{ ...product, status: product.status || 'pending' }, ...state.vendorProducts]
       })),
 
       updateVendorProduct: (updatedProduct) => set((state) => ({
@@ -209,7 +217,7 @@ export const useVendorStore = create<VendorState>()(
       getVendorOrders: (vendorId) => get().vendorOrders.filter(o => o.vendorId === vendorId),
     }),
     {
-      name: 'scomhub-vendor-storage-v7',
+      name: 'scomhub-vendor-storage-v8',
     }
   )
 );

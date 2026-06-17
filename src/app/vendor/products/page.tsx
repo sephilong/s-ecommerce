@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { useVendorStore } from "@/store/vendorStore";
 import { useUserStore } from "@/store/userStore";
 import { formatVND } from "@/lib/currency";
@@ -69,7 +69,7 @@ function ProductsContent() {
   const searchParams = useSearchParams();
 
   const vendor = profile ? getVendorByUserId(profile.email) : null;
-  const myProducts = vendorProducts.filter(p => p.vendorId === vendor?.id);
+  const myProducts = useMemo(() => vendorProducts.filter(p => p.vendorId === vendor?.id), [vendorProducts, vendor]);
 
   useEffect(() => {
     if (searchParams.get("add") === "true") {
@@ -120,6 +120,14 @@ function ProductsContent() {
     toast({ title: "Thành công", description: "Đã cập nhật thông tin sản phẩm và các biến thể." });
   };
 
+  const openEdit = (product: any) => {
+    setEditingProduct({
+      ...product,
+      attributes: product.attributes || [],
+      variants: product.variants || []
+    });
+  };
+
   // Variant Management Helpers
   const addAttribute = (name: string = "") => {
     const currentAttrs = editingProduct.attributes || [];
@@ -147,7 +155,9 @@ function ProductsContent() {
 
   const addAttrValue = (attrIdx: number, val: string = "") => {
     const newAttrs = [...editingProduct.attributes];
+    if (!newAttrs[attrIdx].values) newAttrs[attrIdx].values = [];
     if (newAttrs[attrIdx].values.includes(val)) return;
+    
     if (newAttrs[attrIdx].values.length === 1 && newAttrs[attrIdx].values[0] === "") {
         newAttrs[attrIdx].values = [val];
     } else {
@@ -187,6 +197,10 @@ function ProductsContent() {
     setEditingProduct({ ...editingProduct, variants: newVariants });
   };
 
+  const filteredMyProducts = useMemo(() => {
+    return myProducts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [myProducts, searchTerm]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -201,11 +215,9 @@ function ProductsContent() {
           </Button>
           
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-            <DialogTrigger asChild>
-              <Button className="rounded-full h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20">
-                <Plus className="w-5 h-5" /> Đăng sản phẩm mới
-              </Button>
-            </DialogTrigger>
+            <Button onClick={() => setIsAddOpen(true)} className="rounded-full h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20">
+              <Plus className="w-5 h-5" /> Đăng sản phẩm mới
+            </Button>
             <DialogContent className="max-w-2xl rounded-[2.5rem] bg-[#0f0f0f] border-white/10">
               <form onSubmit={handleAddProduct}>
                 <DialogHeader>
@@ -306,12 +318,12 @@ function ProductsContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {myProducts.map((p) => (
+                    {filteredMyProducts.map((p) => (
                       <tr key={p.id} className="hover:bg-white/5 transition-colors group">
                         <td className="p-6">
                           <div 
                             className="flex items-center gap-4 cursor-pointer group/link"
-                            onClick={() => setEditingProduct(p)}
+                            onClick={() => openEdit(p)}
                           >
                             <div className="h-14 w-14 rounded-xl overflow-hidden border border-white/10 relative shrink-0 shadow-inner group-hover/link:border-primary/50 transition-colors">
                               <Image src={p.image} alt={p.name} fill className="object-cover" />
@@ -335,7 +347,7 @@ function ProductsContent() {
                              </DropdownMenuTrigger>
                              <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 bg-[#0f0f0f] border-white/5 z-50">
                                 <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Quản trị Sản phẩm</DropdownMenuLabel>
-                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" onSelect={() => setEditingProduct(p)}>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" onSelect={() => openEdit(p)}>
                                    <Edit2 className="w-4 h-4" /> Chỉnh sửa chi tiết
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => window.open(`/products/${p.slug}`, '_blank')}>
@@ -423,7 +435,6 @@ function ProductsContent() {
 
                     {editingProduct.hasVariants && (
                       <div className="space-y-10">
-                        {/* 1. Attributes */}
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <h4 className="text-sm font-black italic uppercase tracking-widest text-primary">1. Cấu hình Nhóm thuộc tính</h4>
@@ -491,7 +502,7 @@ function ProductsContent() {
                                               key={s} 
                                               type="button"
                                               onClick={() => addAttrValue(aIdx, s)}
-                                              disabled={attr.values.includes(s)}
+                                              disabled={attr.values?.includes(s)}
                                               className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-medium hover:bg-primary/20 hover:border-primary/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                                             >
                                               {s}
@@ -507,7 +518,6 @@ function ProductsContent() {
                           </div>
                         </div>
 
-                        {/* 2. Variants List */}
                         <div className="space-y-4">
                            <div className="flex justify-between items-center">
                               <h4 className="text-sm font-black italic uppercase tracking-widest text-primary">2. Danh sách SKUs cụ thể</h4>
