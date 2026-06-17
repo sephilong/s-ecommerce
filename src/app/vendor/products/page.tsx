@@ -23,7 +23,9 @@ import {
   AlertCircle,
   Store,
   FileSpreadsheet,
-  Loader2
+  Loader2,
+  ExternalLink,
+  Settings2
 } from "lucide-react";
 import {
   Dialog,
@@ -42,6 +44,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MediaUploader } from "@/components/media/MediaUploader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function VendorProductsPage() {
   return (
@@ -93,7 +98,10 @@ function ProductsContent() {
       slug: productName.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
       inStock: true,
       createdAt: new Date().toISOString(),
-      status: 'pending'
+      status: 'pending',
+      hasVariants: false,
+      attributes: [],
+      variants: []
     };
 
     addVendorProduct(newProduct);
@@ -107,7 +115,63 @@ function ProductsContent() {
     if (!editingProduct) return;
     updateVendorProduct(editingProduct);
     setEditingProduct(null);
-    toast({ title: "Thành công", description: "Đã cập nhật thông tin sản phẩm." });
+    toast({ title: "Thành công", description: "Đã cập nhật thông tin sản phẩm và các biến thể." });
+  };
+
+  // Variant Management Helpers
+  const addAttribute = () => {
+    const currentAttrs = editingProduct.attributes || [];
+    setEditingProduct({
+      ...editingProduct,
+      hasVariants: true,
+      attributes: [...currentAttrs, { name: "", values: [""] }]
+    });
+  };
+
+  const removeAttribute = (idx: number) => {
+    const newAttrs = editingProduct.attributes.filter((_: any, i: number) => i !== idx);
+    setEditingProduct({
+      ...editingProduct,
+      attributes: newAttrs,
+      hasVariants: newAttrs.length > 0
+    });
+  };
+
+  const addAttrValue = (attrIdx: number) => {
+    const newAttrs = [...editingProduct.attributes];
+    newAttrs[attrIdx].values.push("");
+    setEditingProduct({ ...editingProduct, attributes: newAttrs });
+  };
+
+  const updateAttrValue = (attrIdx: number, valIdx: number, val: string) => {
+    const newAttrs = [...editingProduct.attributes];
+    newAttrs[attrIdx].values[valIdx] = val;
+    setEditingProduct({ ...editingProduct, attributes: newAttrs });
+  };
+
+  const addVariant = () => {
+    const currentVariants = editingProduct.variants || [];
+    setEditingProduct({
+      ...editingProduct,
+      variants: [...currentVariants, {
+        id: `v-${Date.now()}`,
+        sku: `SKU-${Math.random().toString(36).substring(7).toUpperCase()}`,
+        combination: {},
+        price: editingProduct.price,
+        stock: 10
+      }]
+    });
+  };
+
+  const updateVariantField = (idx: number, field: string, value: any) => {
+    const newVariants = [...editingProduct.variants];
+    newVariants[idx] = { ...newVariants[idx], [field]: value };
+    setEditingProduct({ ...editingProduct, variants: newVariants });
+  };
+
+  const removeVariant = (idx: number) => {
+    const newVariants = editingProduct.variants.filter((_: any, i: number) => i !== idx);
+    setEditingProduct({ ...editingProduct, variants: newVariants });
   };
 
   return (
@@ -281,52 +345,193 @@ function ProductsContent() {
         </>
       )}
 
-      {/* Quick Edit Dialog */}
+      {/* Advanced Edit Dialog with Variants */}
       <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] bg-[#0f0f0f] border-white/10">
+        <DialogContent className="max-w-4xl rounded-[2.5rem] bg-[#0f0f0f] border-white/10 max-h-[90vh] overflow-y-auto custom-scrollbar">
            <form onSubmit={handleUpdateProduct}>
               <DialogHeader>
-                 <DialogTitle className="font-headline italic uppercase text-2xl">CẬP NHẬT SẢN PHẨM</DialogTitle>
-                 <DialogDescription>Chỉnh sửa thông tin cơ bản cho sản phẩm của bạn.</DialogDescription>
+                 <DialogTitle className="font-headline italic uppercase text-2xl">QUẢN LÝ SẢN PHẨM & BIẾN THỂ</DialogTitle>
+                 <DialogDescription>Tùy chỉnh thông tin chi tiết, thuộc tính và danh sách SKU cho sản phẩm.</DialogDescription>
               </DialogHeader>
+
               {editingProduct && (
-                <div className="space-y-6 py-6 overflow-y-auto max-h-[60vh] px-1 custom-scrollbar">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                         <Label>Tên sản phẩm</Label>
-                         <Input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="rounded-xl h-11 bg-background/50 border-white/10" />
+                <Tabs defaultValue="info" className="w-full mt-6">
+                  <TabsList className="bg-white/5 rounded-xl p-1 mb-8">
+                    <TabsTrigger value="info" className="rounded-lg px-8">Thông tin chính</TabsTrigger>
+                    <TabsTrigger value="variants" className="rounded-lg px-8">Biến thể (Size/Color)</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="info" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                           <Label>Tên sản phẩm</Label>
+                           <Input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="rounded-xl h-11 bg-background/50 border-white/10" />
+                        </div>
+                        <div className="space-y-2">
+                           <Label>Danh mục</Label>
+                           <Select value={editingProduct.category} onValueChange={v => setEditingProduct({...editingProduct, category: v})}>
+                              <SelectTrigger className="h-11 rounded-xl bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                 <SelectItem value="Điện tử">Điện tử</SelectItem>
+                                 <SelectItem value="Thời trang">Thời trang</SelectItem>
+                                 <SelectItem value="Gia dụng">Gia dụng</SelectItem>
+                                 <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
+                              </SelectContent>
+                           </Select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                           <Label>Giá gốc hệ thống (VNĐ)</Label>
+                           <Input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})} className="rounded-xl h-11 bg-background/50 border-white/10" />
+                        </div>
+                        <div className="space-y-2">
+                           <Label>Ảnh đại diện (URL)</Label>
+                           <Input value={editingProduct.image} onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} className="rounded-xl h-11 bg-background/50 border-white/10" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Mô tả chi tiết</Label>
+                        <Textarea value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} className="min-h-[150px] rounded-xl bg-background/50 border-white/10" />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="variants" className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center justify-between p-6 rounded-[2rem] bg-white/5 border border-white/10">
+                      <div className="space-y-1">
+                        <Label className="text-base italic">Kích hoạt Biến thể</Label>
+                        <p className="text-xs text-muted-foreground">Sản phẩm này có nhiều lựa chọn khác nhau (như Size, Màu sắc...)</p>
                       </div>
-                      <div className="space-y-2">
-                         <Label>Danh mục</Label>
-                         <Select value={editingProduct.category} onValueChange={v => setEditingProduct({...editingProduct, category: v})}>
-                            <SelectTrigger className="h-11 rounded-xl bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                               <SelectItem value="Điện tử">Điện tử</SelectItem>
-                               <SelectItem value="Thời trang">Thời trang</SelectItem>
-                               <SelectItem value="Gia dụng">Gia dụng</SelectItem>
-                               <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
-                            </SelectContent>
-                         </Select>
+                      <Switch 
+                        checked={editingProduct.hasVariants} 
+                        onCheckedChange={(val) => setEditingProduct({...editingProduct, hasVariants: val, attributes: val ? (editingProduct.attributes || []) : []})} 
+                      />
+                    </div>
+
+                    {editingProduct.hasVariants && (
+                      <div className="space-y-10">
+                        {/* 1. Attributes */}
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-sm font-black italic uppercase tracking-widest text-primary">1. Cấu hình Nhóm thuộc tính</h4>
+                            <Button type="button" variant="outline" size="sm" onClick={addAttribute} className="rounded-full gap-2 border-primary/20 text-primary">
+                              <Plus className="w-3.5 h-3.5" /> Thêm nhóm
+                            </Button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 gap-4">
+                            {editingProduct.attributes?.map((attr: any, aIdx: number) => (
+                              <Card key={aIdx} className="bg-white/5 border-white/10 p-6 rounded-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                                <div className="flex gap-6 mb-4">
+                                  <div className="flex-1 space-y-2">
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tên nhóm thuộc tính</Label>
+                                    <Input value={attr.name} onChange={(e) => {
+                                      const newAttrs = [...editingProduct.attributes];
+                                      newAttrs[aIdx].name = e.target.value;
+                                      setEditingProduct({...editingProduct, attributes: newAttrs});
+                                    }} placeholder="Ví dụ: Kích thước, Màu sắc..." className="h-10 rounded-xl" />
+                                  </div>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeAttribute(aIdx)} className="mt-6 text-destructive hover:bg-destructive/10 h-10 w-10"><Trash2 className="w-5 h-5" /></Button>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Các giá trị lựa chọn</Label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {attr.values.map((v: string, vIdx: number) => (
+                                      <div key={vIdx} className="relative group/val">
+                                        <Input 
+                                          value={v} 
+                                          onChange={(e) => updateAttrValue(aIdx, vIdx, e.target.value)}
+                                          className="w-28 h-9 rounded-lg text-xs pr-8"
+                                        />
+                                        <button 
+                                          type="button" 
+                                          onClick={() => {
+                                            const newAttrs = [...editingProduct.attributes];
+                                            newAttrs[aIdx].values = newAttrs[aIdx].values.filter((_: any, i: number) => i !== vIdx);
+                                            setEditingProduct({...editingProduct, attributes: newAttrs});
+                                          }}
+                                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive opacity-0 group-hover/val:opacity-100 transition-opacity"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" onClick={() => addAttrValue(aIdx)} className="h-9 rounded-lg px-4 gap-2 border-dashed border-white/20"><Plus className="w-3 h-3" /> Thêm giá trị</Button>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 2. Variants List */}
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-center">
+                              <h4 className="text-sm font-black italic uppercase tracking-widest text-primary">2. Danh sách SKUs cụ thể</h4>
+                              <Button type="button" variant="outline" size="sm" onClick={addVariant} className="rounded-full gap-2 border-primary/20 text-primary">
+                                <Settings2 className="w-3.5 h-3.5" /> Thêm SKU mới
+                              </Button>
+                           </div>
+                           
+                           <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+                              <table className="w-full text-xs">
+                                 <thead className="bg-white/5 border-b border-white/10">
+                                    <tr className="text-left">
+                                       <th className="p-4 font-black uppercase text-[9px] tracking-widest text-muted-foreground">Mã SKU</th>
+                                       <th className="p-4 font-black uppercase text-[9px] tracking-widest text-muted-foreground">Giá Biến thể</th>
+                                       <th className="p-4 font-black uppercase text-[9px] tracking-widest text-muted-foreground">Tồn kho</th>
+                                       <th className="p-4"></th>
+                                    </tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-white/5">
+                                    {editingProduct.variants?.map((v: any, vIdx: number) => (
+                                      <tr key={vIdx} className="hover:bg-white/5 transition-colors">
+                                         <td className="p-4">
+                                            <Input 
+                                              value={v.sku} 
+                                              onChange={(e) => updateVariantField(vIdx, 'sku', e.target.value)}
+                                              className="h-9 rounded-lg font-mono text-[10px]"
+                                            />
+                                         </td>
+                                         <td className="p-4">
+                                            <Input 
+                                              type="number"
+                                              value={v.price} 
+                                              onChange={(e) => updateVariantField(vIdx, 'price', parseInt(e.target.value))}
+                                              className="h-9 rounded-lg font-bold text-primary"
+                                            />
+                                         </td>
+                                         <td className="p-4">
+                                            <Input 
+                                              type="number"
+                                              value={v.stock} 
+                                              onChange={(e) => updateVariantField(vIdx, 'stock', parseInt(e.target.value))}
+                                              className="h-9 rounded-lg"
+                                            />
+                                         </td>
+                                         <td className="p-4 text-right">
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeVariant(vIdx)} className="h-8 w-8 text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                                         </td>
+                                      </tr>
+                                    ))}
+                                    {(!editingProduct.variants || editingProduct.variants.length === 0) && (
+                                      <tr><td colSpan={4} className="p-10 text-center italic text-muted-foreground opacity-40">Chưa có tổ hợp biến thể nào.</td></tr>
+                                    )}
+                                 </tbody>
+                              </table>
+                           </div>
+                        </div>
                       </div>
-                   </div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                         <Label>Giá bán (VNĐ)</Label>
-                         <Input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})} className="rounded-xl h-11 bg-background/50 border-white/10" />
-                      </div>
-                      <div className="space-y-2">
-                         <Label>Tồn kho</Label>
-                         <Input type="number" value={editingProduct.stock || 0} onChange={e => setEditingProduct({...editingProduct, stock: parseInt(e.target.value)})} className="rounded-xl h-11 bg-background/50 border-white/10" />
-                      </div>
-                   </div>
-                   <div className="space-y-2">
-                      <Label>Mô tả sản phẩm</Label>
-                      <Textarea value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} className="min-h-[150px] rounded-xl bg-background/50 border-white/10" />
-                   </div>
-                </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               )}
-              <DialogFooter>
-                 <Button type="submit" className="w-full h-14 rounded-2xl font-black italic uppercase tracking-tighter shadow-xl shadow-primary/30">Cập nhật ngay</Button>
+
+              <DialogFooter className="mt-12 border-t border-white/10 pt-8">
+                 <Button type="submit" className="w-full h-16 rounded-2xl font-black italic uppercase tracking-tighter shadow-2xl shadow-primary/30 text-lg">
+                    Lưu thông tin sản phẩm
+                 </Button>
               </DialogFooter>
            </form>
         </DialogContent>
