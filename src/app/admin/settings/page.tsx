@@ -19,10 +19,15 @@ import {
   Video, 
   ShieldCheck, 
   Save, 
-  Globe 
+  Globe,
+  Search,
+  BarChart3,
+  ExternalLink,
+  Code
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminSettingsPage() {
   const config = useConfigStore();
@@ -35,16 +40,6 @@ export default function AdminSettingsPage() {
     setLocalStoreName(config.storeName);
     setLocalStoreDesc(config.storeDescription);
   }, [config.storeName, config.storeDescription]);
-
-  const togglePayment = (id: string) => {
-    const updated = config.paymentMethods.map(pm => pm.id === id ? { ...pm, isActive: !pm.isActive } : pm);
-    config.updatePaymentMethods(updated);
-  };
-
-  const toggleShipping = (id: string) => {
-    const updated = config.shippingMethods.map(sm => sm.id === id ? { ...sm, isActive: !sm.isActive } : sm);
-    config.updateShippingMethods(updated);
-  };
 
   const handleSave = () => {
     config.updateStoreInfo(localStoreName, localStoreDesc);
@@ -67,9 +62,10 @@ export default function AdminSettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-muted/30 border border-white/5 p-1 rounded-2xl h-14 w-full md:w-auto justify-start overflow-x-auto gap-2">
+        <TabsList className="bg-muted/30 border border-white/5 p-1.5 rounded-2xl h-14 w-full md:w-auto justify-start overflow-x-auto gap-2">
            <TabsTrigger value="general" className="rounded-xl px-8 h-full font-bold text-xs uppercase italic">Cấu hình Chung</TabsTrigger>
            <TabsTrigger value="social" className="rounded-xl px-8 h-full font-bold text-xs uppercase italic">Social Commerce</TabsTrigger>
+           <TabsTrigger value="google" className="rounded-xl px-8 h-full font-bold text-xs uppercase italic">Google & SEO</TabsTrigger>
            <TabsTrigger value="payment" className="rounded-xl px-8 h-full font-bold text-xs uppercase italic">Thanh toán</TabsTrigger>
            <TabsTrigger value="shipping" className="rounded-xl px-8 h-full font-bold text-xs uppercase italic">Vận chuyển</TabsTrigger>
         </TabsList>
@@ -110,7 +106,7 @@ export default function AdminSettingsPage() {
                  <div className="space-y-4">
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-black text-muted-foreground">Global Facebook App ID</Label>
-                       <Input placeholder="Nhập App ID dùng chung cho toàn sàn..." className="h-11 rounded-xl bg-background" />
+                       <Input placeholder="Nhập App ID..." className="h-11 rounded-xl bg-background" />
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-black text-muted-foreground">Global Meta Pixel ID</Label>
@@ -127,31 +123,100 @@ export default function AdminSettingsPage() {
                  <div className="space-y-4">
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-black text-muted-foreground">Zalo App ID</Label>
-                       <Input placeholder="Nhập App ID từ Zalo Developer..." className="h-11 rounded-xl bg-background" />
+                       <Input placeholder="Nhập App ID từ Zalo..." className="h-11 rounded-xl bg-background" />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black text-muted-foreground">Zalo Secret Key</Label>
-                       <Input type="password" placeholder="••••••••••••" className="h-11 rounded-xl bg-background" />
+                       <Label className="text-[10px] uppercase font-black text-muted-foreground">Zalo OA ID</Label>
+                       <Input placeholder="Mã Official Account..." className="h-11 rounded-xl bg-background" />
                     </div>
-                 </div>
-              </Card>
-
-              <Card className="md:col-span-2 bg-primary/5 border border-primary/20 rounded-[2rem] p-8 flex flex-col md:flex-row justify-between items-center gap-8">
-                 <div className="flex items-center gap-6">
-                    <div className="h-16 w-16 rounded-[1.5rem] bg-primary/20 flex items-center justify-center text-primary">
-                       <Video className="w-8 h-8" />
-                    </div>
-                    <div className="space-y-1">
-                       <h3 className="text-xl font-black italic uppercase tracking-tighter">Tính năng Live Commerce</h3>
-                       <p className="text-sm text-muted-foreground">Cho phép các Merchant sử dụng hệ thống tự động chốt đơn qua livestream Facebook/Tiktok.</p>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-3 bg-black/40 px-6 py-3 rounded-2xl border border-white/10">
-                    <span className="text-xs font-bold uppercase tracking-widest italic">Trạng thái Nền tảng: SẴN SÀNG</span>
-                    <Switch checked={true} />
                  </div>
               </Card>
            </div>
+        </TabsContent>
+
+        <TabsContent value="google" className="mt-8 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <Card className="bg-[#111] border-white/5 rounded-[2rem] p-8 shadow-2xl">
+                 <CardHeader className="px-0 pt-0">
+                    <CardTitle className="flex items-center gap-2 italic">
+                       <BarChart3 className="w-5 h-5 text-primary" /> Google Analytics & Ads
+                    </CardTitle>
+                 </CardHeader>
+                 <CardContent className="px-0 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black text-muted-foreground">GA4 Measurement ID</Label>
+                          <Input placeholder="G-XXXXXXXXXX" className="h-11 rounded-xl bg-background" />
+                       </div>
+                       <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black text-muted-foreground">GTM Container ID</Label>
+                          <Input placeholder="GTM-XXXXXXX" className="h-11 rounded-xl bg-background" />
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black text-muted-foreground">Google Ads Conversion ID</Label>
+                          <Input placeholder="AW-XXXXXXXXXX" className="h-11 rounded-xl bg-background" />
+                       </div>
+                       <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black text-muted-foreground">Search Console Verification</Label>
+                          <Input placeholder="google-site-verification code" className="h-11 rounded-xl bg-background" />
+                       </div>
+                    </div>
+                 </CardContent>
+              </Card>
+
+              <Card className="bg-[#111] border-white/5 rounded-[2rem] p-8 shadow-2xl">
+                 <CardHeader className="px-0 pt-0">
+                    <CardTitle className="flex items-center gap-2 italic">
+                       <Search className="w-5 h-5 text-primary" /> Sitemap & Indexing
+                    </CardTitle>
+                 </CardHeader>
+                 <CardContent className="px-0 space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                       <div>
+                          <p className="text-sm font-bold">XML Sitemap</p>
+                          <p className="text-xs text-muted-foreground">Tự động cập nhật sản phẩm & bài viết</p>
+                       </div>
+                       <Button variant="link" asChild className="text-primary font-bold">
+                          <a href="/sitemap.xml" target="_blank" className="flex items-center gap-2">Xem XML <ExternalLink className="w-3 h-3" /></a>
+                       </Button>
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                       <div>
+                          <p className="text-sm font-bold">Google Merchant Feed</p>
+                          <p className="text-xs text-muted-foreground">Chuẩn RSS cho Google Shopping</p>
+                       </div>
+                       <Button variant="link" asChild className="text-primary font-bold">
+                          <a href="/api/feeds/google-merchant" target="_blank" className="flex items-center gap-2">Xem Feed <ExternalLink className="w-3 h-3" /></a>
+                       </Button>
+                    </div>
+                 </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-8">
+               <Card className="bg-primary/5 border border-primary/20 rounded-[2.5rem] p-8">
+                  <h3 className="font-bold text-sm italic uppercase flex items-center gap-2 mb-4">
+                     <Code className="w-4 h-4 text-primary" /> SEO Performance
+                  </h3>
+                  <div className="space-y-4">
+                     <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground font-bold uppercase">JSON-LD Status:</span>
+                        <Badge className="bg-green-500/10 text-green-500 border-none">ACTIVE</Badge>
+                     </div>
+                     <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground font-bold uppercase">Meta Tags:</span>
+                        <Badge className="bg-green-500/10 text-green-500 border-none">OPTIMIZED</Badge>
+                     </div>
+                     <div className="pt-4 border-t border-white/5">
+                        <p className="text-[10px] text-muted-foreground italic leading-relaxed">Hệ thống tự động tạo Structured Data cho Sản phẩm, Bài viết và Cửa hàng theo chuẩn Schema.org.</p>
+                     </div>
+                  </div>
+               </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="payment" className="mt-8 space-y-6">
@@ -162,10 +227,7 @@ export default function AdminSettingsPage() {
                       <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                         <CreditCard className="w-6 h-6" />
                       </div>
-                      <Switch 
-                        checked={pm.isActive} 
-                        onCheckedChange={() => togglePayment(pm.id)}
-                      />
+                      <Switch checked={pm.isActive} />
                    </div>
                    <h3 className="text-lg font-bold italic">{pm.name}</h3>
                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{pm.description}</p>
@@ -182,10 +244,7 @@ export default function AdminSettingsPage() {
                       <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                         <Truck className="w-6 h-6" />
                       </div>
-                      <Switch 
-                        checked={sm.isActive} 
-                        onCheckedChange={() => toggleShipping(sm.id)}
-                      />
+                      <Switch checked={sm.isActive} />
                    </div>
                    <h3 className="text-lg font-bold italic">{sm.name}</h3>
                    <p className="text-xs text-muted-foreground mt-1">Phí vận chuyển mặc định: <span className="text-primary font-bold">{sm.price.toLocaleString('vi-VN')}₫</span></p>

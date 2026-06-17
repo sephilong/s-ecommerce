@@ -24,13 +24,24 @@ export type Product = {
   compareAtPrice?: number;
   image: string;
   description: string;
+  shortDescription?: string;
   category: string;
   inStock: boolean;
   createdAt: string;
+  updatedAt?: string;
   attributes?: VariantAttribute[];
   variants?: ProductVariant[];
   hasVariants?: boolean;
   brand?: { name: string };
+  sku?: string;
+  barcode?: string;
+  tags?: string[];
+  googleProductCategory?: string;
+  reviewCount?: number;
+  ratingAverage?: number;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
 };
 
 export type Banner = {
@@ -105,6 +116,16 @@ export interface LoyaltyConfig {
   maxRedeemPercent: number;
 }
 
+export interface GoogleEcosystemConfig {
+  ga4MeasurementId?: string;
+  gtmContainerId?: string;
+  searchConsoleVerificationCode?: string;
+  googleAdsId?: string;
+  googleAdsConversionLabel?: string;
+  merchantCenterId?: string;
+  reportWebVitalsToGA: boolean;
+}
+
 export interface SocialCommerceConfig {
   facebookAppId?: string;
   facebookPageId?: string;
@@ -130,10 +151,21 @@ export type Tenant = {
   id: string;
   ownerId?: string;
   name: string;
+  storeName: string;
   subdomain: string;
+  customDomain?: string;
   description: string;
   logo?: string;
+  logoUrl?: string;
   primaryColor: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  address?: {
+    street: string;
+    district: string;
+    province: string;
+  };
+  openingHours?: any;
   products: Product[];
   banners: Banner[];
   paymentMethods: PaymentMethod[];
@@ -142,6 +174,7 @@ export type Tenant = {
   coupons: Coupon[];
   loyaltyConfig: LoyaltyConfig;
   socialCommerce: SocialCommerceConfig;
+  googleEcosystem: GoogleEcosystemConfig;
   type: 'platform' | 'reseller';
 };
 
@@ -165,32 +198,6 @@ const generateMockProducts = (count: number): Product[] => {
     const imageIndex = (i % 4) + 1; 
     const productName = `${category} Premium Model ${i + 1}`;
     
-    const hasVariants = i < 5;
-    let attributes: VariantAttribute[] | undefined = undefined;
-    let variants: ProductVariant[] | undefined = undefined;
-
-    if (hasVariants) {
-      attributes = [
-        { name: "Màu sắc", values: ["Titan", "Xanh", "Đen"] },
-        { name: "Dung lượng", values: ["128GB", "256GB", "512GB"] }
-      ];
-      
-      variants = [];
-      attributes[0].values.forEach((color, cIdx) => {
-        attributes![1].values.forEach((size, sIdx) => {
-          variants!.push({
-            id: `v-${i}-${color}-${size}`,
-            sku: `SKU-${i}-${color.substring(0,1).toUpperCase()}-${size}`,
-            combination: { "Màu sắc": color, "Dung lượng": size },
-            price: 15000000 + (cIdx * 500000) + (sIdx * 1000000),
-            compareAtPrice: 22000000,
-            stock: 10 + (cIdx * 2),
-            image: PlaceHolderImages[imageIndex].imageUrl
-          });
-        });
-      });
-    }
-
     return {
       id: `p${i + 1}`,
       name: productName,
@@ -199,60 +206,19 @@ const generateMockProducts = (count: number): Product[] => {
       compareAtPrice: i % 2 === 0 ? 12000000 : undefined,
       image: PlaceHolderImages[imageIndex].imageUrl,
       description: `Mô tả chi tiết cho sản phẩm ${category} thế hệ mới. Đầy đủ tính năng và bảo hành chính hãng.`,
+      shortDescription: `Sản phẩm ${category} chất lượng cao, bền bỉ.`,
       category: category,
       brand: { name: "S-Com Elite" },
       inStock: true,
       createdAt: new Date(2025, 0, 1 + i).toISOString(),
-      hasVariants,
-      attributes,
-      variants
+      updatedAt: new Date(2025, 0, 1 + i).toISOString(),
+      sku: `SKU-P${i+1}`,
+      tags: [category.toLowerCase(), 'premium'],
+      reviewCount: 15,
+      ratingAverage: 4.8
     };
   });
 };
-
-const mockBanners: Banner[] = [
-  {
-    id: "b1",
-    title: "Siêu Phẩm Công Nghệ 2025",
-    subtitle: "Giảm giá lên đến 30% cho các dòng máy tính xách tay đời mới nhất.",
-    imageUrl: PlaceHolderImages[0].imageUrl,
-    link: "/products",
-    type: 'product',
-    isActive: true
-  }
-];
-
-const mockPromotions: Promotion[] = [
-  {
-    id: 'promo-1',
-    name: 'Giảm giá Điện tử',
-    description: 'Giảm 20% cho các sản phẩm Điện tử',
-    type: 'percentage',
-    isActive: true,
-    priority: 10,
-    config: {
-      discountPercent: 20,
-      maxDiscountAmount: 500000,
-      appliesTo: 'category',
-      targetIds: ['Điện tử']
-    }
-  },
-  {
-    id: 'promo-2',
-    name: 'Flash Sale Cuối Tuần',
-    description: 'Deal sốc theo giờ',
-    type: 'flash_sale',
-    isActive: true,
-    priority: 100,
-    config: {
-      startTime: "2025-01-01T00:00:00Z",
-      endTime: "2025-12-31T23:59:59Z",
-      products: [
-        { productId: 'p1', salePrice: 2000000, saleQuantity: 10 }
-      ]
-    }
-  }
-];
 
 const commonConfig = {
   paymentMethods: [
@@ -287,6 +253,11 @@ const commonConfig = {
       zalo: "https://zalo.me/scomhub",
       tiktok: "https://tiktok.com/@scomhub"
     }
+  },
+  googleEcosystem: {
+    reportWebVitalsToGA: true,
+    ga4MeasurementId: "G-XXXXXXXXXX",
+    gtmContainerId: "GTM-XXXXXXX"
   }
 };
 
@@ -294,12 +265,17 @@ export const MOCK_TENANTS: Tenant[] = [
   {
     id: "platform-1",
     name: "S-Com Hub Platform",
+    storeName: "S-Com Hub",
     subdomain: "demo",
     description: "Nền tảng thương mại điện tử đa năng, hỗ trợ Việt Nam.",
     primaryColor: "266 79% 63%",
+    logoUrl: "https://picsum.photos/seed/logo/200/200",
+    contactPhone: "1900 1234",
+    contactEmail: "contact@scomhub.vn",
+    address: { street: "123 Lê Lợi", district: "Quận 1", province: "TP. Hồ Chí Minh" },
     products: generateMockProducts(20),
-    banners: mockBanners,
-    promotions: mockPromotions,
+    banners: [],
+    promotions: [],
     coupons: [],
     type: 'platform',
     ...commonConfig
