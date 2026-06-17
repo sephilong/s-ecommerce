@@ -53,8 +53,9 @@ export default function VendorProductsPage() {
 
 function ProductsContent() {
   const { profile } = useUserStore();
-  const { getVendorByUserId, vendorProducts, addVendorProduct, deleteVendorProduct } = useVendorStore();
+  const { getVendorByUserId, vendorProducts, addVendorProduct, deleteVendorProduct, updateVendorProduct } = useVendorStore();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [uploadedUrl, setUploadedUrl] = useState("");
@@ -101,8 +102,16 @@ function ProductsContent() {
     toast({ title: "Đã đăng sản phẩm!", description: "Sản phẩm của bạn đang chờ Admin phê duyệt." });
   };
 
+  const handleUpdateProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    updateVendorProduct(editingProduct);
+    setEditingProduct(null);
+    toast({ title: "Thành công", description: "Đã cập nhật thông tin sản phẩm." });
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-black font-headline italic tracking-tighter uppercase">Quản lý Kho hàng</h1>
@@ -120,7 +129,7 @@ function ProductsContent() {
                 <Plus className="w-5 h-5" /> Đăng sản phẩm mới
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl rounded-[2.5rem]">
+            <DialogContent className="max-w-2xl rounded-[2.5rem] bg-[#0f0f0f] border-white/10">
               <form onSubmit={handleAddProduct}>
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-headline italic">THIẾT LẬP SẢN PHẨM</DialogTitle>
@@ -128,19 +137,19 @@ function ProductsContent() {
                 </DialogHeader>
                 <div className="space-y-6 py-6 overflow-y-auto max-h-[70vh] px-2 custom-scrollbar">
                   <div className="space-y-3">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary">Hình ảnh sản phẩm (Media pipeline)</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Hình ảnh sản phẩm (Media pipeline)</Label>
                     <MediaUploader category="product" onUploadSuccess={setUploadedUrl} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Tên sản phẩm</Label>
-                      <Input name="name" placeholder="iPhone 15 Pro Max..." required className="h-11 rounded-xl" />
+                      <Input name="name" placeholder="iPhone 15 Pro Max..." required className="h-11 rounded-xl bg-background/50 border-white/10" />
                     </div>
                     <div className="space-y-2">
                       <Label>Danh mục</Label>
                       <Select name="category" defaultValue="Điện tử">
-                        <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Điện tử">Điện tử</SelectItem>
                           <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
@@ -153,16 +162,16 @@ function ProductsContent() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Giá bán (VNĐ)</Label>
-                      <Input name="price" type="number" placeholder="25000000" required className="h-11 rounded-xl" />
+                      <Input name="price" type="number" placeholder="25000000" required className="h-11 rounded-xl bg-background/50 border-white/10" />
                     </div>
                     <div className="space-y-2">
                       <Label>Số lượng kho</Label>
-                      <Input name="stock" type="number" defaultValue="10" className="h-11 rounded-xl" />
+                      <Input name="stock" type="number" defaultValue="10" className="h-11 rounded-xl bg-background/50 border-white/10" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Mô tả chi tiết</Label>
-                    <Textarea name="description" placeholder="Thông tin chi tiết, cấu hình..." className="min-h-[100px] rounded-xl" />
+                    <Textarea name="description" placeholder="Thông tin chi tiết, cấu hình..." className="min-h-[100px] rounded-xl bg-background/50 border-white/10" />
                   </div>
                 </div>
                 <DialogFooter>
@@ -221,13 +230,16 @@ function ProductsContent() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {myProducts.map((p) => (
-                      <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                      <tr key={p.id} className="hover:bg-white/5 transition-colors group">
                         <td className="p-6">
-                          <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/10 relative shrink-0">
+                          <div 
+                            className="flex items-center gap-4 cursor-pointer group/link"
+                            onClick={() => setEditingProduct(p)}
+                          >
+                            <div className="h-14 w-14 rounded-xl overflow-hidden border border-white/10 relative shrink-0 shadow-inner group-hover/link:border-primary/50 transition-colors">
                               <Image src={p.image} alt={p.name} fill className="object-cover" />
                             </div>
-                            <div className="font-bold text-base truncate max-w-[200px]">{p.name}</div>
+                            <div className="font-bold text-base truncate max-w-[200px] group-hover/link:text-primary transition-colors">{p.name}</div>
                           </div>
                         </td>
                         <td className="p-6 text-muted-foreground italic">{p.category}</td>
@@ -238,10 +250,26 @@ function ProductsContent() {
                           </Badge>
                         </td>
                         <td className="p-6 text-right">
-                           <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full"><Edit2 className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-destructive" onClick={() => deleteVendorProduct(p.id)}><Trash2 className="w-4 h-4" /></Button>
-                           </div>
+                           <DropdownMenu modal={false}>
+                             <DropdownMenuTrigger asChild>
+                               <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                                 <MoreHorizontal className="w-4 h-4" />
+                               </Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 bg-[#0f0f0f] border-white/5 z-50">
+                                <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Quản trị Sản phẩm</DropdownMenuLabel>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" onSelect={() => setEditingProduct(p)}>
+                                   <Edit2 className="w-4 h-4" /> Chỉnh sửa chi tiết
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => window.open(`/products/${p.slug}`, '_blank')}>
+                                   <ExternalLink className="w-4 h-4" /> Xem trên Store
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-white/5" />
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onSelect={() => deleteVendorProduct(p.id)}>
+                                   <Trash2 className="w-4 h-4" /> Xóa sản phẩm
+                                </DropdownMenuItem>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
                         </td>
                       </tr>
                     ))}
@@ -252,6 +280,57 @@ function ProductsContent() {
           </Card>
         </>
       )}
+
+      {/* Quick Edit Dialog */}
+      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
+        <DialogContent className="max-w-2xl rounded-[2.5rem] bg-[#0f0f0f] border-white/10">
+           <form onSubmit={handleUpdateProduct}>
+              <DialogHeader>
+                 <DialogTitle className="font-headline italic uppercase text-2xl">CẬP NHẬT SẢN PHẨM</DialogTitle>
+                 <DialogDescription>Chỉnh sửa thông tin cơ bản cho sản phẩm của bạn.</DialogDescription>
+              </DialogHeader>
+              {editingProduct && (
+                <div className="space-y-6 py-6 overflow-y-auto max-h-[60vh] px-1 custom-scrollbar">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                         <Label>Tên sản phẩm</Label>
+                         <Input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="rounded-xl h-11 bg-background/50 border-white/10" />
+                      </div>
+                      <div className="space-y-2">
+                         <Label>Danh mục</Label>
+                         <Select value={editingProduct.category} onValueChange={v => setEditingProduct({...editingProduct, category: v})}>
+                            <SelectTrigger className="h-11 rounded-xl bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                               <SelectItem value="Điện tử">Điện tử</SelectItem>
+                               <SelectItem value="Thời trang">Thời trang</SelectItem>
+                               <SelectItem value="Gia dụng">Gia dụng</SelectItem>
+                               <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
+                            </SelectContent>
+                         </Select>
+                      </div>
+                   </div>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                         <Label>Giá bán (VNĐ)</Label>
+                         <Input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})} className="rounded-xl h-11 bg-background/50 border-white/10" />
+                      </div>
+                      <div className="space-y-2">
+                         <Label>Tồn kho</Label>
+                         <Input type="number" value={editingProduct.stock || 0} onChange={e => setEditingProduct({...editingProduct, stock: parseInt(e.target.value)})} className="rounded-xl h-11 bg-background/50 border-white/10" />
+                      </div>
+                   </div>
+                   <div className="space-y-2">
+                      <Label>Mô tả sản phẩm</Label>
+                      <Textarea value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} className="min-h-[150px] rounded-xl bg-background/50 border-white/10" />
+                   </div>
+                </div>
+              )}
+              <DialogFooter>
+                 <Button type="submit" className="w-full h-14 rounded-2xl font-black italic uppercase tracking-tighter shadow-xl shadow-primary/30">Cập nhật ngay</Button>
+              </DialogFooter>
+           </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

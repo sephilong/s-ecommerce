@@ -19,7 +19,8 @@ import {
   FileSpreadsheet,
   Upload,
   Download,
-  Loader2
+  Loader2,
+  Package
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -50,7 +51,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function AdminProductsPage() {
-  const { vendorProducts, approveProduct, rejectProduct, addVendorProduct } = useVendorStore();
+  const { vendorProducts, approveProduct, rejectProduct, addVendorProduct, updateVendorProduct, deleteVendorProduct } = useVendorStore();
   const [products, setProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -59,6 +60,7 @@ export default function AdminProductsPage() {
   
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   useEffect(() => {
     const systemProducts = MOCK_TENANTS[0].products.map(p => ({ ...p, vendorId: 'system', status: 'approved' }));
@@ -85,6 +87,14 @@ export default function AdminProductsPage() {
       setRejectingId(null);
       setRejectReason("");
     }
+  };
+
+  const handleUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    updateVendorProduct(editingProduct);
+    setEditingProduct(null);
+    toast({ title: "Thành công", description: "Đã cập nhật thông tin sản phẩm." });
   };
 
   const handleDownloadTemplate = () => {
@@ -216,12 +226,15 @@ export default function AdminProductsPage() {
                   {filteredProducts.map((product) => (
                     <tr key={`${product.vendorId}-${product.id}`} className="hover:bg-white/5 transition-colors group">
                       <td className="p-6">
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 relative rounded-xl overflow-hidden border border-white/10 bg-background">
+                        <div 
+                          className="flex items-center gap-4 cursor-pointer group/link"
+                          onClick={() => setEditingProduct(product)}
+                        >
+                          <div className="h-12 w-12 relative rounded-xl overflow-hidden border border-white/10 bg-background shrink-0 shadow-inner group-hover/link:border-primary/50 transition-colors">
                             <Image src={product.image} alt={product.name} fill className="object-cover" />
                           </div>
-                          <div>
-                            <div className="font-bold text-base group-hover:text-primary transition-colors">{product.name}</div>
+                          <div className="min-w-0">
+                            <div className="font-bold text-base group-hover/link:text-primary transition-colors truncate max-w-[300px]">{product.name}</div>
                             <div className="text-[10px] text-muted-foreground uppercase">{product.category}</div>
                           </div>
                         </div>
@@ -250,20 +263,24 @@ export default function AdminProductsPage() {
                             <DropdownMenuLabel className="text-[10px] uppercase font-bold text-muted-foreground px-3 py-2">Quản trị Sản phẩm</DropdownMenuLabel>
                             {product.status === 'pending' && (
                               <>
-                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" onClick={() => handleApprove(product.id)}>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 focus:bg-primary focus:text-white cursor-pointer" onSelect={() => handleApprove(product.id)}>
                                   <CheckCircle2 className="w-4 h-4" /> Phê duyệt đăng
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setRejectingId(product.id)}>
+                                <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onSelect={() => setRejectingId(product.id)}>
                                   <XCircle className="w-4 h-4" /> Từ chối đăng
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator className="bg-white/5" />
                               </>
                             )}
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onClick={() => window.open(`/products/${product.slug}`, '_blank')}>
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => window.open(`/products/${product.slug}`, '_blank')}>
                               <ExternalLink className="w-4 h-4" /> Xem trên Storefront
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer">
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 cursor-pointer" onSelect={() => setEditingProduct(product)}>
                               <Edit className="w-4 h-4" /> Chỉnh sửa nhanh
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-white/5" />
+                            <DropdownMenuItem className="gap-3 rounded-xl p-3 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onSelect={() => deleteVendorProduct(product.id)}>
+                                <Trash className="w-4 h-4" /> Xóa sản phẩm
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -277,7 +294,8 @@ export default function AdminProductsPage() {
         </Card>
       </Tabs>
 
-      <Dialog open={!!rejectingId} onOpenChange={() => setRejectingId(null)}>
+      {/* Reject Dialog */}
+      <Dialog open={!!rejectingId} onOpenChange={(open) => !open && setRejectingId(null)}>
         <DialogContent className="rounded-3xl bg-[#0f0f0f] border-white/10">
            <DialogHeader>
               <DialogTitle className="font-headline italic uppercase">LÝ DO TỪ CHỐI SẢN PHẨM</DialogTitle>
@@ -297,6 +315,87 @@ export default function AdminProductsPage() {
            </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
+        <DialogContent className="max-w-2xl rounded-[2rem] bg-[#0f0f0f] border-white/10">
+          <form onSubmit={handleUpdate}>
+            <DialogHeader>
+              <DialogTitle className="font-headline italic uppercase">CHỈNH SỬA SẢN PHẨM</DialogTitle>
+              <DialogDescription>Cập nhật thông tin chi tiết cho sản phẩm trên hệ thống.</DialogDescription>
+            </DialogHeader>
+            {editingProduct && (
+              <div className="space-y-4 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tên sản phẩm</Label>
+                    <Input 
+                      value={editingProduct.name} 
+                      onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
+                      className="rounded-xl h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Danh mục</Label>
+                    <Select 
+                      value={editingProduct.category} 
+                      onValueChange={v => setEditingProduct({...editingProduct, category: v})}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Điện tử">Điện tử</SelectItem>
+                        <SelectItem value="Thời trang">Thời trang</SelectItem>
+                        <SelectItem value="Gia dụng">Gia dụng</SelectItem>
+                        <SelectItem value="Phụ kiện">Phụ kiện</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                    <Label>Giá bán (VNĐ)</Label>
+                    <Input 
+                      type="number" 
+                      value={editingProduct.price} 
+                      onChange={e => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})}
+                      className="rounded-xl h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ảnh sản phẩm (URL)</Label>
+                    <Input 
+                      value={editingProduct.image} 
+                      onChange={e => setEditingProduct({...editingProduct, image: e.target.value})}
+                      className="rounded-xl h-11"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mô tả sản phẩm</Label>
+                  <Textarea 
+                    value={editingProduct.description} 
+                    onChange={e => setEditingProduct({...editingProduct, description: e.target.value})}
+                    className="min-h-[150px] rounded-xl"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+               <Button type="submit" className="w-full h-12 rounded-xl font-bold shadow-xl shadow-primary/20">Lưu thay đổi</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: any }) {
+  const configs: any = {
+    approved: { label: "Hoạt động", class: "bg-green-500/10 text-green-500 border-none" },
+    pending: { label: "Chờ duyệt", class: "bg-orange-500/10 text-orange-500 border-none" },
+    rejected: { label: "Từ chối", class: "bg-red-500/10 text-red-500 border-none" },
+  };
+  const config = configs[status] || configs.pending;
+  return <Badge className={`rounded-full px-3 py-0.5 text-[10px] uppercase font-black italic ${config.class}`}>{config.label}</Badge>;
 }
